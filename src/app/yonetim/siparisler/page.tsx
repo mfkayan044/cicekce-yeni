@@ -839,6 +839,40 @@ export default function AdminOrdersPage() {
                       </div>
                     </div>
                   </div>
+
+                  {/* SEPARATE COURIER DOOR DELIVERY PHOTO DISPLAY */}
+                  {selectedOrder.deliveredPhoto && selectedOrder.deliveredPhoto !== selectedOrder.preparedPhoto && (
+                    <div className="pt-3 border-t border-slate-200 mt-3">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-base">🚚</span>
+                        <h4 className="text-xs font-black text-slate-900 m-0 uppercase">Kurye Kapıda Teslimat Görseli</h4>
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                          Teslimat Anında Çekildi ({selectedOrder.deliveredAt || "Teslim Edildi"})
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <div className="relative w-24 h-24 rounded-2xl overflow-hidden border bg-slate-100 shrink-0 shadow-xs">
+                          <img
+                            src={selectedOrder.deliveredPhoto}
+                            alt="Kurye Teslimat Fotoğrafı"
+                            className="w-full h-full object-cover"
+                          />
+                          <a
+                            href={selectedOrder.deliveredPhoto}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="absolute bottom-1 right-1 bg-black/70 text-white text-[9px] px-1.5 py-0.5 rounded font-bold"
+                          >
+                            Büyüt 🔍
+                          </a>
+                        </div>
+                        <div className="text-xs text-slate-600 space-y-1">
+                          <div>Teslim Edilme Zamanı: <strong className="text-slate-900">{selectedOrder.deliveredAt || "—"}</strong></div>
+                          <div>Teslimat Notu: <strong className="text-slate-900">{selectedOrder.deliveryNote || "Alıcının kendisine teslim edildi."}</strong></div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* 3. FLOWER CARD NOTE (YAZILACAK KART NOTU) */}

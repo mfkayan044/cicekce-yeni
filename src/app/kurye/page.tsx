@@ -147,10 +147,8 @@ export default function CourierPortalPage() {
     if (!deliveringOrder) return;
     setSubmittingDelivery(true);
 
-    const finalPhoto =
-      previewPhotoUrl ||
-      deliveringOrder.preparedPhoto ||
-      "https://images.unsplash.com/photo-1526047932273-341f2a7631f9?w=500&auto=format&fit=crop&q=60";
+    // FIX: Delivered photo must NOT fallback to prepared approval photo!
+    const finalPhoto = previewPhotoUrl || "";
     const deliveredTimeStr = new Date().toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" });
     const deliveredDateStr = new Date().toLocaleDateString("tr-TR");
     const deliveredAtFull = `${deliveredDateStr} ${deliveredTimeStr}`;

@@ -1,72 +1,113 @@
 import { NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
+import fs from "fs";
+import path from "path";
 
 const ALLOWED_MIME_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif", "image/svg+xml"];
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB limit
+
+const uploadsDir = path.join(process.cwd(), "public", "uploads");
+
+function ensureUploadsDir() {
+  try {
+    if (!fs.existsSync(uploadsDir)) {
+      fs.mkdirSync(uploadsDir, { recursive: true });
+    }
+  } catch (e) {}
+}
 
 export async function POST(req: Request) {
   try {
-    const formData = await req.formData();
-    const file = formData.get("file") as File | null;
+    let fileBuffer: Buffer | null = null;
+    let mimeType = "image/jpeg";
+    let originalName = "photo.jpg";
+    let fileExt = "jpg";
 
-    if (!file) {
-      return NextResponse.json({ error: "Dosya bulunamadı." }, { status: 400 });
+    const contentType = req.headers.get("content-type") || "";
+
+    if (contentType.includes("application/json")) {
+      const jsonBody = await req.json();
+      if (jsonBody.base64 || jsonBody.image) {
+        const rawStr = jsonBody.base64 || jsonBody.image;
+        if (rawStr.startsWith("data:")) {
+          const matches = rawStr.match(/^data:(image\/[a-zA-Z+]+);base64,(.+)$/);
+          if (matches) {
+            mimeType = matches[1];
+            fileBuffer = Buffer.from(matches[2], "base64");
+            fileExt = mimeType.split("/")[1] || "jpg";
+          }
+        } else {
+          fileBuffer = Buffer.from(rawStr, "base64");
+        }
+      }
+    } else {
+      const formData = await req.formData();
+      const file = formData.get("file") as File | null;
+      if (file) {
+        mimeType = file.type || "image/jpeg";
+        originalName = file.name || "photo.jpg";
+        fileExt = originalName.split(".").pop() || "jpg";
+        
+        if (file.size > MAX_FILE_SIZE) {
+          return NextResponse.json(
+            { error: "Dosya boyutu çok büyük. Maksimum 10 MB yüklenebilir." },
+            { status: 400 }
+          );
+        }
+
+        const arrayBuffer = await file.arrayBuffer();
+        fileBuffer = Buffer.from(arrayBuffer);
+      }
     }
 
-    if (!ALLOWED_MIME_TYPES.includes(file.type)) {
-      return NextResponse.json(
-        { error: "Geçersiz dosya formatı. Sadece JPG, PNG, WEBP ve GIF dosyaları yüklenebilir." },
-        { status: 400 }
-      );
+    if (!fileBuffer || fileBuffer.length === 0) {
+      return NextResponse.json({ error: "Görsel dosyası veya verisi bulunamadı." }, { status: 400 });
     }
 
-    if (file.size > MAX_FILE_SIZE) {
-      return NextResponse.json(
-        { error: "Dosya boyutu çok büyük. Maksimum 5 MB yüklenebilir." },
-        { status: 400 }
-      );
-    }
+    const uniqueFileName = `${Date.now()}-${Math.random().toString(36).substring(2, 8)}.${fileExt}`;
 
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-    const ext = file.name.split(".").pop() || "jpg";
-    const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 8)}.${ext}`;
-
-    // 1. Attempt upload to Supabase Storage bucket 'cicekce-uploads'
+    // 1. SUPABASE STORAGE BUCKET UPLOAD ('cicekce-uploads')
     try {
       const { data, error } = await supabase.storage
         .from("cicekce-uploads")
-        .upload(fileName, buffer, {
-          contentType: file.type,
+        .upload(uniqueFileName, fileBuffer, {
+          contentType: mimeType,
           upsert: true,
         });
 
       if (!error && data) {
         const { data: publicUrlData } = supabase.storage
           .from("cicekce-uploads")
-          .getPublicUrl(fileName);
+          .getPublicUrl(uniqueFileName);
 
-        return NextResponse.json({
-          url: publicUrlData.publicUrl,
-          name: file.name,
-          storage: "supabase",
-        });
+        if (publicUrlData?.publicUrl) {
+          return NextResponse.json({
+            url: publicUrlData.publicUrl,
+            name: uniqueFileName,
+            storage: "supabase-cloud",
+          });
+        }
       }
-    } catch (supabaseErr) {
-      // Supabase storage bucket might not exist yet or have RLS policy
+    } catch (supErr) {
+      console.warn("Supabase Storage bucket notice:", supErr);
     }
 
-    // 2. Safe Fallback: Base64 Data URL (guaranteed to render anywhere across serverless / static without local disk dependency)
-    const base64 = `data:${file.type};base64,${buffer.toString("base64")}`;
+    // 2. LOCAL & SERVERLESS FALLBACK
+    ensureUploadsDir();
+    const localFilePath = path.join(uploadsDir, uniqueFileName);
+    fs.writeFileSync(localFilePath, fileBuffer);
+    const localUrl = `/uploads/${uniqueFileName}`;
+
     return NextResponse.json({
-      url: base64,
-      name: file.name,
-      storage: "inline",
+      url: localUrl,
+      name: uniqueFileName,
+      storage: "local-persistent",
     });
+
   } catch (error: any) {
     console.error("Upload error:", error);
     return NextResponse.json(
-      { error: "Görsel yüklenirken bir hata oluştu: " + (error?.message || "") },
+      { error: "Görsel yüklenirken hata oluştu: " + (error?.message || "") },
       { status: 500 }
     );
   }

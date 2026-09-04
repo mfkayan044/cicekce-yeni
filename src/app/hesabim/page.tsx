@@ -6,6 +6,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { getStoredMember, setStoredMember, clearStoredMember, MemberUser, MemberAddress } from "@/lib/member-auth";
 import Link from "next/link";
+import OrderUpdateRequestModal from "@/components/orders/OrderUpdateRequestModal";
 
 export default function MemberAccountPage() {
   const router = useRouter();
@@ -16,6 +17,7 @@ export default function MemberAccountPage() {
   // Orders State
   const [myOrders, setMyOrders] = useState<any[]>([]);
   const [loadingOrders, setLoadingOrders] = useState(false);
+  const [editingOrderForUpdate, setEditingOrderForUpdate] = useState<any | null>(null);
 
   // Profile Edit Form State
   const [name, setName] = useState("");
@@ -305,6 +307,46 @@ export default function MemberAccountPage() {
                         </div>
                       </div>
 
+                      {/* Update Request Status Alert if exists */}
+                      {o.updateRequest && (
+                        <div className="text-xs space-y-2">
+                          {o.updateRequest.status === "PENDING" && (
+                            <div className="p-3 bg-amber-50 border border-amber-200 rounded-2xl text-amber-950">
+                              <div className="font-extrabold text-xs text-amber-900 flex items-center gap-1.5">
+                                <span>⏳</span>
+                                <span>Bilgi Güncelleme Talebiniz İnceleniyor</span>
+                              </div>
+                              <p className="text-[11px] text-slate-600 mt-0.5">
+                                Teslimat adresi veya zamanı değişikliği talebiniz atölyemiz ve temsilcimiz tarafından inceleniyor.
+                              </p>
+                            </div>
+                          )}
+
+                          {o.updateRequest.status === "APPROVED" && (
+                            <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-2xl text-emerald-950">
+                              <div className="font-extrabold text-xs text-emerald-900 flex items-center gap-1.5">
+                                <span>✅</span>
+                                <span>Bilgi Güncelleme Talebiniz Onaylandı</span>
+                              </div>
+                            </div>
+                          )}
+
+                          {o.updateRequest.status === "REJECTED" && (
+                            <div className="p-3 bg-red-50 border border-red-200 rounded-2xl text-red-950">
+                              <div className="font-extrabold text-xs text-red-900 flex items-center gap-1.5">
+                                <span>❌</span>
+                                <span>Güncelleme Talebiniz Kabul Edilemedi</span>
+                              </div>
+                              {o.updateRequest.adminNote && (
+                                <p className="text-[11px] text-red-800 font-semibold mt-0.5">
+                                  Gerekçe: {o.updateRequest.adminNote}
+                                </p>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      )}
+
                       {/* Items and Recipient */}
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
                         <div className="space-y-1">
@@ -322,7 +364,7 @@ export default function MemberAccountPage() {
                         </div>
                       </div>
 
-                      {/* Action Links (Live Photo Approval / Tracking) */}
+                      {/* Action Links (Live Photo Approval / Tracking / Update Request) */}
                       <div className="flex flex-wrap items-center gap-2 pt-2 border-t">
                         {o.preparedPhoto ? (
                           <Link
@@ -334,8 +376,18 @@ export default function MemberAccountPage() {
                           </Link>
                         ) : null}
 
+                        {o.status !== "Teslim Edildi" && o.updateRequest?.status !== "PENDING" && (
+                          <button
+                            type="button"
+                            onClick={() => setEditingOrderForUpdate(o)}
+                            className="py-2 px-4 rounded-xl text-xs font-bold bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 transition"
+                          >
+                            ✏️ Bilgileri Güncelle
+                          </button>
+                        )}
+
                         <Link
-                          href={`/siparis-takip?orderId=${o.id}`}
+                          href={`/siparis-takip?id=${o.id}`}
                           className="py-2 px-4 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-800 transition"
                         >
                           🔍 Siparişi Takip Et
@@ -343,6 +395,18 @@ export default function MemberAccountPage() {
                       </div>
                     </div>
                   ))}
+
+                  {/* Order Update Request Modal */}
+                  <OrderUpdateRequestModal
+                    order={editingOrderForUpdate}
+                    isOpen={!!editingOrderForUpdate}
+                    onClose={() => setEditingOrderForUpdate(null)}
+                    onSuccess={(updatedOrder) => {
+                      setMyOrders((prev) =>
+                        prev.map((ord) => (ord.id === updatedOrder.id ? updatedOrder : ord))
+                      );
+                    }}
+                  />
                 </div>
               )}
             </div>

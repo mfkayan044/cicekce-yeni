@@ -83,7 +83,8 @@ export async function GET(request: Request) {
         customerApprovalStatus: order.customer_approval_status,
         courierId: order.courier_id || extra.courierId || "",
         courierName: order.courier_name || extra.courierName || "",
-        deliveredAt: order.delivered_at || extra.deliveredAt || ""
+        deliveredAt: order.delivered_at || extra.deliveredAt || "",
+        updateRequest: extra.updateRequest || order.update_request || null
       });
     }
 
@@ -163,7 +164,8 @@ export async function GET(request: Request) {
         courierName: extra.courierName || o.courier_name || "",
         deliveredAt: extra.deliveredAt || o.delivered_at || "",
         deliveredPhoto: extra.deliveredPhoto || o.delivered_photo || "",
-        deliveryNote: extra.deliveryNote || o.delivery_note || ""
+        deliveryNote: extra.deliveryNote || o.delivery_note || "",
+        updateRequest: extra.updateRequest || o.update_request || null
       };
     });
 
@@ -241,7 +243,13 @@ export async function PUT(request: Request) {
       courierName,
       deliveredAt,
       deliveredPhoto,
-      deliveryNote
+      deliveryNote,
+      updateRequest,
+      recipientName,
+      recipientPhone,
+      address,
+      deliveryDate,
+      deliveryTime
     } = body;
 
     if (!id) {
@@ -264,6 +272,11 @@ export async function PUT(request: Request) {
     if (deliveredAt !== undefined) updatePayload.delivered_at = deliveredAt;
     if (deliveredPhoto !== undefined) updatePayload.delivered_photo = deliveredPhoto;
     if (deliveryNote !== undefined) updatePayload.delivery_note = deliveryNote;
+    if (recipientName !== undefined) updatePayload.recipient_name = recipientName;
+    if (recipientPhone !== undefined) updatePayload.recipient_phone = recipientPhone;
+    if (address !== undefined) updatePayload.address = address;
+    if (deliveryDate !== undefined) updatePayload.delivery_date = deliveryDate;
+    if (deliveryTime !== undefined) updatePayload.delivery_time = deliveryTime;
 
     if (Object.keys(updatePayload).length > 0) {
       try {
@@ -286,6 +299,12 @@ export async function PUT(request: Request) {
       ...(customerApprovalStatus !== undefined ? { customerApprovalStatus } : {}),
       ...(rejectionCount !== undefined ? { rejectionCount } : {}),
       ...(rejectionReason !== undefined ? { rejectionReason } : {}),
+      ...(updateRequest !== undefined ? { updateRequest } : {}),
+      ...(recipientName !== undefined ? { recipientName } : {}),
+      ...(recipientPhone !== undefined ? { recipientPhone } : {}),
+      ...(address !== undefined ? { address } : {}),
+      ...(deliveryDate !== undefined ? { deliveryDate } : {}),
+      ...(deliveryTime !== undefined ? { deliveryTime } : {}),
       ...(status !== undefined ? { status } : {})
     };
 

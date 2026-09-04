@@ -104,6 +104,112 @@ export default function AdminOrdersPage() {
   const [endDate, setEndDate] = useState<string>(todayDefault);
   const [dateFilterType, setDateFilterType] = useState<"all" | "today" | "upcoming" | "past" | "custom">("today");
 
+  // Update Request Review State
+  const [reviewingUpdateRequestOrder, setReviewingUpdateRequestOrder] = useState<any | null>(null);
+  const [adminRejectReason, setAdminRejectReason] = useState<string>("");
+
+  const handleApproveUpdateRequest = async (orderToApprove: any) => {
+    if (!orderToApprove || !orderToApprove.updateRequest) return;
+    const reqChanges = orderToApprove.updateRequest.requestedChanges || {};
+
+    const updatedReqObj = {
+      ...orderToApprove.updateRequest,
+      status: "APPROVED",
+      reviewedAt: new Date().toISOString(),
+    };
+
+    const payload = {
+      id: orderToApprove.id,
+      recipientName: reqChanges.recipientName || orderToApprove.recipientName,
+      recipientPhone: reqChanges.recipientPhone || orderToApprove.recipientPhone,
+      address: reqChanges.address || orderToApprove.address,
+      deliveryDate: reqChanges.deliveryDate || orderToApprove.deliveryDate,
+      deliveryTime: reqChanges.deliveryTime || orderToApprove.deliveryTime,
+      updateRequest: updatedReqObj,
+    };
+
+    try {
+      const res = await fetch("/api/orders", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (res.ok) {
+        setOrders((prev) =>
+          prev.map((o) =>
+            o.id === orderToApprove.id
+              ? {
+                  ...o,
+                  ...payload,
+                }
+              : o
+          )
+        );
+        if (selectedOrder && selectedOrder.id === orderToApprove.id) {
+          setSelectedOrder((prev: any) => ({
+            ...prev,
+            ...payload,
+          }));
+        }
+        setReviewingUpdateRequestOrder(null);
+        alert("✅ Müşteri bilgi güncelleme talebi onaylandı ve sipariş teslimat bilgileri güncellendi!");
+      } else {
+        alert("İşlem sırasında hata oluştu.");
+      }
+    } catch (e) {
+      alert("Bağlantı hatası.");
+    }
+  };
+
+  const handleRejectUpdateRequest = async (orderToReject: any) => {
+    if (!orderToReject || !orderToReject.updateRequest) return;
+
+    const updatedReqObj = {
+      ...orderToReject.updateRequest,
+      status: "REJECTED",
+      adminNote: adminRejectReason.trim() || "Sipariş kuryede veya teslimat aşamasında olduğu için güncelleme yapılamadı.",
+      reviewedAt: new Date().toISOString(),
+    };
+
+    try {
+      const res = await fetch("/api/orders", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: orderToReject.id,
+          updateRequest: updatedReqObj,
+        }),
+      });
+
+      if (res.ok) {
+        setOrders((prev) =>
+          prev.map((o) =>
+            o.id === orderToReject.id
+              ? {
+                  ...o,
+                  updateRequest: updatedReqObj,
+                }
+              : o
+          )
+        );
+        if (selectedOrder && selectedOrder.id === orderToReject.id) {
+          setSelectedOrder((prev: any) => ({
+            ...prev,
+            updateRequest: updatedReqObj,
+          }));
+        }
+        setReviewingUpdateRequestOrder(null);
+        setAdminRejectReason("");
+        alert("❌ Müşteri bilgi güncelleme talebi reddedildi.");
+      } else {
+        alert("İşlem sırasında hata oluştu.");
+      }
+    } catch (e) {
+      alert("Bağlantı hatası.");
+    }
+  };
+
   useEffect(() => {
     fetchOrders();
     fetchCouriers();
@@ -701,6 +807,16 @@ export default function AdminOrdersPage() {
                             #{o.id}
                           </span>
                           <div className="text-[11px] text-slate-400 font-bold">{o.date}</div>
+
+                          {o.updateRequest?.status === "PENDING" && (
+                            <button
+                              type="button"
+                              onClick={() => setReviewingUpdateRequestOrder(o)}
+                              className="mt-1.5 w-full py-1.5 px-2 bg-red-600 hover:bg-red-700 text-white rounded-xl font-black text-[10px] transition shadow-xs flex items-center justify-center gap-1 animate-pulse"
+                            >
+                              <span>⚠️ Güncelleme Talebi Var!</span>
+                            </button>
+                          )}
                         </td>
 
                         {/* 4. DURUM SÜTUNU (DİNAMİK BUTONLAR) */}
@@ -1305,6 +1421,125 @@ export default function AdminOrdersPage() {
                   className="px-6 py-2.5 rounded-xl font-extrabold text-xs shadow-xs hover:opacity-90 transition"
                 >
                   Kapat
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* MÜŞTERİ BİLGİ GÜNCELLEME TALEBİ İNCELEME MODALI */}
+        {reviewingUpdateRequestOrder && (
+          <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto font-sans">
+            <div className="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl space-y-6 relative border border-slate-100 my-8">
+              <div className="flex justify-between items-start border-b pb-4">
+                <div>
+                  <div className="text-xs font-black uppercase text-red-600 tracking-wider mb-1 flex items-center gap-1.5">
+                    <span>⚠️</span> <span>MÜŞTERİ BİLGİ GÜNCELLEME TALEBİ İNCELEME</span>
+                  </div>
+                  <h3 className="text-lg font-black text-slate-900">
+                    Sipariş #{reviewingUpdateRequestOrder.id} - Değişiklik Talebi
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-1">
+                    Müşteri teslimat adresi, alıcı bilgisi veya saati için değişiklik talep etti. Yan yana inceleyip onaylayabilir veya reddedebilirsiniz.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setReviewingUpdateRequestOrder(null);
+                    setAdminRejectReason("");
+                  }}
+                  className="w-8 h-8 rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 font-extrabold text-sm flex items-center justify-center transition"
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* COMPARISON TABLE */}
+              <div className="border border-slate-200 rounded-2xl overflow-hidden text-xs">
+                <table className="w-full text-left border-collapse">
+                  <thead className="bg-slate-100 text-slate-700 font-black">
+                    <tr>
+                      <th className="p-3 border-b">Bilgi Alanı</th>
+                      <th className="p-3 border-b bg-slate-50">Mevcut Bilgi (Sistemde Olan)</th>
+                      <th className="p-3 border-b bg-amber-50 text-amber-950">Müşterinin Talep Ettiği Yeni Bilgi</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 font-bold">
+                    <tr>
+                      <td className="p-3 text-slate-500">Alıcı Adı Soyadı</td>
+                      <td className="p-3 bg-slate-50 text-slate-800">{reviewingUpdateRequestOrder.recipientName}</td>
+                      <td className="p-3 bg-amber-50/50 text-amber-900 font-extrabold">
+                        {reviewingUpdateRequestOrder.updateRequest?.requestedChanges?.recipientName || "Değişmedi"}
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="p-3 text-slate-500">Alıcı Telefonu</td>
+                      <td className="p-3 bg-slate-50 text-slate-800">{reviewingUpdateRequestOrder.recipientPhone || "—"}</td>
+                      <td className="p-3 bg-amber-50/50 text-amber-900 font-extrabold">
+                        {reviewingUpdateRequestOrder.updateRequest?.requestedChanges?.recipientPhone || "Değişmedi"}
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="p-3 text-slate-500">Teslimat Adresi</td>
+                      <td className="p-3 bg-slate-50 text-slate-800">{reviewingUpdateRequestOrder.address}</td>
+                      <td className="p-3 bg-amber-50/50 text-amber-900 font-extrabold">
+                        {reviewingUpdateRequestOrder.updateRequest?.requestedChanges?.address || "Değişmedi"}
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="p-3 text-slate-500">Teslimat Tarihi</td>
+                      <td className="p-3 bg-slate-50 text-slate-800">{reviewingUpdateRequestOrder.deliveryDate}</td>
+                      <td className="p-3 bg-amber-50/50 text-amber-900 font-extrabold">
+                        {reviewingUpdateRequestOrder.updateRequest?.requestedChanges?.deliveryDate || "Değişmedi"}
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="p-3 text-slate-500">Teslimat Saat Aralığı</td>
+                      <td className="p-3 bg-slate-50 text-slate-800">{reviewingUpdateRequestOrder.deliveryTime}</td>
+                      <td className="p-3 bg-amber-50/50 text-amber-900 font-extrabold">
+                        {reviewingUpdateRequestOrder.updateRequest?.requestedChanges?.deliveryTime || "Değişmedi"}
+                      </td>
+                    </tr>
+                    {reviewingUpdateRequestOrder.updateRequest?.requestedChanges?.reason && (
+                      <tr>
+                        <td className="p-3 text-slate-500">Müşteri Notu / Nedeni</td>
+                        <td colSpan={2} className="p-3 bg-amber-100/50 text-amber-950 italic font-semibold">
+                          "{reviewingUpdateRequestOrder.updateRequest.requestedChanges.reason}"
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* REJECTION REASON INPUT */}
+              <div className="space-y-1.5 text-xs">
+                <label className="font-extrabold text-slate-700 block">Reddetme Gerekçesi (Yalnızca Reddedilecekse Doldurun)</label>
+                <input
+                  type="text"
+                  placeholder="Örn: Sipariş dağıtım aşamasında olduğu için teslimat adresi değiştirilemez."
+                  className="w-full p-3 rounded-2xl border border-slate-200 text-slate-900 font-medium outline-none focus:border-red-500 bg-slate-50"
+                  value={adminRejectReason}
+                  onChange={(e) => setAdminRejectReason(e.target.value)}
+                />
+              </div>
+
+              {/* ACTION BUTTONS */}
+              <div className="flex items-center gap-3 pt-3 border-t">
+                <button
+                  type="button"
+                  onClick={() => handleRejectUpdateRequest(reviewingUpdateRequestOrder)}
+                  className="w-1/2 py-3.5 rounded-2xl font-black bg-red-600 hover:bg-red-700 text-white transition shadow-sm text-xs"
+                >
+                  ❌ Talebi Reddet
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleApproveUpdateRequest(reviewingUpdateRequestOrder)}
+                  className="w-1/2 py-3.5 rounded-2xl font-black bg-emerald-600 hover:bg-emerald-700 text-white transition shadow-sm text-xs"
+                >
+                  ✅ Talebi Onayla ve Siparişi Güncelle
                 </button>
               </div>
             </div>

@@ -4,6 +4,7 @@ import StoreHeader from "@/components/store/StoreHeader";
 import StoreFooter from "@/components/store/StoreFooter";
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import OrderUpdateRequestModal from "@/components/orders/OrderUpdateRequestModal";
 
 export default function OrderTrackingPage() {
   const [orderIdInput, setOrderIdInput] = useState("");
@@ -13,6 +14,7 @@ export default function OrderTrackingPage() {
   const [order, setOrder] = useState<any | null>(null);
   const [approving, setApproving] = useState(false);
   const [approvedSuccess, setApprovedSuccess] = useState(false);
+  const [showUpdateModal, setShowUpdateModal] = useState(false);
 
   // Auto-search if query params exist in URL
   useEffect(() => {
@@ -288,13 +290,71 @@ export default function OrderTrackingPage() {
                 )}
               </div>
 
+              {/* Update Request Status Alert if exists */}
+              {order.updateRequest && (
+                <div className="bg-white rounded-3xl p-5 border shadow-xs space-y-2 text-xs">
+                  {order.updateRequest.status === "PENDING" && (
+                    <div className="p-4 bg-amber-50 border border-amber-200 rounded-2xl text-amber-950 space-y-1">
+                      <div className="font-extrabold text-sm text-amber-900 flex items-center gap-2">
+                        <span>⏳</span>
+                        <span>Sipariş Bilgileri Güncelleme Talebiniz İnceleniyor</span>
+                      </div>
+                      <p className="text-slate-700">
+                        Teslimat adresi/zamanı değişikliği talebiniz müşteri temsilcimiz ve atölyemiz tarafından inceleniyor. Kısa süre içinde sonuçlandırılacaktır.
+                      </p>
+                      {order.updateRequest.requestedChanges?.reason && (
+                        <div className="italic text-slate-500 pt-1">
+                          Talep Notunuz: "{order.updateRequest.requestedChanges.reason}"
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {order.updateRequest.status === "APPROVED" && (
+                    <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl text-emerald-950 space-y-1">
+                      <div className="font-extrabold text-sm text-emerald-900 flex items-center gap-2">
+                        <span>✅</span>
+                        <span>Bilgi Güncelleme Talebiniz Onaylandı!</span>
+                      </div>
+                      <p className="text-emerald-800">
+                        Talebiniz temsilcimiz tarafından onaylandı ve siparişinizin teslimat bilgileri güncellendi.
+                      </p>
+                    </div>
+                  )}
+
+                  {order.updateRequest.status === "REJECTED" && (
+                    <div className="p-4 bg-red-50 border border-red-200 rounded-2xl text-red-950 space-y-1">
+                      <div className="font-extrabold text-sm text-red-900 flex items-center gap-2">
+                        <span>❌</span>
+                        <span>Bilgi Güncelleme Talebiniz Kabul Edilemedi</span>
+                      </div>
+                      <p className="text-red-800 font-semibold">
+                        Gerekçe: {order.updateRequest.adminNote || "Sipariş kuryede veya teslimat aşamasında olduğu için güncelleme yapılamadı."}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* Order Details & Summary Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Recipient & Delivery Details */}
-                <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-200 space-y-3 text-xs">
-                  <h4 className="font-extrabold text-sm text-slate-800 border-b pb-2">
-                    📍 Teslimat Bilgileri
-                  </h4>
+                <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-200 space-y-4 text-xs">
+                  <div className="flex justify-between items-center border-b pb-2">
+                    <h4 className="font-extrabold text-sm text-slate-800 m-0">
+                      📍 Teslimat Bilgileri
+                    </h4>
+                    {order.status !== "Teslim Edildi" && order.updateRequest?.status !== "PENDING" && (
+                      <button
+                        type="button"
+                        onClick={() => setShowUpdateModal(true)}
+                        className="px-3 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 rounded-xl font-extrabold text-[11px] transition shadow-2xs"
+                      >
+                        ✏️ Bilgileri Güncelle
+                      </button>
+                    )}
+                  </div>
+
                   <div className="space-y-2 text-slate-600">
                     <div>
                       <span className="font-bold text-slate-800">Alıcı: </span>
@@ -341,6 +401,14 @@ export default function OrderTrackingPage() {
                   </div>
                 </div>
               </div>
+
+              {/* Order Update Request Modal */}
+              <OrderUpdateRequestModal
+                order={order}
+                isOpen={showUpdateModal}
+                onClose={() => setShowUpdateModal(false)}
+                onSuccess={(updatedOrder) => setOrder(updatedOrder)}
+              />
             </div>
           )}
         </main>

@@ -93,24 +93,37 @@ export async function POST(request: Request) {
           const currentPriceNum = parsePriceNumber(p.price);
           let newPriceNum = currentPriceNum;
 
-          if (changeType === "percent") {
-            newPriceNum = currentPriceNum * (1 + numValue / 100);
-          } else if (changeType === "percent_discount") {
-            newPriceNum = currentPriceNum * (1 - numValue / 100);
-          } else if (changeType === "fixed") {
-            newPriceNum = currentPriceNum + numValue;
-          }
+          let newPriceStr = "";
+          let oldPriceStr: string | undefined = undefined;
+          let discountStr: string | undefined = undefined;
 
-          newPriceNum = Math.max(0, Math.round(newPriceNum));
-          const newPriceStr = formatPriceTL(newPriceNum);
-          const oldPriceStr = formatPriceTL(currentPriceNum);
+          if (changeType === "percent") {
+            // Zam (Price Increase) -> Clear oldPrice & discount!
+            newPriceNum = Math.round(currentPriceNum * (1 + numValue / 100));
+            newPriceStr = formatPriceTL(newPriceNum);
+            oldPriceStr = undefined;
+            discountStr = undefined;
+          } else if (changeType === "percent_discount") {
+            // İndirim (Discount) -> Set oldPrice to higher original price!
+            newPriceNum = Math.round(currentPriceNum * (1 - numValue / 100));
+            newPriceStr = formatPriceTL(newPriceNum);
+            oldPriceStr = formatPriceTL(currentPriceNum);
+            discountStr = `-%${numValue}`;
+          } else if (changeType === "fixed") {
+            // Sabit Artış (Fixed Increase)
+            newPriceNum = Math.round(currentPriceNum + numValue);
+            newPriceStr = formatPriceTL(newPriceNum);
+            oldPriceStr = undefined;
+            discountStr = undefined;
+          }
 
           updatedCount++;
           return {
             ...p,
             price: newPriceStr,
             old_price: oldPriceStr,
-            oldPrice: oldPriceStr
+            oldPrice: oldPriceStr,
+            discount: discountStr
           };
         }
         return p;

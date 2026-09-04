@@ -2,13 +2,22 @@
 
 import AdminLayout from "@/components/layout/AdminLayout";
 import { useState } from "react";
+import { useStore, CategoryItem, Product } from "@/lib/store";
 
 export default function TopluFiyatPage() {
+  const { categories = [], products = [] } = useStore();
   const [selectedCategory, setSelectedCategory] = useState("Tüm Ürünler");
   const [changeType, setChangeType] = useState("percent");
   const [value, setValue] = useState("10");
   const [msg, setMsg] = useState("");
   const [loading, setLoading] = useState(false);
+
+  const categoryList: string[] = Array.from(
+    new Set([
+      ...categories.map((c: CategoryItem) => c.name),
+      ...products.map((p: Product) => p.category).filter(Boolean),
+    ])
+  ).filter(Boolean).sort((a, b) => a.localeCompare(b, "tr"));
 
   const handleApply = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -65,9 +74,11 @@ export default function TopluFiyatPage() {
               <label className="text-xs font-bold text-slate-700 block mb-1">Hedef Kategori</label>
               <select className="w-full p-3 border border-slate-200 rounded-xl text-sm outline-none font-semibold" value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)}>
                 <option value="Tüm Ürünler">Tüm Ürünler (Tüm Katalog)</option>
-                <option value="Buketler">Buketler</option>
-                <option value="Doğum Günü">Doğum Günü</option>
-                <option value="Aranjmanlar">Aranjmanlar</option>
+                {categoryList.map((catName) => (
+                  <option key={catName} value={catName}>
+                    {catName}
+                  </option>
+                ))}
               </select>
             </div>
 

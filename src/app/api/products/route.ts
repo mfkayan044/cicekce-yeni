@@ -40,29 +40,39 @@ function writeDbAndTs(dbObj: any) {
 
 export async function GET() {
   try {
-    const { data, error } = await supabase.from("products").select("*").order("created_at", { ascending: false });
-    if (error || !data || data.length === 0) {
-      const db = readDb();
-      return NextResponse.json(db.products || []);
-    }
+    // Read directly from db.json to guarantee 100% SSR & Client hydration parity
+    const db = readDb();
+    let productsList = db.products || [];
 
-    const formatted = (data || []).map((p: any) => ({
-      id: p.id,
-      slug: p.slug,
-      title: p.title,
-      category: p.category,
-      categorySlug: p.category_slug || p.categorySlug,
-      price: p.price,
-      oldPrice: p.old_price || p.oldPrice,
-      discount: p.discount,
-      image: p.image,
-      code: p.code,
-      stock: p.stock !== false,
-      featured: p.featured === true,
-      description: p.description
-    }));
+    // Try syncing Supabase if available
+    try {
+      const { data } = await supabase.from("products").select("*").order("created_at", { ascending: false });
+      if (data && data.length > 0) {
+        // If Supabase data matches our IDs, use Supabase prices if updated
+        const dbMap = new Map(productsList.map((p: any) => [String(p.id), p]));
+        const merged = data.map((sbP: any) => {
+          const localP: any = dbMap.get(String(sbP.id)) || {};
+          return {
+            id: String(sbP.id),
+            slug: sbP.slug || localP.slug || String(sbP.id),
+            title: sbP.title || localP.title,
+            category: sbP.category || localP.category || "Genel",
+            categorySlug: sbP.category_slug || localP.categorySlug || "cicekler",
+            price: localP.price || sbP.price,
+            oldPrice: localP.oldPrice || sbP.old_price,
+            discount: localP.discount || sbP.discount,
+            image: sbP.image || localP.image,
+            code: sbP.code || localP.code || `DM${sbP.id}`,
+            stock: sbP.stock !== false && localP.stock !== false,
+            featured: sbP.featured === true || localP.featured === true,
+            description: sbP.description || localP.description
+          };
+        });
+        if (merged.length > 0) return NextResponse.json(merged);
+      }
+    } catch (sbErr) {}
 
-    return NextResponse.json(formatted);
+    return NextResponse.json(productsList);
   } catch (error) {
     const db = readDb();
     return NextResponse.json(db.products || []);
@@ -78,10 +88,8 @@ export async function POST(request: Request) {
       const { category, changeType, value } = body;
       const numValue = parseFloat(value) || 0;
 
-      // Fetch products from Supabase
-      const { data: dbProducts } = await supabase.from("products").select("*");
       const dbObj = readDb();
-      let productsList = (dbProducts && dbProducts.length > 0) ? dbProducts : (dbObj.products || []);
+      let productsList = dbObj.products || [];
 
       let updatedCount = 0;
       const updatedProducts = productsList.map((p: any) => {
@@ -129,32 +137,21 @@ export async function POST(request: Request) {
         return p;
       });
 
-      // Update in Supabase
+      // Synchronously write to db.json and initial-db.ts (Prevents client hydration reversion!)
+      dbObj.products = updatedProducts;
+      writeDbAndTs(dbObj);
+
+      // Also upsert to Supabase
       try {
         const supabaseUpsertPayload = updatedProducts.map((p: any) => ({
-          id: p.id,
+          id: String(p.id),
           title: p.title || "Çiçek",
           price: p.price,
-          old_price: p.old_price || p.oldPrice,
+          old_price: p.oldPrice || null,
           category: p.category || "Genel"
         }));
         await supabase.from("products").upsert(supabaseUpsertPayload, { onConflict: "id" });
       } catch (sbErr) {}
-
-      // Sync to db.json and initial-db.ts
-      dbObj.products = updatedProducts.map((p: any) => ({
-        id: p.id,
-        slug: p.slug || String(p.id),
-        title: p.title,
-        price: p.price,
-        oldPrice: p.old_price || p.oldPrice,
-        category: p.category,
-        image: p.image,
-        code: p.code || "DM10",
-        stock: p.stock !== false,
-        featured: p.featured === true
-      }));
-      writeDbAndTs(dbObj);
 
       return NextResponse.json({
         success: true,
@@ -164,14 +161,17 @@ export async function POST(request: Request) {
     }
 
     // 2. SINGLE PRODUCT ADD / UPDATE
+    const dbObj = readDb();
+    let productsList = dbObj.products || [];
+
     const newProduct = {
       id: body.id || String(Date.now()),
       slug: body.slug || (body.title ? body.title.toLowerCase().replace(/[^a-z0-9]+/g, "-") : "urun"),
       title: body.title || "Yeni Ürün",
       category: body.category || "Genel",
-      category_slug: body.categorySlug || body.category_slug,
+      categorySlug: body.categorySlug || body.category_slug || "cicekler",
       price: String(body.price || "0 ₺"),
-      old_price: body.oldPrice || body.old_price,
+      oldPrice: body.oldPrice || body.old_price,
       discount: body.discount,
       image: body.image,
       code: body.code || "DM" + Math.floor(10 + Math.random() * 89),
@@ -180,10 +180,26 @@ export async function POST(request: Request) {
       description: body.description
     };
 
-    const { data, error } = await supabase.from("products").upsert(newProduct, { onConflict: "id" }).select().single();
-    if (error) throw error;
+    const existingIdx = productsList.findIndex((p: any) => String(p.id) === String(newProduct.id));
+    if (existingIdx >= 0) {
+      productsList[existingIdx] = { ...productsList[existingIdx], ...newProduct };
+    } else {
+      productsList.unshift(newProduct);
+    }
 
-    return NextResponse.json(data, { status: 201 });
+    dbObj.products = productsList;
+    writeDbAndTs(dbObj);
+
+    try {
+      await supabase.from("products").upsert({
+        id: String(newProduct.id),
+        title: newProduct.title,
+        price: newProduct.price,
+        category: newProduct.category
+      }, { onConflict: "id" });
+    } catch (sbErr) {}
+
+    return NextResponse.json(newProduct, { status: 201 });
   } catch (error: any) {
     console.error("POST /api/products error:", error);
     return NextResponse.json({ error: error?.message || "Failed to process product request" }, { status: 500 });
@@ -199,10 +215,16 @@ export async function DELETE(request: Request) {
 
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");
-    const { error } = await supabase.from("products").delete().eq("id", id);
-    if (error) throw error;
+    const dbObj = readDb();
+    dbObj.products = (dbObj.products || []).filter((p: any) => String(p.id) !== String(id));
+    writeDbAndTs(dbObj);
+
+    try {
+      await supabase.from("products").delete().eq("id", id);
+    } catch (sbErr) {}
+
     return NextResponse.json({ success: true });
   } catch (error) {
-    return NextResponse.json({ error: "Failed to delete product from Supabase" }, { status: 500 });
+    return NextResponse.json({ error: "Failed to delete product" }, { status: 500 });
   }
 }

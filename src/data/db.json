@@ -4,144 +4,183 @@
       "id": "1788102023236",
       "slug": "deneme--r-n",
       "title": "Deneme Ürün",
-      "price": "2.761 ₺",
+      "price": "2.461 ₺",
       "category": "Buketler",
       "image": "/uploads/1788102934110-p-14022025c84d862d.jpg",
       "code": "DM50",
       "stock": true,
-      "featured": false
+      "featured": false,
+      "old_price": "2.734 ₺",
+      "oldPrice": "2.734 ₺",
+      "discount": "-%10"
     },
     {
       "id": "1",
       "slug": "7-kirmizi-gul-ve-beyaz-bicme-179",
       "title": "7 Kırmızı Gül ve Beyaz Biçme A",
-      "price": "2.211 ₺",
+      "price": "1.970 ₺",
       "category": "Aranjmanlar",
       "image": "https://demo.procicek.com.tr/urunler/7-kirmizi-gul-ve-beyaz-bicme-179-v2.webp",
       "code": "DM45",
       "stock": true,
-      "featured": false
+      "featured": false,
+      "old_price": "2.189 ₺",
+      "oldPrice": "2.189 ₺",
+      "discount": "-%10"
     },
     {
       "id": "2",
       "slug": "35-beyaz-gerbera-buketi-119",
       "title": "35 Beyaz Gerbera Buketi",
-      "price": "3.861 ₺",
+      "price": "3.441 ₺",
       "category": "Gerbera",
       "image": "https://demo.procicek.com.tr/urunler/35-beyaz-gerbera-buketi-119-v2.webp",
       "code": "DM34",
       "stock": true,
-      "featured": true
+      "featured": true,
+      "old_price": "3.823 ₺",
+      "oldPrice": "3.823 ₺",
+      "discount": "-%10"
     },
     {
       "id": "3",
       "slug": "7-kirmizi-gul-ve-papatyalar-56",
       "title": "7 Kırmızı Gül ve Papatyalar",
-      "price": "2.761 ₺",
+      "price": "2.461 ₺",
       "category": "Aranjmanlar",
       "image": "https://demo.procicek.com.tr/urunler/7-kirmizi-gul-ve-papatyalar-56-v2.webp",
       "code": "DM46",
       "stock": true,
-      "featured": true
+      "featured": true,
+      "old_price": "2.734 ₺",
+      "oldPrice": "2.734 ₺",
+      "discount": "-%10"
     },
     {
       "id": "4",
       "slug": "beyaz-lisianthus-buketi-106",
       "title": "Beyaz Lisianthus Buketi",
-      "price": "2.761 ₺",
+      "price": "2.461 ₺",
       "category": "Buketler",
       "image": "https://demo.procicek.com.tr/urunler/beyaz-lisianthus-buketi-106-v2.webp",
       "code": "DM32",
       "stock": true,
-      "featured": true
+      "featured": true,
+      "old_price": "2.734 ₺",
+      "oldPrice": "2.734 ₺",
+      "discount": "-%10"
     },
     {
       "id": "5",
       "slug": "15-karisik-renk-gul-buketi-96",
       "title": "15 Karışık Renk Gül Buketi",
-      "price": "4.246 ₺",
+      "price": "3.783 ₺",
       "category": "Güller",
       "image": "https://demo.procicek.com.tr/urunler/15-karisik-renk-gul-buketi-96-v2.webp",
       "code": "DM13",
       "stock": true,
-      "featured": true
+      "featured": true,
+      "old_price": "4.203 ₺",
+      "oldPrice": "4.203 ₺",
+      "discount": "-%10"
     },
     {
       "id": "6",
       "slug": "51-kirmizi-beyaz-gulden-buket-12",
       "title": "51 Kırmızı Beyaz Gülden Buket",
-      "price": "4.961 ₺",
+      "price": "4.421 ₺",
       "category": "Güller",
       "image": "https://demo.procicek.com.tr/urunler/51-kirmizi-beyaz-gulden-buket-12-v2.webp",
       "code": "DM30",
       "stock": true,
-      "featured": true
+      "featured": true,
+      "old_price": "4.912 ₺",
+      "oldPrice": "4.912 ₺",
+      "discount": "-%10"
     },
     {
       "id": "7",
       "slug": "35-kirmizi-gul-buketi-13981",
       "title": "35 Kırmızı Gül Buketi",
-      "price": "6.061 ₺",
+      "price": "5.401 ₺",
       "category": "Güller",
       "image": "https://demo.procicek.com.tr/urunler/35-kirmizi-gul-buketi-13981-v2.webp",
       "code": "DM35",
       "stock": true,
-      "featured": true
+      "featured": true,
+      "old_price": "6.001 ₺",
+      "oldPrice": "6.001 ₺",
+      "discount": "-%10"
     },
     {
       "id": "8",
       "slug": "mor-lisyantus-buketi-63",
       "title": "Mor Lisyantus Buketi",
-      "price": "2.761 ₺",
+      "price": "2.461 ₺",
       "category": "Buketler",
       "image": "https://demo.procicek.com.tr/urunler/mor-lisyantus-buketi-63-v2.webp",
       "code": "DM62",
       "stock": true,
-      "featured": true
+      "featured": true,
+      "old_price": "2.734 ₺",
+      "oldPrice": "2.734 ₺",
+      "discount": "-%10"
     },
     {
       "id": "101",
       "slug": "35-adet-krizantem-buketi-101",
       "title": "35 adet Krizantem Buketi",
-      "price": "2.651 ₺",
+      "price": "2.363 ₺",
       "category": "Buketler",
       "image": "https://demo.procicek.com.tr/urunler/35-kirmizi-gul-buketi-13981-v2.webp",
       "code": "DM50",
       "stock": true,
-      "featured": true
+      "featured": true,
+      "old_price": "2.625 ₺",
+      "oldPrice": "2.625 ₺",
+      "discount": "-%10"
     },
     {
       "id": "102",
       "slug": "7-kirmizi-gul-ve-papatyalar-102",
       "title": "7 Kırmızı Gül ve Papatyalar",
-      "price": "2.761 ₺",
+      "price": "2.461 ₺",
       "category": "Buketler",
       "image": "https://demo.procicek.com.tr/urunler/7-kirmizi-gul-ve-beyaz-bicme-179-v2.webp",
       "code": "DM45",
       "stock": true,
-      "featured": true
+      "featured": true,
+      "old_price": "2.734 ₺",
+      "oldPrice": "2.734 ₺",
+      "discount": "-%10"
     },
     {
       "id": "103",
       "slug": "9-pembe-gul-ve-krizantem-103",
       "title": "9 Pembe Gül ve Krizantem",
-      "price": "2.431 ₺",
+      "price": "2.166 ₺",
       "category": "Buketler",
       "image": "https://demo.procicek.com.tr/urunler/fanusta-papatya-ve-3-gul-264-v2.webp",
       "code": "DM40",
       "stock": true,
-      "featured": true
+      "featured": true,
+      "old_price": "2.407 ₺",
+      "oldPrice": "2.407 ₺",
+      "discount": "-%10"
     },
     {
       "id": "104",
       "slug": "beyaz-krizantem-ve-beyaz-guller-104",
       "title": "Beyaz Krizantem Ve Beyaz Güller",
-      "price": "2.541 ₺",
+      "price": "2.264 ₺",
       "category": "Buketler",
       "image": "https://demo.procicek.com.tr/urunler/vazoda-kirmizi-11-gul-7-v2.webp",
       "code": "DM35",
       "stock": true,
-      "featured": true
+      "featured": true,
+      "old_price": "2.516 ₺",
+      "oldPrice": "2.516 ₺",
+      "discount": "-%10"
     }
   ],
   "categories": [
@@ -918,16 +957,7 @@
       "active": true
     }
   ],
-  "redirects": [
-    {
-      "id": "1",
-      "source": "/eski-cicek-sayfasi",
-      "target": "/urun/35-kirmizi-gul-buketi-13981",
-      "type": "301 Kalıcı",
-      "clicks": 42,
-      "active": true
-    }
-  ],
+  "redirects": [],
   "reviews": [
     {
       "id": "1788263862320",

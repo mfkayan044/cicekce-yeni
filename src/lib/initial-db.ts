@@ -957,16 +957,7 @@ export const initialDbData: any = {
       "active": true
     }
   ],
-  "redirects": [
-    {
-      "id": "1",
-      "source": "/eski-cicek-sayfasi",
-      "target": "/urun/35-kirmizi-gul-buketi-13981",
-      "type": "301 Kalıcı",
-      "clicks": 42,
-      "active": true
-    }
-  ],
+  "redirects": [],
   "reviews": [
     {
       "id": "1788263862320",
@@ -1994,5 +1985,34 @@ export const initialDbData: any = {
         }
       ]
     }
-  ]
+  ],
+  "paymentSettings": {
+    "card": {
+      "active": false,
+      "name": "Kredi / Banka Kartı",
+      "provider": "Sanal POS (iyzico / PayTR / Mock)"
+    },
+    "iban": {
+      "active": true,
+      "name": "Havale / EFT (IBAN)"
+    },
+    "cash": {
+      "active": false,
+      "name": "Kapıda Ödeme",
+      "fee": 20
+    },
+    "whatsapp": {
+      "active": true,
+      "name": "WhatsApp ile Öde"
+    },
+    "banks": [
+      {
+        "id": "1788529084127",
+        "bank": "Ziraat Katılım Bankası",
+        "owner": "Serkan Kayan",
+        "iban": "TR04 0020 9000 0113 4092 0000 01",
+        "active": true
+      }
+    ]
+  }
 };

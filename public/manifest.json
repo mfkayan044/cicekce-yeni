@@ -1,0 +1,38 @@
+{
+  "name": "Çiçekçe - Taze Çiçek Siparişi & Kurye Paneli",
+  "short_name": "Çiçekçe",
+  "description": "Türkiye ve Antalya'nın En Taze Çiçek Sipariş & Aynı Gün Kurye Teslimat Platformu",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#2b2623",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/logo-cicekce.jpg",
+      "sizes": "192x192",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/logo-cicekce.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Kurye Ekranı",
+      "short_name": "Kurye",
+      "description": "Saha Teslimat & Fotoğraf Yükleme Paneli",
+      "url": "/kurye"
+    },
+    {
+      "name": "Yönetim Paneli",
+      "short_name": "Yönetim",
+      "description": "Sipariş & Kataloğu Yönetin",
+      "url": "/yonetim"
+    }
+  ]
+}

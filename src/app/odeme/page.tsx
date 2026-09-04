@@ -118,6 +118,13 @@ export default function CheckoutPage() {
   };
 
   // Step 5: Ödeme Yöntemi State
+  const [paymentSettings, setPaymentSettings] = useState<any>({
+    card: { active: true },
+    iban: { active: true },
+    cash: { active: true, fee: 20 },
+    whatsapp: { active: true },
+    banks: []
+  });
   const [paymentMethod, setPaymentMethod] = useState<"card" | "iban" | "cash" | "whatsapp">("card");
   const [cardNumber, setCardNumber] = useState("");
   const [cardExpiry, setCardExpiry] = useState("");
@@ -171,14 +178,26 @@ export default function CheckoutPage() {
     setCouponError("");
   };
 
-  // Fetch active regions and live admin extras, AND match selected user address (POINT 2 FIX)
+  // Fetch active regions, live admin extras, AND payment settings
   useEffect(() => {
     async function loadData() {
       try {
-        const [regRes, extRes] = await Promise.all([
+        const [regRes, extRes, payRes] = await Promise.all([
           fetch("/api/regions?storefront=true"),
-          fetch("/api/extras")
+          fetch("/api/extras"),
+          fetch("/api/payment-methods")
         ]);
+
+        if (payRes.ok) {
+          const payData = await payRes.json();
+          if (payData) {
+            setPaymentSettings(payData);
+            if (payData.card?.active !== false) setPaymentMethod("card");
+            else if (payData.iban?.active) setPaymentMethod("iban");
+            else if (payData.cash?.active) setPaymentMethod("cash");
+            else if (payData.whatsapp?.active) setPaymentMethod("whatsapp");
+          }
+        }
 
         if (regRes.ok) {
           const data = await regRes.json();
@@ -1030,45 +1049,53 @@ export default function CheckoutPage() {
                 </h4>
 
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setPaymentMethod("card")}
-                    className={`p-3 rounded-2xl border text-center font-bold text-xs transition ${
-                      paymentMethod === "card" ? "border-[#2b2623] bg-[#F5EFE6] text-[#2b2623]" : "border-slate-200 text-slate-600"
-                    }`}
-                  >
-                    💳 Kredi / Banka Kartı
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setPaymentMethod("iban")}
-                    className={`p-3 rounded-2xl border text-center font-bold text-xs transition ${
-                      paymentMethod === "iban" ? "border-[#2b2623] bg-[#F5EFE6] text-[#2b2623]" : "border-slate-200 text-slate-600"
-                    }`}
-                  >
-                    🏦 Havale / EFT (IBAN)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setPaymentMethod("cash")}
-                    className={`p-3 rounded-2xl border text-center font-bold text-xs transition ${
-                      paymentMethod === "cash" ? "border-[#2b2623] bg-[#F5EFE6] text-[#2b2623]" : "border-slate-200 text-slate-600"
-                    }`}
-                  >
-                    💵 Kapıda Ödeme
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setPaymentMethod("whatsapp")}
-                    className={`p-3 rounded-2xl border text-center font-bold text-xs transition ${
-                      paymentMethod === "whatsapp" ? "border-[#2b2623] bg-[#F5EFE6] text-[#2b2623]" : "border-slate-200 text-slate-600"
-                    }`}
-                  >
-                    💬 WhatsApp ile Öde
-                  </button>
+                  {paymentSettings.card?.active !== false && (
+                    <button
+                      type="button"
+                      onClick={() => setPaymentMethod("card")}
+                      className={`p-3 rounded-2xl border text-center font-bold text-xs transition ${
+                        paymentMethod === "card" ? "border-[#2b2623] bg-[#F5EFE6] text-[#2b2623]" : "border-slate-200 text-slate-600"
+                      }`}
+                    >
+                      💳 Kredi / Banka Kartı
+                    </button>
+                  )}
+                  {paymentSettings.iban?.active && (
+                    <button
+                      type="button"
+                      onClick={() => setPaymentMethod("iban")}
+                      className={`p-3 rounded-2xl border text-center font-bold text-xs transition ${
+                        paymentMethod === "iban" ? "border-[#2b2623] bg-[#F5EFE6] text-[#2b2623]" : "border-slate-200 text-slate-600"
+                      }`}
+                    >
+                      🏦 Havale / EFT (IBAN)
+                    </button>
+                  )}
+                  {paymentSettings.cash?.active && (
+                    <button
+                      type="button"
+                      onClick={() => setPaymentMethod("cash")}
+                      className={`p-3 rounded-2xl border text-center font-bold text-xs transition ${
+                        paymentMethod === "cash" ? "border-[#2b2623] bg-[#F5EFE6] text-[#2b2623]" : "border-slate-200 text-slate-600"
+                      }`}
+                    >
+                      💵 Kapıda Ödeme
+                    </button>
+                  )}
+                  {paymentSettings.whatsapp?.active && (
+                    <button
+                      type="button"
+                      onClick={() => setPaymentMethod("whatsapp")}
+                      className={`p-3 rounded-2xl border text-center font-bold text-xs transition ${
+                        paymentMethod === "whatsapp" ? "border-[#2b2623] bg-[#F5EFE6] text-[#2b2623]" : "border-slate-200 text-slate-600"
+                      }`}
+                    >
+                      💬 WhatsApp ile Öde
+                    </button>
+                  )}
                 </div>
 
-                {paymentMethod === "card" && (
+                {paymentMethod === "card" && paymentSettings.card?.active !== false && (
                   <div className="space-y-4 p-4 bg-slate-50 rounded-2xl border border-slate-200">
                     <div>
                       <label className="text-xs font-bold text-slate-700 block mb-1">Kart Numarası</label>
@@ -1108,13 +1135,17 @@ export default function CheckoutPage() {
                   </div>
                 )}
 
-                {paymentMethod === "iban" && (
-                  <div className="p-4 bg-amber-50 border border-amber-200 rounded-2xl text-xs text-amber-900 space-y-2 font-semibold">
-                    <div className="font-bold text-sm">Banka Hesap Bilgilerimiz (Havale/EFT)</div>
-                    <div>Banka: Ziraat Bankası</div>
-                    <div>IBAN: TR98 0001 0099 8877 6655 4433 22</div>
-                    <div>Alıcı: Çiçekce Çiçekçilik Ltd. Şti.</div>
-                    <div className="text-[11px] text-amber-700 pt-1">Lütfen açıklama kısmına telefon numaranızı yazınız.</div>
+                {paymentMethod === "iban" && paymentSettings.iban?.active && (
+                  <div className="p-4 bg-amber-50 border border-amber-200 rounded-2xl text-xs text-amber-900 space-y-3 font-semibold">
+                    <div className="font-bold text-sm text-[#2b2623]">Havale / EFT İçin Banka Hesaplarımız:</div>
+                    {(paymentSettings.banks || []).map((b: any) => (
+                      <div key={b.id} className="p-3 bg-white/80 rounded-xl border border-amber-200 space-y-1">
+                        <div className="font-extrabold text-slate-800 text-xs">{b.bank}</div>
+                        <div>IBAN: <span className="font-mono font-bold text-[#2b2623]">{b.iban}</span></div>
+                        <div>Alıcı: {b.owner}</div>
+                      </div>
+                    ))}
+                    <div className="text-[11px] text-amber-700 pt-1">Lütfen havale/EFT yaparken açıklama kısmına telefon numaranızı ve adınızı yazınız.</div>
                   </div>
                 )}
 

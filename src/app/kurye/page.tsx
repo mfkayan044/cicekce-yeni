@@ -45,6 +45,28 @@ export default function CourierPortalPage() {
   const [previewPhotoUrl, setPreviewPhotoUrl] = useState<string>("");
   const [deliveredNote, setDeliveredNote] = useState("Alıcının kendisine teslim edildi.");
   const [submittingDelivery, setSubmittingDelivery] = useState(false);
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [showInstallBanner, setShowInstallBanner] = useState(false);
+
+  useEffect(() => {
+    const handler = (e: any) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+      setShowInstallBanner(true);
+    };
+    window.addEventListener("beforeinstallprompt", handler);
+    return () => window.removeEventListener("beforeinstallprompt", handler);
+  }, []);
+
+  const handleInstallPwa = async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const choiceResult = await deferredPrompt.userChoice;
+    if (choiceResult.outcome === "accepted") {
+      setShowInstallBanner(false);
+    }
+    setDeferredPrompt(null);
+  };
 
   // Fetch Couriers and Orders
   const fetchData = async () => {
@@ -232,6 +254,27 @@ export default function CourierPortalPage() {
             </Link>
           </div>
         </div>
+
+        {/* PWA Install Banner */}
+        {showInstallBanner && (
+          <div className="max-w-md mx-auto px-4 pb-3 pt-1">
+            <div className="bg-[#2b2623] text-white p-3 rounded-2xl flex items-center justify-between shadow-md">
+              <div className="flex items-center gap-2.5">
+                <span className="text-xl">📲</span>
+                <div>
+                  <div className="font-extrabold text-xs">Uygulama Olarak Yükle</div>
+                  <div className="text-[10px] text-slate-300">Ana ekrandan doğrudan kurye paneline eriş!</div>
+                </div>
+              </div>
+              <button
+                onClick={handleInstallPwa}
+                className="bg-emerald-500 hover:bg-emerald-600 text-white px-3 py-1.5 rounded-xl font-extrabold text-xs transition shrink-0"
+              >
+                Yükle
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Courier Selector Dropdown */}
         <div className="max-w-md mx-auto px-4 pb-3">

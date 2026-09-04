@@ -62,28 +62,36 @@ export async function GET(request: Request) {
       const courierMap = await getOrderCouriersMap();
       const extra = courierMap[order.id] || {};
 
+      const preparedPhoto = extra.preparedPhoto || order.prepared_photo || order.preparedPhoto || "";
+      const customerApprovalStatus = extra.customerApprovalStatus || order.customer_approval_status || "Bekliyor";
+      const deliveredPhoto = extra.deliveredPhoto || order.delivered_photo || "";
+      const deliveryNote = extra.deliveryNote || order.delivery_note || "";
+
       return NextResponse.json({
         id: order.id,
         date: order.date,
-        status: order.status || extra.status || "Yeni Sipariş",
-        customerName: order.customer_name,
-        customerPhone: order.customer_phone,
-        recipientName: order.recipient_name,
-        recipientPhone: order.recipient_phone,
+        status: extra.status || order.status || "Yeni Sipariş",
+        customerName: order.customer_name || order.customerName,
+        customerPhone: order.customer_phone || order.customerPhone,
+        recipientName: order.recipient_name || order.recipientName,
+        recipientPhone: order.recipient_phone || order.recipientPhone,
         address: order.address,
-        deliveryDate: order.delivery_date,
-        deliveryTime: order.delivery_time,
+        deliveryDate: order.delivery_date || order.deliveryDate,
+        deliveryTime: order.delivery_time || order.deliveryTime,
         items: order.items || [],
         addons: order.addons || [],
-        cardNote: order.card_note,
+        cardNote: order.card_note || order.cardNote,
         isAnonymous: order.is_anonymous === true,
-        paymentMethod: order.payment_method,
-        totalAmount: order.total_amount,
-        preparedPhoto: order.prepared_photo,
-        customerApprovalStatus: order.customer_approval_status,
-        courierId: order.courier_id || extra.courierId || "",
-        courierName: order.courier_name || extra.courierName || "",
-        deliveredAt: order.delivered_at || extra.deliveredAt || "",
+        paymentMethod: order.payment_method || order.paymentMethod,
+        totalAmount: order.total_amount || order.totalAmount,
+        preparedPhoto,
+        preparedPhotoTime: extra.preparedPhotoTime || order.prepared_photo_time || "",
+        customerApprovalStatus,
+        courierId: extra.courierId || order.courier_id || "",
+        courierName: extra.courierName || order.courier_name || "",
+        deliveredAt: extra.deliveredAt || order.delivered_at || "",
+        deliveredPhoto,
+        deliveryNote,
         updateRequest: extra.updateRequest || order.update_request || null
       });
     }

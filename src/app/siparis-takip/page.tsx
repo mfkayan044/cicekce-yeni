@@ -290,6 +290,58 @@ export default function OrderTrackingPage() {
                 )}
               </div>
 
+              {/* Courier Door Delivery Photo Section */}
+              {order.deliveredPhoto && (
+                <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-sm border border-slate-200 space-y-4">
+                  <div className="flex flex-wrap items-center justify-between gap-2 border-b pb-3">
+                    <h3 className="font-extrabold text-base text-slate-800 flex items-center gap-2 m-0">
+                      <span>🚚</span>
+                      <span>Kurye Kapıda Teslimat Görseli</span>
+                    </h3>
+                    <span className="px-3 py-1 bg-emerald-100 text-emerald-900 border border-emerald-300 text-xs font-black rounded-full">
+                      ✓ Teslim Edildi ({order.deliveredAt || "Tamamlandı"})
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+                    <div className="relative rounded-2xl overflow-hidden border border-slate-200 bg-slate-50 aspect-4/3 flex items-center justify-center">
+                      <img
+                        src={order.deliveredPhoto}
+                        alt="Kurye Kapıda Teslimat Fotoğrafı"
+                        className="w-full h-full object-cover"
+                      />
+                      <a
+                        href={order.deliveredPhoto}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="absolute bottom-3 right-3 bg-black/80 hover:bg-black text-white text-xs font-bold px-3 py-1.5 rounded-xl shadow-md transition flex items-center gap-1"
+                      >
+                        <span>🔍 Fotoğrafı Büyüt</span>
+                      </a>
+                    </div>
+                    <div className="space-y-3">
+                      <div className="p-4 bg-emerald-50/80 border border-emerald-200 rounded-2xl text-xs space-y-2 text-emerald-950">
+                        <div className="font-bold text-sm text-emerald-900 flex items-center gap-1.5">
+                          <span>🎉</span>
+                          <span>Çiçeğiniz Alıcısına Teslim Edildi!</span>
+                        </div>
+                        <p className="leading-relaxed text-slate-700">
+                          Kuryemiz teslimatı gerçekleştirirken çiçeğinizin kapıdaki teslimat anı fotoğrafını sisteme yükledi.
+                        </p>
+                      </div>
+
+                      <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl text-xs space-y-1.5">
+                        <div className="text-slate-500 font-bold">Teslimat Zamanı: <span className="text-slate-900 font-extrabold">{order.deliveredAt || "Tamamlandı"}</span></div>
+                        <div className="text-slate-500 font-bold">Teslimat Notu: <span className="text-slate-900 font-extrabold">{order.deliveryNote || "Alıcının kendisine teslim edildi."}</span></div>
+                        {order.courierName && (
+                          <div className="text-slate-500 font-bold">Teslim Eden Kurye: <span className="text-blue-900 font-extrabold">{order.courierName}</span></div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Update Request Status Alert if exists */}
               {order.updateRequest && (
                 <div className="bg-white rounded-3xl p-5 border shadow-xs space-y-2 text-xs">

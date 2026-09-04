@@ -103,17 +103,37 @@ export async function GET(request: Request) {
       let customerApprovalStatus = extra.customerApprovalStatus || o.customer_approval_status || o.customerApprovalStatus || "Bekliyor";
       const preparedPhotoTime = extra.preparedPhotoTime || o.prepared_photo_time;
 
-      // 15-Minute Auto-Approval Check:
-      if (preparedPhoto && customerApprovalStatus === "Bekliyor" && preparedPhotoTime) {
-        const photoAgeMs = nowMs - new Date(preparedPhotoTime).getTime();
-        if (photoAgeMs >= 15 * 60 * 1000) {
-          customerApprovalStatus = "Sistem Tarafından Onaylandı";
+      // 15-Minute Auto-Approval Check Engine:
+      let currentStatus = extra.status || o.status || "Yeni Sipariş";
+      const photoTime = preparedPhotoTime || o.prepared_photo_time || extra.photoTime || o.created_at;
+
+      if ((currentStatus === "Fotoğraflı Onay Bekliyor" || preparedPhoto) && (customerApprovalStatus === "Bekliyor" || !customerApprovalStatus)) {
+        const photoTimeMs = photoTime ? new Date(photoTime).getTime() : 0;
+        if (photoTimeMs > 0) {
+          const photoAgeMs = nowMs - photoTimeMs;
+          if (photoAgeMs >= 15 * 60 * 1000) {
+            customerApprovalStatus = "Sistem Tarafından Onaylandı (15 dk Süre Doldu)";
+            if (currentStatus === "Fotoğraflı Onay Bekliyor") {
+              currentStatus = "Hazırlanıyor / Onaylandı";
+            }
+            // Auto persist to memory/courierMap
+            courierMap[o.id] = {
+              ...(courierMap[o.id] || {}),
+              customerApprovalStatus,
+              status: currentStatus
+            };
+          }
         }
+      }
+
+      // If approved by customer or system, update status
+      if ((customerApprovalStatus.includes("Onaylandı") || customerApprovalStatus === "Onaylandı") && currentStatus === "Fotoğraflı Onay Bekliyor") {
+        currentStatus = "Hazırlanıyor / Onaylandı";
       }
 
       const status = (extra.status === "Teslim Edildi" || extra.status === "Kuryede / Dağıtımda")
         ? extra.status
-        : (o.status || extra.status || "Yeni Sipariş");
+        : currentStatus;
 
       return {
         id: o.id,
@@ -229,9 +249,16 @@ export async function PUT(request: Request) {
     }
 
     const updatePayload: any = {};
+    const nowIso = new Date().toISOString();
+    let finalPreparedPhotoTime = preparedPhotoTime;
+    if ((status === "Fotoğraflı Onay Bekliyor" || preparedPhoto) && !finalPreparedPhotoTime) {
+      finalPreparedPhotoTime = nowIso;
+    }
+
     if (status !== undefined) updatePayload.status = status;
     if (preparedPhoto !== undefined) updatePayload.prepared_photo = preparedPhoto;
     if (customerApprovalStatus !== undefined) updatePayload.customer_approval_status = customerApprovalStatus;
+    if (finalPreparedPhotoTime) updatePayload.prepared_photo_time = finalPreparedPhotoTime;
     if (courierId !== undefined) updatePayload.courier_id = courierId;
     if (courierName !== undefined) updatePayload.courier_name = courierName;
     if (deliveredAt !== undefined) updatePayload.delivered_at = deliveredAt;
@@ -255,7 +282,7 @@ export async function PUT(request: Request) {
       ...(deliveredPhoto !== undefined ? { deliveredPhoto } : {}),
       ...(deliveryNote !== undefined ? { deliveryNote } : {}),
       ...(preparedPhoto !== undefined ? { preparedPhoto } : {}),
-      ...(preparedPhotoTime !== undefined ? { preparedPhotoTime } : {}),
+      ...(finalPreparedPhotoTime ? { preparedPhotoTime: finalPreparedPhotoTime } : {}),
       ...(customerApprovalStatus !== undefined ? { customerApprovalStatus } : {}),
       ...(rejectionCount !== undefined ? { rejectionCount } : {}),
       ...(rejectionReason !== undefined ? { rejectionReason } : {}),

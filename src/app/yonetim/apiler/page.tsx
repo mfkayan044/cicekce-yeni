@@ -19,6 +19,8 @@ export default function ApilerPage() {
     mapsApiKey: "",
     iyzicoApiKey: "",
     iyzicoSecret: "",
+    metaPixelId: "",
+    googleAnalyticsId: "",
   });
 
   useEffect(() => {
@@ -207,6 +209,43 @@ export default function ApilerPage() {
                   placeholder="AIzaSyD-..."
                   value={form.googleApiKey}
                   onChange={(e) => setForm({ ...form, googleApiKey: e.target.value })}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Card 4: Meta Pixel & Google Analytics 4 (GA4) */}
+          <div className="card border-0 shadow-sm rounded-3xl bg-white p-6 space-y-4">
+            <div className="flex items-center gap-3 border-b pb-3">
+              <div className="w-10 h-10 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center font-bold text-xl">
+                📊
+              </div>
+              <div>
+                <h5 className="font-black text-slate-900 text-base m-0">Meta (Facebook/Instagram) Pixel & Google Analytics 4</h5>
+                <p className="text-xs text-slate-400 m-0">Reklam dönüşüm takibi, sayfa ziyaretleri ve sipariş istatistikleri için takip kodları.</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="text-xs font-extrabold text-slate-700 block mb-1">Meta (Facebook) Pixel ID</label>
+                <input
+                  type="text"
+                  className="w-full p-3 border border-slate-300 rounded-xl text-xs font-mono font-bold text-slate-900 bg-slate-50 focus:outline-none"
+                  placeholder="Örn: 123456789012345"
+                  value={form.metaPixelId}
+                  onChange={(e) => setForm({ ...form, metaPixelId: e.target.value })}
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-extrabold text-slate-700 block mb-1">Google Analytics 4 / Tag ID (GA4)</label>
+                <input
+                  type="text"
+                  className="w-full p-3 border border-slate-300 rounded-xl text-xs font-mono font-bold text-slate-900 bg-slate-50 focus:outline-none"
+                  placeholder="Örn: G-XXXXXXXXXX veya GT-XXXXXX"
+                  value={form.googleAnalyticsId}
+                  onChange={(e) => setForm({ ...form, googleAnalyticsId: e.target.value })}
                 />
               </div>
             </div>

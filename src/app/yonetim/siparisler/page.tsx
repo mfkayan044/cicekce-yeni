@@ -15,8 +15,28 @@ function normalizeDateStr(dateVal?: string): string {
   if (!dateVal) return "";
   const str = String(dateVal).trim();
   
+  // Handing Turkish month names if present (e.g. "5 Eylül 2026")
+  const trMonths: Record<string, string> = {
+    ocak: "01", şubat: "02", mart: "03", nisan: "04", mayıs: "05", haziran: "06",
+    temmuz: "07", ağustos: "08", eylül: "09", ekim: "10", kasım: "11", aralık: "12"
+  };
+
+  const lowerStr = str.toLowerCase();
+  for (const [mName, mNum] of Object.entries(trMonths)) {
+    if (lowerStr.includes(mName)) {
+      const parts = str.split(/\s+/);
+      if (parts.length >= 3) {
+        const day = parts[0].padStart(2, "0");
+        const year = parts[2];
+        return `${year}-${mNum}-${day}`;
+      }
+    }
+  }
+
+  // Format DD.MM.YYYY HH:MM:SS or DD/MM/YYYY
   if (str.includes(".") || str.includes("/")) {
-    const parts = str.split(/[./]/);
+    const firstPart = str.split(" ")[0];
+    const parts = firstPart.split(/[./]/);
     if (parts.length === 3) {
       const day = parts[0].padStart(2, "0");
       const month = parts[1].padStart(2, "0");
@@ -25,6 +45,7 @@ function normalizeDateStr(dateVal?: string): string {
     }
   }
   
+  // Format YYYY-MM-DD
   if (str.includes("-")) {
     const parts = str.split("-");
     if (parts.length >= 3) {
@@ -55,10 +76,11 @@ export default function AdminOrdersPage() {
   const [activeTab, setActiveTab] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Çiçeksepeti Style Date Filtering States
-  const [startDate, setStartDate] = useState<string>("");
-  const [endDate, setEndDate] = useState<string>("");
-  const [dateFilterType, setDateFilterType] = useState<"all" | "today" | "upcoming" | "past" | "custom">("all");
+  // Default to Today's Date
+  const todayDefault = getTodayIsoStr();
+  const [startDate, setStartDate] = useState<string>(todayDefault);
+  const [endDate, setEndDate] = useState<string>(todayDefault);
+  const [dateFilterType, setDateFilterType] = useState<"all" | "today" | "upcoming" | "past" | "custom">("today");
 
   useEffect(() => {
     fetchOrders();
@@ -330,22 +352,22 @@ export default function AdminOrdersPage() {
           </button>
         </div>
 
-        {/* TARİH ARALIĞI & HIZLI FİLTRE BAR (ÇİÇEKSEPETİ STYLE) */}
+        {/* PREMIUM DATE FILTER & DELIVERY CALENDAR BAR */}
         <div className="bg-white rounded-3xl p-5 border border-slate-200/80 shadow-xs space-y-4">
           <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 border-b border-slate-100 pb-4">
-            <div className="flex items-center gap-2.5">
-              <div className="w-10 h-10 rounded-2xl bg-amber-50 text-amber-900 flex items-center justify-center font-bold text-xl">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-[#2b2623] text-white flex items-center justify-center font-bold text-lg shadow-xs">
                 📅
               </div>
               <div>
-                <h4 className="font-extrabold text-sm text-slate-800 m-0">Tarih Aralığı & Teslimat Filtresi (Çiçeksepeti Modu)</h4>
-                <p className="text-[11px] text-slate-400 m-0">Günün siparişlerini, ileri tarihli teslimatları veya geçmiş siparişleri seçin.</p>
+                <h4 className="font-extrabold text-base text-slate-900 m-0">Sipariş Tarihi ve Teslimat Takvimi</h4>
+                <p className="text-xs text-slate-500 m-0">Siparişleri teslimat tarihlerine göre filtreleyin veya iki tarih arasını listeleyin.</p>
               </div>
             </div>
 
-            {/* Range Date Picker Inputs */}
-            <div className="flex flex-wrap items-center gap-2.5 w-full lg:w-auto">
-              <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-2xl px-3 py-2 text-xs font-bold text-slate-700 shadow-2xs">
+            {/* Date Inputs */}
+            <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto">
+              <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-2xl px-3.5 py-2 text-xs font-bold text-slate-700 shadow-2xs">
                 <span className="text-slate-400">Başlangıç:</span>
                 <input
                   type="date"
@@ -358,9 +380,9 @@ export default function AdminOrdersPage() {
                 />
               </div>
 
-              <span className="text-slate-400 font-black text-xs">-</span>
+              <span className="text-slate-300 font-black text-sm">-</span>
 
-              <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-2xl px-3 py-2 text-xs font-bold text-slate-700 shadow-2xs">
+              <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-2xl px-3.5 py-2 text-xs font-bold text-slate-700 shadow-2xs">
                 <span className="text-slate-400">Bitiş:</span>
                 <input
                   type="date"
@@ -373,17 +395,17 @@ export default function AdminOrdersPage() {
                 />
               </div>
 
-              {(startDate || endDate || dateFilterType !== "all") && (
+              {(startDate !== todayDefault || endDate !== todayDefault || dateFilterType !== "today") && (
                 <button
                   type="button"
                   onClick={() => {
-                    setStartDate("");
-                    setEndDate("");
-                    setDateFilterType("all");
+                    setStartDate(todayDefault);
+                    setEndDate(todayDefault);
+                    setDateFilterType("today");
                   }}
-                  className="px-3.5 py-2 bg-red-50 hover:bg-red-100 text-red-700 rounded-2xl text-xs font-bold transition border border-red-200"
+                  className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-2xl text-xs font-extrabold transition border border-slate-200"
                 >
-                  ✕ Filtreyi Temizle
+                  ↩ Bugün'e Dön
                 </button>
               )}
             </div>
@@ -393,30 +415,19 @@ export default function AdminOrdersPage() {
           <div className="flex flex-wrap items-center gap-2.5">
             <button
               type="button"
-              onClick={() => setDateFilterType("all")}
-              className={`px-4 py-2.5 rounded-2xl text-xs font-black transition flex items-center gap-2 ${
-                dateFilterType === "all"
-                  ? "bg-[#2b2623] text-white shadow-xs"
-                  : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-              }`}
-            >
-              <span>Tüm Tarihler</span>
-              <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${dateFilterType === "all" ? "bg-white/20 text-white" : "bg-slate-200 text-slate-700"}`}>
-                {orders.length}
-              </span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setDateFilterType("today")}
+              onClick={() => {
+                setDateFilterType("today");
+                setStartDate(todayDefault);
+                setEndDate(todayDefault);
+              }}
               className={`px-4 py-2.5 rounded-2xl text-xs font-black transition flex items-center gap-2 ${
                 dateFilterType === "today"
-                  ? "bg-emerald-600 text-white shadow-xs"
-                  : "bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border border-emerald-200"
+                  ? "bg-[#2b2623] text-white shadow-xs ring-2 ring-[#2b2623]/20"
+                  : "bg-emerald-50 text-emerald-900 hover:bg-emerald-100 border border-emerald-200"
               }`}
             >
               <span>📅 Bugünün Siparişleri</span>
-              <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${dateFilterType === "today" ? "bg-white/20 text-white" : "bg-emerald-200 text-emerald-950"}`}>
+              <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${dateFilterType === "today" ? "bg-white/20 text-white" : "bg-emerald-200/80 text-emerald-950"}`}>
                 {countTodayOrders}
               </span>
             </button>
@@ -426,12 +437,12 @@ export default function AdminOrdersPage() {
               onClick={() => setDateFilterType("upcoming")}
               className={`px-4 py-2.5 rounded-2xl text-xs font-black transition flex items-center gap-2 ${
                 dateFilterType === "upcoming"
-                  ? "bg-blue-600 text-white shadow-xs"
-                  : "bg-blue-50 text-blue-800 hover:bg-blue-100 border border-blue-200"
+                  ? "bg-[#2b2623] text-white shadow-xs ring-2 ring-[#2b2623]/20"
+                  : "bg-blue-50 text-blue-900 hover:bg-blue-100 border border-blue-200"
               }`}
             >
               <span>⏩ İleri Tarihli Siparişler</span>
-              <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${dateFilterType === "upcoming" ? "bg-white/20 text-white" : "bg-blue-200 text-blue-950"}`}>
+              <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${dateFilterType === "upcoming" ? "bg-white/20 text-white" : "bg-blue-200/80 text-blue-950"}`}>
                 {countUpcomingOrders}
               </span>
             </button>
@@ -441,13 +452,32 @@ export default function AdminOrdersPage() {
               onClick={() => setDateFilterType("past")}
               className={`px-4 py-2.5 rounded-2xl text-xs font-black transition flex items-center gap-2 ${
                 dateFilterType === "past"
-                  ? "bg-purple-600 text-white shadow-xs"
-                  : "bg-purple-50 text-purple-800 hover:bg-purple-100 border border-purple-200"
+                  ? "bg-[#2b2623] text-white shadow-xs ring-2 ring-[#2b2623]/20"
+                  : "bg-purple-50 text-purple-900 hover:bg-purple-100 border border-purple-200"
               }`}
             >
               <span>⏪ Geçmiş Tarihli Siparişler</span>
-              <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${dateFilterType === "past" ? "bg-white/20 text-white" : "bg-purple-200 text-purple-950"}`}>
+              <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${dateFilterType === "past" ? "bg-white/20 text-white" : "bg-purple-200/80 text-purple-950"}`}>
                 {countPastOrders}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setDateFilterType("all");
+                setStartDate("");
+                setEndDate("");
+              }}
+              className={`px-4 py-2.5 rounded-2xl text-xs font-black transition flex items-center gap-2 ${
+                dateFilterType === "all"
+                  ? "bg-[#2b2623] text-white shadow-xs ring-2 ring-[#2b2623]/20"
+                  : "bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200"
+              }`}
+            >
+              <span>🌐 Tüm Zamanlar</span>
+              <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${dateFilterType === "all" ? "bg-white/20 text-white" : "bg-slate-200 text-slate-800"}`}>
+                {orders.length}
               </span>
             </button>
           </div>

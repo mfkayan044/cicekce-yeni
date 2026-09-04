@@ -88,19 +88,21 @@ export default function CourierPortalPage() {
     } catch (e) {}
   };
 
-  // Filter orders for the selected courier
+  // Filter orders for the selected courier (with "all" support & smart Turkish text matching)
   const courierOrders = orders.filter((o) => {
-    if (!selectedCourier) return false;
-    const orderCourierId = String(o.courierId || "").trim();
-    const orderCourierName = String(o.courierName || "").toLowerCase().trim();
-    const selectedId = String(selectedCourier.id || "").trim();
-    const selectedName = String(selectedCourier.name || "").toLowerCase().trim();
+    if (!selectedCourier) return true; // Default show all if no selection
+    if (selectedCourier.id === "all") return true; // Show all active orders
 
-    const matchesId = orderCourierId && orderCourierId === selectedId;
+    const orderCourierId = String(o.courierId || "").trim();
+    const orderCourierName = String(o.courierName || "").toLowerCase().replace(/[^\w]/g, "");
+    const selectedId = String(selectedCourier.id || "").trim();
+    const selectedName = String(selectedCourier.name || "").toLowerCase().replace(/[^\w]/g, "");
+
+    const matchesId = orderCourierId && (orderCourierId === selectedId || selectedId.includes(orderCourierId) || orderCourierId.includes(selectedId));
     const matchesName =
       orderCourierName &&
       selectedName &&
-      (orderCourierName.includes(selectedName) || selectedName.includes(orderCourierName));
+      (orderCourierName.includes(selectedName.slice(0, 5)) || selectedName.includes(orderCourierName.slice(0, 5)));
 
     return matchesId || matchesName;
   });
@@ -238,13 +240,19 @@ export default function CourierPortalPage() {
           <div className="bg-slate-50 p-2.5 rounded-2xl border border-slate-200 flex items-center justify-between gap-2">
             <span className="text-xs font-bold text-slate-600 shrink-0">Aktif Kurye:</span>
             <select
-              value={selectedCourier?.id || ""}
+              value={selectedCourier?.id || "all"}
               onChange={(e) => {
-                const found = couriers.find((c) => String(c.id) === String(e.target.value));
-                if (found) handleSelectCourier(found);
+                const val = e.target.value;
+                if (val === "all") {
+                  handleSelectCourier({ id: "all", name: "Tüm Kuryeler & Aktif Dağıtımlar", phone: "" });
+                } else {
+                  const found = couriers.find((c) => String(c.id) === String(val));
+                  if (found) handleSelectCourier(found);
+                }
               }}
               className="bg-white border border-slate-300 font-extrabold text-xs text-slate-900 px-3 py-1.5 rounded-xl shadow-2xs outline-none w-full"
             >
+              <option value="all">🌟 Tüm Kuryeler & Aktif Dağıtımlar</option>
               {couriers.map((c) => (
                 <option key={c.id} value={String(c.id)}>
                   🛵 {c.name} ({c.region || "Genel Bölge"})

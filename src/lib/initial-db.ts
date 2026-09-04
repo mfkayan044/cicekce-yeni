@@ -4,196 +4,157 @@ export const initialDbData: any = {
       "id": "1788102023236",
       "slug": "deneme--r-n",
       "title": "Deneme Ürün",
+      "price": "2.761 ₺",
+      "oldPrice": "2.510 ₺",
       "category": "Buketler",
-      "categorySlug": "buketler",
-      "price": "2.510 ₺",
-      "oldPrice": "2.500 ₺",
-      "discount": "%10",
       "image": "/uploads/1788102934110-p-14022025c84d862d.jpg",
       "code": "DM50",
       "stock": true,
-      "featured": false,
-      "description": "Taze özel çiçek."
+      "featured": false
     },
     {
       "id": "1",
       "slug": "7-kirmizi-gul-ve-beyaz-bicme-179",
       "title": "7 Kırmızı Gül ve Beyaz Biçme A",
+      "price": "2.211 ₺",
+      "oldPrice": "2.010 ₺",
       "category": "Aranjmanlar",
-      "categorySlug": "aranjmanlar",
-      "price": "2.010 ₺",
-      "oldPrice": "2.000 ₺",
-      "discount": "%10",
       "image": "https://demo.procicek.com.tr/urunler/7-kirmizi-gul-ve-beyaz-bicme-179-v2.webp",
       "code": "DM45",
       "stock": true,
-      "featured": false,
-      "description": "Canlı kırmızı güller ve mis kokulu beyaz biçmeler ile harika tasarım."
+      "featured": false
     },
     {
       "id": "2",
       "slug": "35-beyaz-gerbera-buketi-119",
       "title": "35 Beyaz Gerbera Buketi",
+      "price": "3.861 ₺",
+      "oldPrice": "3.510 ₺",
       "category": "Gerbera",
-      "categorySlug": "gerbera",
-      "price": "3.510 ₺",
-      "oldPrice": "3.500 ₺",
-      "discount": "%10",
       "image": "https://demo.procicek.com.tr/urunler/35-beyaz-gerbera-buketi-119-v2.webp",
       "code": "DM34",
       "stock": true,
-      "featured": true,
-      "description": "Masumiyetin simgesi 35 adet canlı beyaz gerbera çiçeği."
+      "featured": true
     },
     {
       "id": "3",
       "slug": "7-kirmizi-gul-ve-papatyalar-56",
       "title": "7 Kırmızı Gül ve Papatyalar",
+      "price": "2.761 ₺",
+      "oldPrice": "2.510 ₺",
       "category": "Aranjmanlar",
-      "categorySlug": "aranjmanlar",
-      "price": "2.510 ₺",
-      "oldPrice": "2.500 ₺",
-      "discount": "%10",
       "image": "https://demo.procicek.com.tr/urunler/7-kirmizi-gul-ve-papatyalar-56-v2.webp",
       "code": "DM46",
       "stock": true,
-      "featured": true,
-      "description": "7 adet tutkulu kırmızı gül ve kır papatyaları."
+      "featured": true
     },
     {
       "id": "4",
       "slug": "beyaz-lisianthus-buketi-106",
       "title": "Beyaz Lisianthus Buketi",
+      "price": "2.761 ₺",
+      "oldPrice": "2.510 ₺",
       "category": "Buketler",
-      "categorySlug": "buketler",
-      "price": "2.510 ₺",
-      "oldPrice": "2.500 ₺",
-      "discount": "%10",
       "image": "https://demo.procicek.com.tr/urunler/beyaz-lisianthus-buketi-106-v2.webp",
       "code": "DM32",
       "stock": true,
-      "featured": true,
-      "description": "Zarif beyaz lisyantus dalları ve özel kurdele süslemesi."
+      "featured": true
     },
     {
       "id": "5",
       "slug": "15-karisik-renk-gul-buketi-96",
       "title": "15 Karışık Renk Gül Buketi",
+      "price": "4.246 ₺",
+      "oldPrice": "3.860 ₺",
       "category": "Güller",
-      "categorySlug": "guller",
-      "price": "3.860 ₺",
-      "oldPrice": "3.850 ₺",
-      "discount": "%10",
       "image": "https://demo.procicek.com.tr/urunler/15-karisik-renk-gul-buketi-96-v2.webp",
       "code": "DM13",
       "stock": true,
-      "featured": true,
-      "description": "15 adet karışık renklerde taze ithal gül buketi."
+      "featured": true
     },
     {
       "id": "6",
       "slug": "51-kirmizi-beyaz-gulden-buket-12",
       "title": "51 Kırmızı Beyaz Gülden Buket",
+      "price": "4.961 ₺",
+      "oldPrice": "4.510 ₺",
       "category": "Güller",
-      "categorySlug": "guller",
-      "price": "4.510 ₺",
-      "oldPrice": "4.500 ₺",
-      "discount": "%10",
       "image": "https://demo.procicek.com.tr/urunler/51-kirmizi-beyaz-gulden-buket-12-v2.webp",
       "code": "DM30",
       "stock": true,
-      "featured": true,
-      "description": "51 adet kırmızı ve beyaz canlı güllerden dev kucak dolusu buket."
+      "featured": true
     },
     {
       "id": "7",
       "slug": "35-kirmizi-gul-buketi-13981",
       "title": "35 Kırmızı Gül Buketi",
+      "price": "6.061 ₺",
+      "oldPrice": "5.510 ₺",
       "category": "Güller",
-      "categorySlug": "guller",
-      "price": "5.510 ₺",
-      "oldPrice": "5.500 ₺",
-      "discount": "%10",
       "image": "https://demo.procicek.com.tr/urunler/35-kirmizi-gul-buketi-13981-v2.webp",
       "code": "DM35",
       "stock": true,
-      "featured": true,
-      "description": "35 adet taze ithal kırmızı gül ve okaliptüs yaprakları ile lüks buket."
+      "featured": true
     },
     {
       "id": "8",
       "slug": "mor-lisyantus-buketi-63",
       "title": "Mor Lisyantus Buketi",
+      "price": "2.761 ₺",
+      "oldPrice": "2.510 ₺",
       "category": "Buketler",
-      "categorySlug": "buketler",
-      "price": "2.510 ₺",
-      "oldPrice": "2.500 ₺",
-      "discount": "%10",
       "image": "https://demo.procicek.com.tr/urunler/mor-lisyantus-buketi-63-v2.webp",
       "code": "DM62",
       "stock": true,
-      "featured": true,
-      "description": "Zarafeti ve tazeliğiyle büyüleyen mor lisyantus çiçeklerinden özel taze buket."
+      "featured": true
     },
     {
       "id": "101",
       "slug": "35-adet-krizantem-buketi-101",
       "title": "35 adet Krizantem Buketi",
+      "price": "2.651 ₺",
+      "oldPrice": "2.410 ₺",
       "category": "Buketler",
-      "categorySlug": "buketler",
-      "price": "2.410 ₺",
-      "oldPrice": "2.400 ₺",
-      "discount": "%10",
       "image": "https://demo.procicek.com.tr/urunler/35-kirmizi-gul-buketi-13981-v2.webp",
       "code": "DM50",
       "stock": true,
-      "featured": true,
-      "description": null
+      "featured": true
     },
     {
       "id": "102",
       "slug": "7-kirmizi-gul-ve-papatyalar-102",
       "title": "7 Kırmızı Gül ve Papatyalar",
+      "price": "2.761 ₺",
+      "oldPrice": "2.510 ₺",
       "category": "Buketler",
-      "categorySlug": "buketler",
-      "price": "2.510 ₺",
-      "oldPrice": "2.500 ₺",
-      "discount": "%10",
       "image": "https://demo.procicek.com.tr/urunler/7-kirmizi-gul-ve-beyaz-bicme-179-v2.webp",
       "code": "DM45",
       "stock": true,
-      "featured": true,
-      "description": null
+      "featured": true
     },
     {
       "id": "103",
       "slug": "9-pembe-gul-ve-krizantem-103",
       "title": "9 Pembe Gül ve Krizantem",
+      "price": "2.431 ₺",
+      "oldPrice": "2.210 ₺",
       "category": "Buketler",
-      "categorySlug": "buketler",
-      "price": "2.210 ₺",
-      "oldPrice": "2.200 ₺",
-      "discount": "%10",
       "image": "https://demo.procicek.com.tr/urunler/fanusta-papatya-ve-3-gul-264-v2.webp",
       "code": "DM40",
       "stock": true,
-      "featured": true,
-      "description": null
+      "featured": true
     },
     {
       "id": "104",
       "slug": "beyaz-krizantem-ve-beyaz-guller-104",
       "title": "Beyaz Krizantem Ve Beyaz Güller",
+      "price": "2.541 ₺",
+      "oldPrice": "2.310 ₺",
       "category": "Buketler",
-      "categorySlug": "buketler",
-      "price": "2.310 ₺",
-      "oldPrice": "2.300 ₺",
-      "discount": "%10",
       "image": "https://demo.procicek.com.tr/urunler/vazoda-kirmizi-11-gul-7-v2.webp",
       "code": "DM35",
       "stock": true,
-      "featured": true,
-      "description": null
+      "featured": true
     }
   ],
   "categories": [
@@ -703,228 +664,64 @@ export const initialDbData: any = {
   "abandonedCarts": [],
   "assistantChats": [
     {
-      "id": "CHAT-135442",
-      "visitor": "Ziyaretçi (#5442)",
+      "id": "CHAT-938621",
+      "createdAtMs": 1788456702103,
+      "visitor": "Ziyaretçi (#8621)",
       "msgCount": 3,
       "lastMsg": "Sevgiliye Özel Gül",
       "status": "Tamamlandı",
-      "date": "03.09.2026 08:46",
+      "date": "03.09.2026 20:31",
       "messages": [
         {
           "sender": "bot",
           "text": "Merhaba! Ben Demo Çiçekçilik Akıllı Sipariş Asistanı. 🌸 Sevdikleriniz için en doğru çiçeği seçmenize ve özel kart notu hazırlamanıza yardımcı olmaktan mutluluk duyarım. Kime veya hangi özel gün için çiçek arıyorsunuz?",
-          "time": "08:46"
+          "time": "20:31"
         },
         {
           "sender": "user",
           "text": "Sevgiliye Özel Gül",
-          "time": "08:46"
+          "time": "20:31"
         },
         {
           "sender": "bot",
-          "text": "Sevdiğinize olan aşkınızı anlatacak en romantik ve tutkulu aranjmanımız \"7 Kırmızı Gül ve Beyaz Biçme A\"! ❤️",
-          "time": "08:46"
-        }
-      ]
-    },
-    {
-      "id": "CHAT-941926",
-      "visitor": "Ziyaretçi (#1926)",
-      "msgCount": 3,
-      "lastMsg": "Anneme Özel Çiçek",
-      "status": "Tamamlandı",
-      "date": "01.09.2026 19:13",
-      "messages": [
-        {
-          "sender": "bot",
-          "text": "Merhaba! Ben Demo Çiçekçilik Akıllı Sipariş Asistanı. 🌸 Sevdikleriniz için en doğru çiçeği seçmenize ve özel kart notu hazırlamanıza yardımcı olmaktan mutluluk duyarım. Kime veya hangi özel gün için çiçek arıyorsunuz?",
-          "time": "19:13"
-        },
-        {
-          "sender": "user",
-          "text": "Anneme Özel Çiçek",
-          "time": "19:13"
-        },
-        {
-          "sender": "bot",
-          "text": "Canım annenize sevginizi ve minnetinizi gösterecek, zarafetiyle büyüleyen \"35 Beyaz Gerbera Buketi\" ürünümüz harika bir seçim olacaktır! 🌸",
-          "time": "19:13"
-        }
-      ]
-    },
-    {
-      "id": "CHAT-971578",
-      "visitor": "Ziyaretçi (#1578)",
-      "msgCount": 3,
-      "lastMsg": "Anneme Özel Çiçek",
-      "status": "Siparişe Dönüştü",
-      "date": "31.08.2026 17:02",
-      "messages": [
-        {
-          "sender": "bot",
-          "text": "Merhaba! Ben Çiçekçe Akıllı Sipariş Asistanı. 🌸 Sevdikleriniz için en doğru çiçeği seçmenize ve özel kart notu hazırlamanıza yardımcı olmaktan mutluluk duyarım. Kime veya hangi özel gün için çiçek arıyorsunuz?",
-          "time": "17:02"
-        },
-        {
-          "sender": "user",
-          "text": "Anneme Özel Çiçek",
-          "time": "17:02"
-        },
-        {
-          "sender": "bot",
-          "text": "Canım annenize sevginizi ve minnetinizi gösterecek, zarafetiyle büyüleyen \"35 Beyaz Gerbera Buketi\" ürünümüz harika bir seçim olacaktır! 🌸",
-          "time": "17:02"
-        }
-      ]
-    },
-    {
-      "id": "1788183660799",
-      "visitor": "Ziyaretçi #3169",
-      "msgCount": 15,
-      "lastMsg": "Asistan önerisiyle sipariş verildi: 35 Beyaz Gerbera Buketi",
-      "status": "Siparişe Dönüştü",
-      "date": "31.08.2026 16:41",
-      "messages": [
-        {
-          "sender": "bot",
-          "text": "Merhaba! Ben Çiçekçe Akıllı Sipariş Asistanı. 🌸 Sevdikleriniz için en doğru çiçeği seçmenize ve kart notunuzu hazırlamanıza yardımcı olabilirim. Kime veya hangi amaçla çiçek arıyorsunuz?",
-          "time": "16:41"
-        },
-        {
-          "sender": "user",
-          "text": "Doğum Günü için Çiçek",
-          "time": "16:41"
-        },
-        {
-          "sender": "bot",
-          "text": "Doğum günü için özel hazırlanan, rengarenk ve taptaze \"Deneme Ürün\" ürünümüzü tavsiye ederim! 🎂",
-          "time": "16:41"
-        },
-        {
-          "sender": "user",
-          "text": "Sevgiliye Özel Gül",
-          "time": "16:41"
-        },
-        {
-          "sender": "bot",
-          "text": "Aşkınızı anlatacak zarif ve tutkulu aranjmanımız \"7 Kırmızı Gül ve Beyaz Biçme A\"! ❤️",
-          "time": "16:41"
-        },
-        {
-          "sender": "user",
-          "text": "Geçmiş Olsun Çiçeği",
-          "time": "16:41"
-        },
-        {
-          "sender": "bot",
-          "text": "Geçmiş olsun dileklerinize tebessüm katacak zarafetteki \"7 Kırmızı Gül ve Papatyalar\" ürünümüz harika bir tercihtir. 🌸",
-          "time": "16:41"
-        },
-        {
-          "sender": "user",
-          "text": "En Uygun Fiyatlı Çiçek",
-          "time": "16:41"
-        },
-        {
-          "sender": "bot",
-          "text": "Bütçenize en uygun ve canlı aranjmanımız \"9 Pembe Gül ve Krizantem\" (2.200 ₺). 💰",
-          "time": "16:41"
-        },
-        {
-          "sender": "user",
-          "text": "sevgilime",
-          "time": "16:41"
-        },
-        {
-          "sender": "bot",
-          "text": "Aşkınızı anlatacak zarif ve tutkulu aranjmanımız \"15 Karışık Renk Gül Buketi\"! ❤️",
-          "time": "16:41"
-        },
-        {
-          "sender": "user",
-          "text": "anneme",
-          "time": "16:41"
-        },
-        {
-          "sender": "bot",
-          "text": "Geçmiş olsun dileklerinize tebessüm katacak zarafetteki \"7 Kırmızı Gül ve Papatyalar\" ürünümüz harika bir tercihtir. 🌸",
-          "time": "16:41"
-        },
-        {
-          "sender": "user",
-          "text": "babama",
-          "time": "16:41"
-        },
-        {
-          "sender": "bot",
-          "text": "Sizin için özel seçtiğimiz ve bugün en çok beğenilen ürünümüz \"35 Beyaz Gerbera Buketi\". ✨",
-          "time": "16:41"
-        }
-      ]
-    },
-    {
-      "id": "11",
-      "visitor": "Ziyaretçi #9021 (Fatma Yılmaz)",
-      "msgCount": 4,
-      "lastMsg": "Sevgiliye doğum günü çiçeği tavsiyesi istendi -> 35 Beyaz Gerbera Buketi önerildi.",
-      "status": "Siparişe Dönüştü",
-      "orderNo": "SIP-65450",
-      "date": "31.08.2026 15:30",
-      "messages": [
-        {
-          "sender": "user",
-          "text": "Merhaba sevgilim için doğum günü çiçeği ne alabilirim?",
-          "time": "15:28"
-        },
-        {
-          "sender": "bot",
-          "text": "Harika bir tercih! Sevgiliniz için özel tasarlanan 35 Beyaz Gerbera Buketi (3.500 ₺) en çok tercih edilen taze aranjmanımızdır. Hemen sipariş verebilirsiniz.",
-          "time": "15:29"
-        },
-        {
-          "sender": "user",
-          "text": "Harika görünüyor, sipariş veriyorum.",
-          "time": "15:30"
+          "text": "Sevdiğinize olan aşkınızı anlatacak en romantik ve tutkulu tasarımımız \"7 Kırmızı Gül ve Beyaz Biçme A\"! ❤️",
+          "time": "20:31"
         }
       ]
     }
   ],
-  "whatsappClicks": [
-    {
-      "id": 1788186159164,
-      "date": "31.08.2026 17:22",
-      "type": "Ürün Sayfası",
-      "product": "35 Beyaz Gerbera Buketi",
-      "button": "WhatsApp İle Sipariş Ver",
-      "page": "/urun/35-beyaz-gerbera-buketi-119",
-      "ip": "127.0.0.1",
-      "device": "Masaüstü (Chrome)",
-      "lang": "TR"
-    },
-    {
-      "id": 1,
-      "date": "31.08.2026 16:30",
-      "type": "Ürün Sayfası",
-      "product": "35 Beyaz Gerbera Buketi",
-      "button": "WhatsApp İle Sipariş Ver",
-      "page": "/urun/35-beyaz-gerbera-buketi-119",
-      "ip": "85.105.12.44",
-      "device": "Masaüstü (Chrome)",
-      "lang": "TR"
-    },
-    {
-      "id": 2,
-      "date": "31.08.2026 15:10",
-      "type": "Ürün Sayfası",
-      "product": "7 Kırmızı Gül ve Papatyalar",
-      "button": "WhatsApp İle Sipariş Ver",
-      "page": "/urun/7-kirmizi-gul-ve-papatyalar-56",
-      "ip": "176.234.1.90",
-      "device": "Mobil (iOS)",
-      "lang": "TR"
-    }
-  ],
+  "whatsappClicks": [],
   "adVisits": [
+    {
+      "id": "1788456017158",
+      "date": "03.09.2026 20:20",
+      "campaign": "Google Ads / cicek_siparis",
+      "city": "Antalya",
+      "device": "Masaüstü (Chrome)",
+      "page": "/",
+      "duration": "1 dk 30 sn",
+      "order": "Sipariş Vermedi"
+    },
+    {
+      "id": "1788450676134",
+      "date": "03.09.2026 18:51",
+      "campaign": "Google Ads / cicek_siparis",
+      "city": "İstanbul",
+      "device": "Masaüstü (Chrome)",
+      "page": "/",
+      "duration": "1 dk 30 sn",
+      "order": "Sipariş Vermedi"
+    },
+    {
+      "id": "1788446891489",
+      "date": "03.09.2026 17:48",
+      "campaign": "Google Ads / cicek_siparis",
+      "city": "Bursa",
+      "device": "Masaüstü (Chrome)",
+      "page": "/",
+      "duration": "1 dk 30 sn",
+      "order": "Sipariş Vermedi"
+    },
     {
       "id": "1788445651598",
       "date": "03.09.2026 17:27",
@@ -2127,5 +1924,26 @@ export const initialDbData: any = {
     "desktopCols": "4",
     "username": "demo",
     "email": "demo@procicek.com.tr"
-  }
+  },
+  "members": [
+    {
+      "id": "mem_1",
+      "name": "Demo Müşteri",
+      "email": "demo@cicekce.com",
+      "phone": "0555 111 22 33",
+      "password": "password123",
+      "date": "01.01.2026",
+      "status": "Aktif",
+      "orders": 2,
+      "addresses": [
+        {
+          "id": "addr_1788458833966",
+          "title": "Ev",
+          "city": "İstanbul",
+          "district": "Kadıköy",
+          "fullAddress": "djhadasd"
+        }
+      ]
+    }
+  ]
 };

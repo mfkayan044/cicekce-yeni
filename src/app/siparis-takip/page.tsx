@@ -290,8 +290,8 @@ export default function OrderTrackingPage() {
                 )}
               </div>
 
-              {/* Courier Door Delivery Photo Section */}
-              {order.deliveredPhoto && (
+              {/* Courier Door Delivery Photo Section - ONLY shown when order status is Teslim Edildi */}
+              {order.deliveredPhoto && (order.status === "Teslim Edildi" || String(order.status || "").includes("Teslim")) && (
                 <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-sm border border-slate-200 space-y-4">
                   <div className="flex flex-wrap items-center justify-between gap-2 border-b pb-3">
                     <h3 className="font-extrabold text-base text-slate-800 flex items-center gap-2 m-0">

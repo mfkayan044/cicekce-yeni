@@ -6,6 +6,8 @@ import { useState, useEffect } from "react";
 function getCanonicalStatus(status?: string, courierId?: string) {
   if (!status) return "Yeni Sipariş";
   if (status.includes("Kurye") || status.includes("Arabaya")) return "Kuryede / Dağıtımda";
+  if (status.includes("Teslim Edildi")) return "Teslim Edildi";
+  if (status.includes("Hazırlanıyor") || status.includes("Fotoğraflı Onay") || status.includes("Onay")) return "Hazırlanıyor";
   return status;
 }
 
@@ -230,14 +232,14 @@ export default function AdminOrdersPage() {
 
     // Tab filter
     if (activeTab === "new") return currentStatus === "Yeni Sipariş";
-    if (activeTab === "preparing") return currentStatus === "Hazırlanıyor" || currentStatus === "Fotoğraflı Onay Bekliyor";
+    if (activeTab === "preparing") return currentStatus === "Hazırlanıyor" || currentStatus === "Fotoğraflı Onay Bekliyor" || String(o.status || "").includes("Hazırlanıyor") || String(o.status || "").includes("Fotoğraf");
     if (activeTab === "shipping") return currentStatus === "Kuryede / Dağıtımda";
     if (activeTab === "delivered") return currentStatus === "Teslim Edildi";
     return true;
   });
 
   const countNew = orders.filter((o) => getCanonicalStatus(o.status, o.courierId) === "Yeni Sipariş").length;
-  const countPreparing = orders.filter((o) => getCanonicalStatus(o.status, o.courierId) === "Hazırlanıyor" || getCanonicalStatus(o.status, o.courierId) === "Fotoğraflı Onay Bekliyor").length;
+  const countPreparing = orders.filter((o) => getCanonicalStatus(o.status, o.courierId) === "Hazırlanıyor" || String(o.status || "").includes("Hazırlanıyor") || String(o.status || "").includes("Fotoğraf")).length;
   const countShipping = orders.filter((o) => getCanonicalStatus(o.status, o.courierId) === "Kuryede / Dağıtımda").length;
   const countDelivered = orders.filter((o) => getCanonicalStatus(o.status, o.courierId) === "Teslim Edildi").length;
 

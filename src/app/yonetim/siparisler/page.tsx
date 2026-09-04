@@ -457,11 +457,16 @@ export default function AdminOrdersPage() {
                                   >
                                     <span>🟢 Kuryeye Teslim Edin</span>
                                   </button>
-                                  {o.customerApprovalStatus === "Sistem Tarafından Onaylandı" && (
-                                    <div className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
-                                      ✓ Sistem Tarafından Onaylandı (15 dk)
+                                  {/* DISTINCT APPROVAL SOURCE BADGES */}
+                                  {String(o.customerApprovalStatus || "").includes("Sistem") ? (
+                                    <div className="text-[10px] font-black text-purple-900 bg-purple-50 px-2 py-0.5 rounded-full border border-purple-300 flex items-center justify-center gap-1">
+                                      <span>🤖 Sistem Otomatik Onayladı (15 Dk Doldu)</span>
                                     </div>
-                                  )}
+                                  ) : String(o.customerApprovalStatus || "").includes("Onaylandı") ? (
+                                    <div className="text-[10px] font-black text-emerald-900 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-300 flex items-center justify-center gap-1">
+                                      <span>🧑 Müşteri Tarafından Onaylandı</span>
+                                    </div>
+                                  ) : null}
                                 </div>
                               ) : o.customerApprovalStatus === "Reddedildi" ? (
                                 /* Subcase B: Müşteri Reddeti -> Kırmızı Yeniden Görsel İletin */
@@ -753,9 +758,25 @@ export default function AdminOrdersPage() {
                       <h4 className="text-sm font-black text-slate-900 m-0">Hazırlanan Çiçek Görseli & Müşteri Onayı</h4>
                     </div>
                     {selectedOrder.preparedPhoto ? (
-                      <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 flex items-center gap-1">
-                        <span>✓</span> <span>Fotoğraf Yüklendi</span>
-                      </span>
+                      <div className="flex items-center gap-2">
+                        {String(selectedOrder.customerApprovalStatus || "").includes("Sistem") ? (
+                          <span className="px-3 py-1 rounded-full text-xs font-black bg-purple-100 text-purple-900 border border-purple-300 flex items-center gap-1">
+                            <span>🤖</span> <span>Sistem Otomatik Onayladı (15 Dk Süre Doldu)</span>
+                          </span>
+                        ) : String(selectedOrder.customerApprovalStatus || "").includes("Onaylandı") ? (
+                          <span className="px-3 py-1 rounded-full text-xs font-black bg-emerald-100 text-emerald-900 border border-emerald-300 flex items-center gap-1">
+                            <span>🧑</span> <span>Müşteri Tarafından Onaylandı</span>
+                          </span>
+                        ) : selectedOrder.customerApprovalStatus === "Reddedildi" ? (
+                          <span className="px-3 py-1 rounded-full text-xs font-black bg-red-100 text-red-900 border border-red-300 flex items-center gap-1">
+                            <span>🔴</span> <span>Müşteri Görseli Reddeti</span>
+                          </span>
+                        ) : (
+                          <span className="px-3 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-900 border border-blue-300 flex items-center gap-1">
+                            <span>⏳</span> <span>Müşteri Onayı Bekliyor (15 Dk Sayaç Aktif)</span>
+                          </span>
+                        )}
+                      </div>
                     ) : (
                       <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-300 flex items-center gap-1">
                         <span>⏳</span> <span>Fotoğraf Bekleniyor</span>

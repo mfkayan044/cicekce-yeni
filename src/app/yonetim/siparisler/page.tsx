@@ -13,22 +13,44 @@ function getCanonicalStatus(status?: string, courierId?: string) {
 
 function normalizeDateStr(dateVal?: string): string {
   if (!dateVal) return "";
-  const str = String(dateVal).trim();
-  
-  // Handing Turkish month names if present (e.g. "5 Eylül 2026")
-  const trMonths: Record<string, string> = {
-    ocak: "01", şubat: "02", mart: "03", nisan: "04", mayıs: "05", haziran: "06",
-    temmuz: "07", ağustos: "08", eylül: "09", ekim: "10", kasım: "11", aralık: "12"
-  };
+  let str = String(dateVal).trim();
+  if (!str) return "";
+
+  // If ISO string with T, extract date portion
+  if (str.includes("T")) {
+    str = str.split("T")[0];
+  }
+
+  // Handing Turkish month names (both short & long aliases)
+  const trMonths: Array<[string[], string]> = [
+    [["ocak", "oca"], "01"],
+    [["şubat", "şub", "subat", "sub"], "02"],
+    [["mart", "mar"], "03"],
+    [["nisan", "nis"], "04"],
+    [["mayıs", "may", "mayis"], "05"],
+    [["haziran", "haz"], "06"],
+    [["temmuz", "tem"], "07"],
+    [["ağustos", "ağust", "ağu", "agustos", "agu"], "08"],
+    [["eylül", "eyl", "eylul"], "09"],
+    [["ekim", "eki"], "10"],
+    [["kasım", "kas", "kasim"], "11"],
+    [["aralık", "ara", "aralik"], "12"],
+  ];
 
   const lowerStr = str.toLowerCase();
-  for (const [mName, mNum] of Object.entries(trMonths)) {
-    if (lowerStr.includes(mName)) {
-      const parts = str.split(/\s+/);
-      if (parts.length >= 3) {
-        const day = parts[0].padStart(2, "0");
-        const year = parts[2];
-        return `${year}-${mNum}-${day}`;
+  for (const [aliases, mNum] of trMonths) {
+    for (const alias of aliases) {
+      if (lowerStr.includes(alias)) {
+        const parts = str.split(/\s+/);
+        if (parts.length >= 3) {
+          const rawDay = parts[0].replace(/\D/g, "");
+          const rawYear = parts[2].replace(/\D/g, "");
+          if (rawDay && rawYear) {
+            const day = rawDay.padStart(2, "0");
+            const year = rawYear.length === 2 ? `20${rawYear}` : rawYear;
+            return `${year}-${mNum}-${day}`;
+          }
+        }
       }
     }
   }
@@ -44,7 +66,7 @@ function normalizeDateStr(dateVal?: string): string {
       return `${year}-${month}-${day}`;
     }
   }
-  
+
   // Format YYYY-MM-DD
   if (str.includes("-")) {
     const parts = str.split("-");
@@ -280,8 +302,63 @@ export default function AdminOrdersPage() {
 
   const todayStr = getTodayIsoStr();
 
-  // Filter orders based on active tab, date range & search query
-  const filteredOrders = orders.filter((o) => {
+  // 1. Calculate Quick Date Preset Counts (over all orders in database)
+  const countTodayOrders = orders.filter(
+    (o) => normalizeDateStr(o.deliveryDate || o.delivery_date || o.date || o.created_at) === todayStr
+  ).length;
+
+  const countUpcomingOrders = orders.filter((o) => {
+    const d = normalizeDateStr(o.deliveryDate || o.delivery_date || o.date || o.created_at);
+    return d > todayStr;
+  }).length;
+
+  const countPastOrders = orders.filter((o) => {
+    const d = normalizeDateStr(o.deliveryDate || o.delivery_date || o.date || o.created_at);
+    return d < todayStr && d.length > 0;
+  }).length;
+
+  // 2. Filter Orders by Date Range First
+  const dateFilteredOrders = orders.filter((o) => {
+    const orderDateNorm = normalizeDateStr(o.deliveryDate || o.delivery_date || o.date || o.created_at);
+
+    if (dateFilterType === "today") {
+      return orderDateNorm === todayStr;
+    }
+    if (dateFilterType === "upcoming") {
+      return orderDateNorm > todayStr;
+    }
+    if (dateFilterType === "past") {
+      return orderDateNorm < todayStr && orderDateNorm.length > 0;
+    }
+    if (dateFilterType === "custom") {
+      if (startDate && orderDateNorm < startDate) return false;
+      if (endDate && orderDateNorm > endDate) return false;
+      return true;
+    }
+    // "all"
+    return true;
+  });
+
+  // 3. Status Tab Counts computed based on dateFilteredOrders
+  const countAllInDate = dateFilteredOrders.length;
+  const countNew = dateFilteredOrders.filter(
+    (o) => getCanonicalStatus(o.status, o.courierId) === "Yeni Sipariş"
+  ).length;
+  const countPreparing = dateFilteredOrders.filter(
+    (o) =>
+      getCanonicalStatus(o.status, o.courierId) === "Hazırlanıyor" ||
+      String(o.status || "").includes("Hazırlanıyor") ||
+      String(o.status || "").includes("Fotoğraf")
+  ).length;
+  const countShipping = dateFilteredOrders.filter(
+    (o) => getCanonicalStatus(o.status, o.courierId) === "Kuryede / Dağıtımda"
+  ).length;
+  const countDelivered = dateFilteredOrders.filter(
+    (o) => getCanonicalStatus(o.status, o.courierId) === "Teslim Edildi"
+  ).length;
+
+  // 4. Final Filtered Orders (Search Query + Active Tab)
+  const filteredOrders = dateFilteredOrders.filter((o) => {
     const currentStatus = getCanonicalStatus(o.status, o.courierId);
 
     // Search query filter
@@ -294,42 +371,19 @@ export default function AdminOrdersPage() {
       if (!matchId && !matchCustomer && !matchRecipient && !matchAddress) return false;
     }
 
-    // Date range filter (Çiçeksepeti Style)
-    const orderDateNorm = normalizeDateStr(o.deliveryDate || o.delivery_date || o.date || o.created_at);
-
-    if (dateFilterType === "today") {
-      if (orderDateNorm !== todayStr) return false;
-    } else if (dateFilterType === "upcoming") {
-      if (orderDateNorm <= todayStr || !orderDateNorm) return false;
-    } else if (dateFilterType === "past") {
-      if (orderDateNorm >= todayStr || !orderDateNorm) return false;
-    } else if (dateFilterType === "custom") {
-      if (startDate && orderDateNorm < startDate) return false;
-      if (endDate && orderDateNorm > endDate) return false;
-    }
-
     // Tab filter
     if (activeTab === "new") return currentStatus === "Yeni Sipariş";
-    if (activeTab === "preparing") return currentStatus === "Hazırlanıyor" || currentStatus === "Fotoğraflı Onay Bekliyor" || String(o.status || "").includes("Hazırlanıyor") || String(o.status || "").includes("Fotoğraf");
+    if (activeTab === "preparing")
+      return (
+        currentStatus === "Hazırlanıyor" ||
+        currentStatus === "Fotoğraflı Onay Bekliyor" ||
+        String(o.status || "").includes("Hazırlanıyor") ||
+        String(o.status || "").includes("Fotoğraf")
+      );
     if (activeTab === "shipping") return currentStatus === "Kuryede / Dağıtımda";
     if (activeTab === "delivered") return currentStatus === "Teslim Edildi";
     return true;
   });
-
-  const countNew = orders.filter((o) => getCanonicalStatus(o.status, o.courierId) === "Yeni Sipariş").length;
-  const countPreparing = orders.filter((o) => getCanonicalStatus(o.status, o.courierId) === "Hazırlanıyor" || String(o.status || "").includes("Hazırlanıyor") || String(o.status || "").includes("Fotoğraf")).length;
-  const countShipping = orders.filter((o) => getCanonicalStatus(o.status, o.courierId) === "Kuryede / Dağıtımda").length;
-  const countDelivered = orders.filter((o) => getCanonicalStatus(o.status, o.courierId) === "Teslim Edildi").length;
-
-  const countTodayOrders = orders.filter((o) => normalizeDateStr(o.deliveryDate || o.delivery_date || o.date || o.created_at) === todayStr).length;
-  const countUpcomingOrders = orders.filter((o) => {
-    const d = normalizeDateStr(o.deliveryDate || o.delivery_date || o.date || o.created_at);
-    return d > todayStr;
-  }).length;
-  const countPastOrders = orders.filter((o) => {
-    const d = normalizeDateStr(o.deliveryDate || o.delivery_date || o.date || o.created_at);
-    return d < todayStr && d.length > 0;
-  }).length;
 
   return (
     <AdminLayout>
@@ -374,7 +428,11 @@ export default function AdminOrdersPage() {
                   className="bg-transparent text-xs font-extrabold text-slate-900 outline-none cursor-pointer"
                   value={startDate}
                   onChange={(e) => {
-                    setStartDate(e.target.value);
+                    const val = e.target.value;
+                    setStartDate(val);
+                    if (!endDate || endDate < val) {
+                      setEndDate(val);
+                    }
                     setDateFilterType("custom");
                   }}
                 />
@@ -389,7 +447,11 @@ export default function AdminOrdersPage() {
                   className="bg-transparent text-xs font-extrabold text-slate-900 outline-none cursor-pointer"
                   value={endDate}
                   onChange={(e) => {
-                    setEndDate(e.target.value);
+                    const val = e.target.value;
+                    setEndDate(val);
+                    if (startDate && startDate > val) {
+                      setStartDate(val);
+                    }
                     setDateFilterType("custom");
                   }}
                 />
@@ -495,7 +557,7 @@ export default function AdminOrdersPage() {
           >
             <span>Tüm Siparişler</span>
             <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${activeTab === "all" ? "bg-white/20 text-white" : "bg-slate-200 text-slate-700"}`}>
-              {orders.length}
+              {countAllInDate}
             </span>
           </button>
 

@@ -227,6 +227,76 @@ export default function RaporPage() {
     }))
     .sort((a, b) => b.total - a.total);
 
+  // Payment Method Breakdown
+  const paymentStats: Record<string, { count: number; revenue: number }> = {};
+  filteredOrders.forEach((o) => {
+    const payRaw = String(o.paymentMethod || o.payment || "Kredi Kartı").trim();
+    let method = "Kredi Kartı";
+    if (payRaw.toLowerCase().includes("havale") || payRaw.toLowerCase().includes("eft")) method = "Havale / EFT";
+    else if (payRaw.toLowerCase().includes("kapı") || payRaw.toLowerCase().includes("nakit")) method = "Kapıda Ödeme";
+
+    if (!paymentStats[method]) paymentStats[method] = { count: 0, revenue: 0 };
+    paymentStats[method].count += 1;
+    paymentStats[method].revenue += parsePrice(o.totalAmount || o.totalPrice);
+  });
+  const sortedPaymentStats = Object.entries(paymentStats).map(([method, stat]) => ({ method, ...stat }));
+
+  // Daily Trend Breakdown
+  const dailyTrendStats: Record<string, number> = {};
+  filteredOrders.forEach((o) => {
+    const rawDate = String(o.date || o.createdAt || "").split(" ")[0];
+    if (rawDate) {
+      dailyTrendStats[rawDate] = (dailyTrendStats[rawDate] || 0) + parsePrice(o.totalAmount || o.totalPrice);
+    }
+  });
+  const sortedDailyTrend = Object.entries(dailyTrendStats).sort((a, b) => a[0].localeCompare(b[0])).slice(-14);
+  const maxDailyRevenue = Math.max(...sortedDailyTrend.map((d) => d[1]), 1);
+
+  const exportToCSV = () => {
+    if (filteredOrders.length === 0) {
+      alert("İndirilecek sipariş verisi bulunamadı.");
+      return;
+    }
+
+    const headers = [
+      "Siparis No",
+      "Tarih",
+      "Musteri Adı",
+      "Musteri Telefon",
+      "Alici Adı",
+      "Alici Telefon",
+      "Teslimat Adresi",
+      "Durum",
+      "Odeme Yontemi",
+      "Tutar (TL)",
+      "Kurye"
+    ];
+
+    const rows = filteredOrders.map((o) => [
+      `"${o.id}"`,
+      `"${o.date || o.createdAt || ""}"`,
+      `"${(o.customerName || "").replace(/"/g, '""')}"`,
+      `"${(o.customerPhone || "").replace(/"/g, '""')}"`,
+      `"${(o.recipientName || "").replace(/"/g, '""')}"`,
+      `"${(o.recipientPhone || "").replace(/"/g, '""')}"`,
+      `"${(o.address || "").replace(/"/g, '""')}"`,
+      `"${(o.status || "").replace(/"/g, '""')}"`,
+      `"${(o.paymentMethod || o.payment || "").replace(/"/g, '""')}"`,
+      `"${parsePrice(o.totalAmount || o.totalPrice)}"`,
+      `"${(o.courierName || o.courier || "").replace(/"/g, '""')}"`
+    ]);
+
+    const csvContent = "\uFEFF" + [headers.join(";"), ...rows.map((r) => r.join(";"))].join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", `cicekce_satis_raporu_${new Date().toISOString().split("T")[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <AdminLayout>
       <div className="space-y-6 font-sans">
@@ -269,6 +339,22 @@ export default function RaporPage() {
               }`}
             >
               Tüm Zamanlar
+            </button>
+            <button
+              type="button"
+              onClick={exportToCSV}
+              className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black shadow-xs transition flex items-center gap-1.5"
+            >
+              <span>📥</span>
+              <span>Excel (CSV) İndir</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => window.print()}
+              className="px-3.5 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-black shadow-xs transition flex items-center gap-1.5"
+            >
+              <span>🖨️</span>
+              <span>Yazdır / PDF</span>
             </button>
             <button
               type="button"
@@ -391,6 +477,104 @@ export default function RaporPage() {
             </div>
             <div className="text-2xl lg:text-3xl font-black text-emerald-700">%100</div>
             <div className="text-xs text-emerald-700 font-bold">İptal / İade yok</div>
+          </div>
+        </div>
+
+        {/* Daily Sales Trend & Payment Breakdown Row */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          {/* Daily Sales Trend Chart (8 cols) */}
+          <div className="lg:col-span-8 card border border-slate-200/80 shadow-xs rounded-3xl bg-white p-5 space-y-4">
+            <div className="flex justify-between items-center">
+              <div>
+                <h5 className="font-black text-slate-900 text-base mb-0.5 flex items-center gap-2">
+                  <span>📈</span>
+                  <span>Günlük Satış & Ciro Grafiği</span>
+                </h5>
+                <p className="text-xs text-slate-500">
+                  Son günlerde gerçekleşen satış cirosunun günlük trendi.
+                </p>
+              </div>
+              <span className="text-xs font-bold text-slate-400">Son {sortedDailyTrend.length} Gün</span>
+            </div>
+
+            {sortedDailyTrend.length === 0 ? (
+              <div className="text-center py-12 text-slate-400 font-bold text-xs">
+                Grafik için sipariş verisi bulunamadı.
+              </div>
+            ) : (
+              <div className="pt-4 pb-2">
+                <div className="h-44 flex items-end justify-between gap-2 border-b border-slate-200 pb-2">
+                  {sortedDailyTrend.map(([day, rev], idx) => {
+                    const heightPct = Math.max(Math.round((rev / maxDailyRevenue) * 100), 8);
+                    return (
+                      <div key={idx} className="flex-1 flex flex-col items-center gap-1 group relative">
+                        <div className="opacity-0 group-hover:opacity-100 transition absolute -top-8 bg-slate-900 text-white text-[10px] font-black px-2 py-1 rounded shadow-lg whitespace-nowrap z-20 pointer-events-none">
+                          {formatTL(rev)}
+                        </div>
+                        <div
+                          style={{ height: `${heightPct}%`, backgroundColor: "#2b2623" }}
+                          className="w-full max-w-[28px] rounded-t-lg group-hover:bg-amber-800 transition duration-300 shadow-xs"
+                        />
+                        <span className="text-[9px] font-bold text-slate-500 truncate w-full text-center">
+                          {day.slice(0, 5)}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Payment Method Breakdown (4 cols) */}
+          <div className="lg:col-span-4 card border border-slate-200/80 shadow-xs rounded-3xl bg-white p-5 space-y-4 flex flex-col justify-between">
+            <div>
+              <h5 className="font-black text-slate-900 text-base mb-0.5 flex items-center gap-2">
+                <span>💳</span>
+                <span>Ödeme Yöntemleri Ciro Dağılımı</span>
+              </h5>
+              <p className="text-xs text-slate-500">
+                Kredi kartı, havale ve kapıda ödeme tahsilat oranları.
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              {sortedPaymentStats.length === 0 ? (
+                <div className="text-center py-6 text-slate-400 text-xs font-bold">
+                  Ödeme verisi bulunamadı.
+                </div>
+              ) : (
+                sortedPaymentStats.map((p, idx) => {
+                  const pct = totalRevenue > 0 ? Math.round((p.revenue / totalRevenue) * 100) : 0;
+                  return (
+                    <div key={idx} className="p-3 bg-slate-50 rounded-2xl border border-slate-200 space-y-1.5">
+                      <div className="flex justify-between items-center text-xs">
+                        <span className="font-black text-slate-800">
+                          {p.method.includes("Kart") ? "💳 " : p.method.includes("Havale") ? "🏛️ " : "💵 "}
+                          {p.method}
+                        </span>
+                        <span className="font-bold text-[#2b2623]">{formatTL(p.revenue)}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-[11px] text-slate-500">
+                        <span>{p.count} İşlem</span>
+                        <span className="font-black text-purple-700 font-mono">%{pct} Pay</span>
+                      </div>
+                      <div className="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden">
+                        <div
+                          style={{ width: `${pct}%` }}
+                          className="h-full bg-purple-600 rounded-full"
+                        />
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-2xl text-[11px] font-bold text-emerald-950 flex items-center justify-between">
+              <span>🔒 Güvenli Ödeme Altyapısı</span>
+              <span className="font-black">Aktif</span>
+            </div>
           </div>
         </div>
 

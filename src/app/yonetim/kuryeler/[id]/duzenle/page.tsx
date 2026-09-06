@@ -14,6 +14,7 @@ export default function EditCourierPage({ params }: { params: Promise<{ id: stri
   const [phone, setPhone] = useState("");
   const [plate, setPlate] = useState("");
   const [region, setRegion] = useState("");
+  const [pin, setPin] = useState("1234");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -30,6 +31,7 @@ export default function EditCourierPage({ params }: { params: Promise<{ id: stri
         setPhone(data.phone || "");
         setPlate(data.plate || "");
         setRegion(data.region || "");
+        setPin(data.pin || "1234");
       }
     } catch (e) {
       console.error(e);
@@ -47,7 +49,7 @@ export default function EditCourierPage({ params }: { params: Promise<{ id: stri
       const res = await fetch("/api/couriers", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: courierId, name, phone, plate, region }),
+        body: JSON.stringify({ id: courierId, name, phone, plate, region, pin: pin.trim() || "1234" }),
       });
 
       if (res.ok) {
@@ -118,12 +120,15 @@ export default function EditCourierPage({ params }: { params: Promise<{ id: stri
             </div>
 
             <div className="mb-3">
-              <label className="form-label fw-bold">Araç Plakası</label>
+              <label className="form-label fw-bold">Kurye Giriş PIN Kodu (Maks. 6 Hane) *</label>
               <input
                 type="text"
-                className="form-control"
-                value={plate}
-                onChange={(e) => setPlate(e.target.value)}
+                className="form-control font-mono font-bold"
+                placeholder="Örn: 1453"
+                value={pin}
+                maxLength={6}
+                onChange={(e) => setPin(e.target.value)}
+                required
               />
             </div>
 

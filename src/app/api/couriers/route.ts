@@ -69,6 +69,7 @@ export async function POST(request: Request) {
         phone: body.phone || "",
         plate: body.plate || "",
         region: body.region || "Genel Kurye",
+        pin: body.pin || "1234",
         active: body.active !== false
       };
       if (!Array.isArray(couriersData.list)) couriersData.list = [];

@@ -265,14 +265,30 @@ export default function CourierPortalPage() {
     e.preventDefault();
     setPinError("");
     const cleanPin = pinInput.trim();
-    if (cleanPin === "1234" || cleanPin === "1453" || cleanPin.length >= 4) {
+
+    // Check if PIN matches any specific courier in the system
+    const matchedCourier = couriers.find((c: any) => String(c.pin || "").trim() === cleanPin);
+
+    if (matchedCourier) {
+      setSelectedCourier(matchedCourier);
+      setIsAuthenticatedCourier(true);
+      try {
+        localStorage.setItem("cicekce_courier_auth", "true");
+        localStorage.setItem("cicekce_courier_id", String(matchedCourier.id));
+      } catch (err) {}
+      return;
+    }
+
+    // Default fallback PINs
+    if (cleanPin === "1234" || cleanPin === "1453") {
       setIsAuthenticatedCourier(true);
       try {
         localStorage.setItem("cicekce_courier_auth", "true");
       } catch (err) {}
-    } else {
-      setPinError("⚠️ Hatalı Kurye PIN kodu. Lütfen geçerli PIN kodunuzu giriniz.");
+      return;
     }
+
+    setPinError("⚠️ Hatalı Kurye PIN kodu. Lütfen yöneticinizin tanımladığı PIN kodunu giriniz.");
   };
 
   const handleCourierLogout = () => {

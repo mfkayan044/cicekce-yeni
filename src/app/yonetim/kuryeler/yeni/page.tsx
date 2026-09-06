@@ -11,6 +11,7 @@ export default function NewCourierPage() {
   const [phone, setPhone] = useState("");
   const [plate, setPlate] = useState("");
   const [region, setRegion] = useState("");
+  const [pin, setPin] = useState("1234");
   const [saving, setSaving] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -22,7 +23,7 @@ export default function NewCourierPage() {
       const res = await fetch("/api/couriers", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, phone, plate, region }),
+        body: JSON.stringify({ name, phone, plate, region, pin: pin.trim() || "1234" }),
       });
 
       if (res.ok) {
@@ -88,13 +89,15 @@ export default function NewCourierPage() {
             </div>
 
             <div className="mb-3">
-              <label className="form-label fw-bold">Araç Plakası (İsteğe Bağlı)</label>
+              <label className="form-label fw-bold">Kurye Giriş PIN Kodu (Maks. 6 Hane) *</label>
               <input
                 type="text"
-                className="form-control"
-                placeholder="Örn: 34 ABC 123"
-                value={plate}
-                onChange={(e) => setPlate(e.target.value)}
+                className="form-control font-mono font-bold"
+                placeholder="Örn: 1453 veya 1234"
+                value={pin}
+                maxLength={6}
+                onChange={(e) => setPin(e.target.value)}
+                required
               />
             </div>
 

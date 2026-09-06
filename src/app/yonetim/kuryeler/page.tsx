@@ -9,6 +9,7 @@ export default function KuryelerPage() {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [region, setRegion] = useState("");
+  const [pin, setPin] = useState("1234");
   const [toastMsg, setToastMsg] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -52,7 +53,7 @@ export default function KuryelerPage() {
       const res = await fetch("/api/couriers", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, phone, region }),
+        body: JSON.stringify({ name, phone, region, pin: pin.trim() || "1234" }),
       });
 
       if (res.ok) {
@@ -61,7 +62,8 @@ export default function KuryelerPage() {
         setName("");
         setPhone("");
         setRegion("");
-        setToastMsg("Yeni kurye başarıyla tanımlandı ve veritabanına kaydedildi!");
+        setPin("1234");
+        setToastMsg("Yeni kurye ve özel PIN kodu başarıyla tanımlandı!");
         setTimeout(() => setToastMsg(""), 3000);
       }
     } catch (e) {
@@ -131,7 +133,7 @@ export default function KuryelerPage() {
 
           <form onSubmit={handleAdd} className="space-y-3 pt-2">
             <h6 className="font-bold text-slate-700 text-sm">Hızlı Kurye Tanımla</h6>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
               <input
                 type="text"
                 className="px-3 py-2 border rounded-lg text-sm"
@@ -150,9 +152,16 @@ export default function KuryelerPage() {
               <input
                 type="text"
                 className="px-3 py-2 border rounded-lg text-sm"
-                placeholder="Teslimat Bölgesi (Örn: Sarıyer)"
+                placeholder="Teslimat Bölgesi"
                 value={region}
                 onChange={(e) => setRegion(e.target.value)}
+              />
+              <input
+                type="text"
+                className="px-3 py-2 border rounded-lg text-sm font-mono font-bold"
+                placeholder="PIN Kodu (Örn: 1453)"
+                value={pin}
+                onChange={(e) => setPin(e.target.value)}
               />
               <button type="submit" disabled={saving} className="btn btn-primary px-4 py-2 text-sm font-semibold rounded-lg flex items-center justify-center gap-1">
                 <span>{saving ? "Kaydediliyor..." : "👤 Hızlı Kaydet"}</span>
@@ -169,6 +178,7 @@ export default function KuryelerPage() {
                   <th className="px-4 py-3">Kurye Ad Soyad</th>
                   <th className="px-4 py-3">Telefon</th>
                   <th className="px-4 py-3">Bölge / Araç</th>
+                  <th className="px-4 py-3">Giriş PIN Kodu</th>
                   <th className="px-4 py-3">Durum</th>
                   <th className="px-4 py-3 text-end">İşlem</th>
                 </tr>
@@ -179,6 +189,11 @@ export default function KuryelerPage() {
                     <td className="px-4 py-3 font-bold text-slate-800">{c.name}</td>
                     <td className="px-4 py-3 text-slate-600">{c.phone || "—"}</td>
                     <td className="px-4 py-3 text-xs text-slate-500">{c.region || "Genel Kurye"}</td>
+                    <td className="px-4 py-3">
+                      <span className="px-2.5 py-1 bg-amber-100 text-amber-900 border border-amber-300 font-mono font-bold text-xs rounded-lg">
+                        🔑 {c.pin || "1234"}
+                      </span>
+                    </td>
                     <td className="px-4 py-3">
                       <span className="badge bg-emerald-100 text-emerald-800 font-bold">Aktif Sahada</span>
                     </td>

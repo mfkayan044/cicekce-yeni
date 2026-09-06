@@ -742,6 +742,16 @@
   ],
   "adVisits": [
     {
+      "id": "1788694477860",
+      "date": "06.09.2026 14:34",
+      "campaign": "Google Ads / cicek_siparis",
+      "city": "İzmir",
+      "device": "Masaüstü (Chrome)",
+      "page": "/",
+      "duration": "1 dk 30 sn",
+      "order": "Sipariş Vermedi"
+    },
+    {
       "id": "1788539666030",
       "date": "04.09.2026 19:34",
       "campaign": "Google Ads / cicek_siparis",

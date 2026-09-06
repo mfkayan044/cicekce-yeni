@@ -44,15 +44,10 @@ export default function CustomerHomePage() {
   const [heroData, setHeroData] = useState<any>(_pageDb.hero || initialHeroData);
   const [seoData, setSeoData] = useState<any>(_pageDb.homeSeo || null);
   const [liveFaqs, setLiveFaqs] = useState<any[]>(_pageDb.faqs || []);
-  const _initialMob = _pageDb.generalSettings?.mobileCols || _pageDb.generalSettings?.grid_cols_mobile || "2";
-  const _initialDesk = _pageDb.generalSettings?.desktopCols || _pageDb.generalSettings?.grid_cols_desktop || "4";
-  let _dInit = "lg:grid-cols-4";
-  if (String(_initialDesk) === "3") _dInit = "lg:grid-cols-3";
-  if (String(_initialDesk) === "4") _dInit = "lg:grid-cols-4";
-  if (String(_initialDesk) === "5") _dInit = "lg:grid-cols-5";
-  if (String(_initialDesk) === "6") _dInit = "lg:grid-cols-6";
+  const _initialMob = String(_pageDb.generalSettings?.mobileCols || _pageDb.generalSettings?.grid_cols_mobile || "2");
+  const _initialDesk = String(_pageDb.generalSettings?.desktopCols || _pageDb.generalSettings?.grid_cols_desktop || "4");
   const [gridColsClass, setGridColsClass] = useState<string>(
-    `grid ${String(_initialMob) === "1" ? "grid-cols-1" : "grid-cols-2"} ${_dInit} gap-4 sm:gap-6`
+    `grid product-catalog-grid cols-mob-${_initialMob} cols-desk-${_initialDesk} gap-4 sm:gap-6`
   );
 
   useEffect(() => {
@@ -62,12 +57,7 @@ export default function CustomerHomePage() {
         if (data) {
           const mob = String(data.mobileCols || data.grid_cols_mobile || "2");
           const desk = String(data.desktopCols || data.grid_cols_desktop || "4");
-          let dClass = "lg:grid-cols-4";
-          if (desk === "3") dClass = "lg:grid-cols-3";
-          if (desk === "4") dClass = "lg:grid-cols-4";
-          if (desk === "5") dClass = "lg:grid-cols-5";
-          if (desk === "6") dClass = "lg:grid-cols-6";
-          setGridColsClass(`grid ${mob === "1" ? "grid-cols-1" : "grid-cols-2"} ${dClass} gap-4 sm:gap-6`);
+          setGridColsClass(`grid product-catalog-grid cols-mob-${mob} cols-desk-${desk} gap-4 sm:gap-6`);
         }
       })
       .catch(() => {});

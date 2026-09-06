@@ -56,7 +56,7 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
   const [selectedQuickProduct, setSelectedQuickProduct] = useState<QuickOrderProduct | null>(null);
   const [cartItemIds, setCartItemIds] = useState<(string | number)[]>([]);
 
-  const [gridColsClass, setGridColsClass] = useState<string>("grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6");
+  const [gridColsClass, setGridColsClass] = useState<string>("grid product-catalog-grid cols-mob-2 cols-desk-4 gap-4 sm:gap-6");
 
   useEffect(() => {
     fetch("/api/settings/general")
@@ -65,12 +65,7 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
         if (data) {
           const mob = String(data.mobileCols || data.grid_cols_mobile || "2");
           const desk = String(data.desktopCols || data.grid_cols_desktop || "4");
-          let dClass = "lg:grid-cols-4";
-          if (desk === "3") dClass = "lg:grid-cols-3";
-          if (desk === "4") dClass = "lg:grid-cols-4";
-          if (desk === "5") dClass = "lg:grid-cols-5";
-          if (desk === "6") dClass = "lg:grid-cols-6";
-          setGridColsClass(`grid ${mob === "1" ? "grid-cols-1" : "grid-cols-2"} ${dClass} gap-4 sm:gap-6`);
+          setGridColsClass(`grid product-catalog-grid cols-mob-${mob} cols-desk-${desk} gap-4 sm:gap-6`);
         }
       })
       .catch(() => {});

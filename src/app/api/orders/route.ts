@@ -51,6 +51,57 @@ async function saveOrderCouriersMap(map: Record<string, any>) {
   } catch (e) {}
 }
 
+function parseOrderMeta(o: any, extra: any) {
+  let customerApprovalStatus = "Bekliyor";
+  let preparedPhotoTime = o.created_at || extra.preparedPhotoTime || "";
+  let courierId = extra.courierId || "";
+  let courierName = extra.courierName || "";
+  let deliveredAt = extra.deliveredAt || "";
+  let deliveredPhoto = extra.deliveredPhoto || "";
+  let deliveryNote = extra.deliveryNote || "";
+  let rejectionReason = extra.rejectionReason || "";
+  let updateRequest = extra.updateRequest || null;
+
+  const rawStatus = o.customer_approval_status || o.customerApprovalStatus || extra.customerApprovalStatus || "";
+  if (rawStatus) {
+    if (typeof rawStatus === "string" && rawStatus.trim().startsWith("{")) {
+      try {
+        const meta = JSON.parse(rawStatus);
+        if (meta.status || meta.approval) customerApprovalStatus = meta.status || meta.approval;
+        if (meta.photoTime || meta.preparedPhotoTime) preparedPhotoTime = meta.photoTime || meta.preparedPhotoTime;
+        if (meta.courierId !== undefined) courierId = meta.courierId;
+        if (meta.courierName !== undefined) courierName = meta.courierName;
+        if (meta.deliveredAt !== undefined) deliveredAt = meta.deliveredAt;
+        if (meta.deliveredPhoto !== undefined) deliveredPhoto = meta.deliveredPhoto;
+        if (meta.deliveryNote !== undefined) deliveryNote = meta.deliveryNote;
+        if (meta.rejectionReason !== undefined) rejectionReason = meta.rejectionReason;
+        if (meta.updateRequest !== undefined) updateRequest = meta.updateRequest;
+      } catch (e) {
+        customerApprovalStatus = rawStatus;
+      }
+    } else {
+      customerApprovalStatus = rawStatus;
+    }
+  }
+
+  const preparedPhoto = (o.prepared_photo && String(o.prepared_photo).trim() !== "")
+    ? o.prepared_photo
+    : ((o.preparedPhoto && String(o.preparedPhoto).trim() !== "") ? o.preparedPhoto : (extra.preparedPhoto || ""));
+
+  return {
+    customerApprovalStatus,
+    preparedPhotoTime,
+    courierId,
+    courierName,
+    deliveredAt,
+    deliveredPhoto,
+    deliveryNote,
+    rejectionReason,
+    updateRequest,
+    preparedPhoto
+  };
+}
+
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -97,16 +148,14 @@ export async function GET(request: Request) {
 
       const courierMap = await getOrderCouriersMap();
       const extra = courierMap[order.id] || memoryCourierMap[order.id] || {};
-
-      const preparedPhoto = order.prepared_photo || order.preparedPhoto || extra.preparedPhoto || "";
-      const customerApprovalStatus = order.customer_approval_status || order.customerApprovalStatus || extra.customerApprovalStatus || "Bekliyor";
-      const deliveredPhoto = order.delivered_photo || order.deliveredPhoto || extra.deliveredPhoto || "";
-      const deliveryNote = order.delivery_note || order.deliveryNote || extra.deliveryNote || "";
+      const meta = parseOrderMeta(order, extra);
 
       return NextResponse.json({
         id: order.id,
         date: order.date,
-        status: (extra.status === "Teslim Edildi" || extra.status === "Kuryede / Dağıtımda") ? extra.status : (order.status || extra.status || "Yeni Sipariş"),
+        status: (meta.courierName || meta.deliveredAt || extra.status === "Teslim Edildi" || extra.status === "Kuryede / Dağıtımda")
+          ? (extra.status || order.status || "Yeni Sipariş")
+          : (order.status || extra.status || "Yeni Sipariş"),
         customerName: order.customer_name || order.customerName,
         customerPhone: order.customer_phone || order.customerPhone,
         recipientName: order.recipient_name || order.recipientName,
@@ -120,15 +169,16 @@ export async function GET(request: Request) {
         isAnonymous: order.is_anonymous === true,
         paymentMethod: order.payment_method || order.paymentMethod,
         totalAmount: order.total_amount || order.totalAmount,
-        preparedPhoto,
-        preparedPhotoTime: order.prepared_photo_time || order.preparedPhotoTime || extra.preparedPhotoTime || "",
-        customerApprovalStatus,
-        courierId: extra.courierId || order.courier_id || "",
-        courierName: extra.courierName || order.courier_name || "",
-        deliveredAt: extra.deliveredAt || order.delivered_at || "",
-        deliveredPhoto,
-        deliveryNote,
-        updateRequest: extra.updateRequest || order.update_request || null
+        preparedPhoto: meta.preparedPhoto,
+        preparedPhotoTime: meta.preparedPhotoTime,
+        customerApprovalStatus: meta.customerApprovalStatus,
+        rejectionReason: meta.rejectionReason,
+        courierId: meta.courierId,
+        courierName: meta.courierName,
+        deliveredAt: meta.deliveredAt,
+        deliveredPhoto: meta.deliveredPhoto,
+        deliveryNote: meta.deliveryNote,
+        updateRequest: meta.updateRequest
       }, { headers: NO_CACHE_HEADERS });
     }
 
@@ -143,17 +193,16 @@ export async function GET(request: Request) {
     const nowMs = Date.now();
     const formatted = (orders || []).map((o: any) => {
       const extra = courierMap[o.id] || memoryCourierMap[o.id] || {};
+      const meta = parseOrderMeta(o, extra);
 
-      const preparedPhoto = o.prepared_photo || o.preparedPhoto || extra.preparedPhoto || "";
-      let customerApprovalStatus = o.customer_approval_status || o.customerApprovalStatus || extra.customerApprovalStatus || "Bekliyor";
-      const preparedPhotoTime = o.prepared_photo_time || o.preparedPhotoTime || extra.preparedPhotoTime;
+      let customerApprovalStatus = meta.customerApprovalStatus;
+      const preparedPhoto = meta.preparedPhoto;
+      const preparedPhotoTime = meta.preparedPhotoTime;
+      let currentStatus = o.status || extra.status || "Yeni Sipariş";
 
       // 15-Minute Auto-Approval Check Engine (Measured EXCLUSIVELY from photo upload time):
-      let currentStatus = o.status || extra.status || "Yeni Sipariş";
-      const photoTimeStr = preparedPhotoTime;
-
-      if (preparedPhoto && photoTimeStr && (customerApprovalStatus === "Bekliyor" || !customerApprovalStatus)) {
-        const photoTimeMs = new Date(photoTimeStr).getTime();
+      if (preparedPhoto && preparedPhotoTime && (customerApprovalStatus === "Bekliyor" || !customerApprovalStatus)) {
+        const photoTimeMs = new Date(preparedPhotoTime).getTime();
         if (!isNaN(photoTimeMs) && photoTimeMs > 0) {
           const photoAgeMs = nowMs - photoTimeMs;
           if (photoAgeMs >= 15 * 60 * 1000) {
@@ -161,12 +210,6 @@ export async function GET(request: Request) {
             if (currentStatus === "Fotoğraflı Onay Bekliyor") {
               currentStatus = "Hazırlanıyor / Onaylandı";
             }
-            // Auto persist to memory/courierMap
-            courierMap[o.id] = {
-              ...(courierMap[o.id] || {}),
-              customerApprovalStatus,
-              status: currentStatus
-            };
           }
         }
       }
@@ -176,8 +219,8 @@ export async function GET(request: Request) {
         currentStatus = "Hazırlanıyor / Onaylandı";
       }
 
-      const status = (extra.status === "Teslim Edildi" || extra.status === "Kuryede / Dağıtımda")
-        ? extra.status
+      const status = (meta.deliveredAt || extra.status === "Teslim Edildi" || extra.status === "Kuryede / Dağıtımda")
+        ? (extra.status || currentStatus)
         : currentStatus;
 
       return {
@@ -202,14 +245,13 @@ export async function GET(request: Request) {
         preparedPhoto,
         preparedPhotoTime,
         customerApprovalStatus,
-        rejectionCount: extra.rejectionCount !== undefined ? extra.rejectionCount : (o.rejection_count || 0),
-        rejectionReason: extra.rejectionReason || o.rejection_reason || "",
-        courierId: extra.courierId || o.courier_id || "",
-        courierName: extra.courierName || o.courier_name || "",
-        deliveredAt: extra.deliveredAt || o.delivered_at || "",
-        deliveredPhoto: extra.deliveredPhoto || o.delivered_photo || "",
-        deliveryNote: extra.deliveryNote || o.delivery_note || "",
-        updateRequest: extra.updateRequest || o.update_request || null
+        rejectionReason: meta.rejectionReason,
+        courierId: meta.courierId,
+        courierName: meta.courierName,
+        deliveredAt: meta.deliveredAt,
+        deliveredPhoto: meta.deliveredPhoto,
+        deliveryNote: meta.deliveryNote,
+        updateRequest: meta.updateRequest
       };
     });
 
@@ -282,7 +324,6 @@ export async function PUT(request: Request) {
       preparedPhoto,
       preparedPhotoTime,
       customerApprovalStatus,
-      rejectionCount,
       rejectionReason,
       courierId,
       courierName,
@@ -301,37 +342,47 @@ export async function PUT(request: Request) {
       return NextResponse.json({ error: "Sipariş ID gereklidir." }, { status: 400 });
     }
 
-    const updatePayload: any = {};
+    const courierMap = await getOrderCouriersMap();
+    const { data: existingOrder } = await supabase.from("orders").select("*").eq("id", id).single();
+    const existingMeta = parseOrderMeta(existingOrder || {}, courierMap[id] || {});
+
     const nowIso = new Date().toISOString();
     let finalPreparedPhotoTime = preparedPhotoTime;
     if ((status === "Fotoğraflı Onay Bekliyor" || preparedPhoto) && !finalPreparedPhotoTime) {
-      finalPreparedPhotoTime = nowIso;
+      finalPreparedPhotoTime = existingMeta.preparedPhotoTime || nowIso;
     }
+
+    const updatedMetaObj: any = {
+      status: customerApprovalStatus !== undefined ? customerApprovalStatus : existingMeta.customerApprovalStatus,
+      photoTime: finalPreparedPhotoTime !== undefined ? finalPreparedPhotoTime : existingMeta.preparedPhotoTime,
+      courierId: courierId !== undefined ? courierId : existingMeta.courierId,
+      courierName: courierName !== undefined ? courierName : existingMeta.courierName,
+      deliveredAt: deliveredAt !== undefined ? deliveredAt : existingMeta.deliveredAt,
+      deliveredPhoto: deliveredPhoto !== undefined ? deliveredPhoto : existingMeta.deliveredPhoto,
+      deliveryNote: deliveryNote !== undefined ? deliveryNote : existingMeta.deliveryNote,
+      rejectionReason: rejectionReason !== undefined ? rejectionReason : existingMeta.rejectionReason,
+      updateRequest: updateRequest !== undefined ? updateRequest : existingMeta.updateRequest
+    };
+
+    const updatePayload: any = {
+      customer_approval_status: JSON.stringify(updatedMetaObj)
+    };
 
     if (status !== undefined) updatePayload.status = status;
     if (preparedPhoto !== undefined) updatePayload.prepared_photo = preparedPhoto;
-    if (customerApprovalStatus !== undefined) updatePayload.customer_approval_status = customerApprovalStatus;
-    if (finalPreparedPhotoTime) updatePayload.prepared_photo_time = finalPreparedPhotoTime;
-    if (courierId !== undefined) updatePayload.courier_id = courierId;
-    if (courierName !== undefined) updatePayload.courier_name = courierName;
-    if (deliveredAt !== undefined) updatePayload.delivered_at = deliveredAt;
-    if (deliveredPhoto !== undefined) updatePayload.delivered_photo = deliveredPhoto;
-    if (deliveryNote !== undefined) updatePayload.delivery_note = deliveryNote;
     if (recipientName !== undefined) updatePayload.recipient_name = recipientName;
     if (recipientPhone !== undefined) updatePayload.recipient_phone = recipientPhone;
     if (address !== undefined) updatePayload.address = address;
     if (deliveryDate !== undefined) updatePayload.delivery_date = deliveryDate;
     if (deliveryTime !== undefined) updatePayload.delivery_time = deliveryTime;
 
-    if (Object.keys(updatePayload).length > 0) {
-      try {
-        await supabase.from("orders").update(updatePayload).eq("id", id);
-      } catch (dbErr) {
-        console.error("Orders table update error:", dbErr);
-      }
+    // DIRECT SUPABASE ORDERS TABLE UPDATE (Only using valid columns)
+    const { error: dbError } = await supabase.from("orders").update(updatePayload).eq("id", id);
+    if (dbError) {
+      console.error("Supabase orders table update error:", dbError);
     }
 
-    const courierMap = await getOrderCouriersMap();
+    // Backup update to courierMap memory
     courierMap[id] = {
       ...(courierMap[id] || {}),
       ...(courierId !== undefined ? { courierId } : {}),
@@ -342,17 +393,10 @@ export async function PUT(request: Request) {
       ...(preparedPhoto !== undefined ? { preparedPhoto } : {}),
       ...(finalPreparedPhotoTime ? { preparedPhotoTime: finalPreparedPhotoTime } : {}),
       ...(customerApprovalStatus !== undefined ? { customerApprovalStatus } : {}),
-      ...(rejectionCount !== undefined ? { rejectionCount } : {}),
       ...(rejectionReason !== undefined ? { rejectionReason } : {}),
       ...(updateRequest !== undefined ? { updateRequest } : {}),
-      ...(recipientName !== undefined ? { recipientName } : {}),
-      ...(recipientPhone !== undefined ? { recipientPhone } : {}),
-      ...(address !== undefined ? { address } : {}),
-      ...(deliveryDate !== undefined ? { deliveryDate } : {}),
-      ...(deliveryTime !== undefined ? { deliveryTime } : {}),
       ...(status !== undefined ? { status } : {})
     };
-
     await saveOrderCouriersMap(courierMap);
 
     return NextResponse.json({ success: true, id, order: courierMap[id] });

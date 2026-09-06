@@ -130,6 +130,72 @@ function isOrderOverdue(deliveryDate?: string, deliveryTime?: string, status?: s
   return false;
 }
 
+function getDeliveryPunctuality(
+  deliveredAt?: string,
+  deliveryDate?: string,
+  deliveryTime?: string
+): { isOnTime: boolean; text: string } {
+  const targetDateIso = normalizeDateStr(deliveryDate);
+  if (!targetDateIso) {
+    return { isOnTime: true, text: "✅ Zamanında Teslim Edildi" };
+  }
+
+  let delivDateIso = "";
+  let delivHour: number | null = null;
+  let delivMin: number | null = null;
+
+  if (deliveredAt) {
+    const raw = String(deliveredAt).trim();
+    if (raw.includes("T")) {
+      const parts = raw.split("T");
+      delivDateIso = normalizeDateStr(parts[0]);
+      if (parts[1]) {
+        const timeParts = parts[1].split(".")[0].split(":");
+        if (timeParts.length >= 2) {
+          delivHour = parseInt(timeParts[0], 10);
+          delivMin = parseInt(timeParts[1], 10);
+        }
+      }
+    } else {
+      const tokens = raw.split(/[\s,]+/);
+      if (tokens.length >= 1) {
+        delivDateIso = normalizeDateStr(tokens[0]);
+      }
+      if (tokens.length >= 2) {
+        const timeParts = tokens[1].split(":");
+        if (timeParts.length >= 2) {
+          delivHour = parseInt(timeParts[0], 10);
+          delivMin = parseInt(timeParts[1], 10);
+        }
+      }
+    }
+  }
+
+  if (!delivDateIso) {
+    delivDateIso = targetDateIso;
+  }
+
+  if (delivDateIso > targetDateIso) {
+    return { isOnTime: false, text: "⚠️ Gecikmeli Teslim Edildi" };
+  }
+  if (delivDateIso < targetDateIso) {
+    return { isOnTime: true, text: "✅ Zamanında Teslim Edildi" };
+  }
+
+  if (delivHour !== null && delivMin !== null && deliveryTime) {
+    const matches = deliveryTime.match(/(\d{1,2})[:.](\d{2})\s*[-–]\s*(\d{1,2})[:.](\d{2})/);
+    if (matches && matches[3]) {
+      const endHour = parseInt(matches[3], 10);
+      const endMinute = parseInt(matches[4], 10);
+      if (delivHour > endHour || (delivHour === endHour && delivMin > endMinute)) {
+        return { isOnTime: false, text: "⚠️ Gecikmeli Teslim Edildi" };
+      }
+    }
+  }
+
+  return { isOnTime: true, text: "✅ Zamanında Teslim Edildi" };
+}
+
 export default function CourierPortalPage() {
   const [couriers, setCouriers] = useState<Courier[]>([]);
   const [selectedCourier, setSelectedCourier] = useState<Courier | null>(null);
@@ -263,6 +329,12 @@ export default function CourierPortalPage() {
   // Final Submit Delivery Action
   const handleSubmitDelivery = async () => {
     if (!deliveringOrder) return;
+
+    if (!previewPhotoUrl && !deliveringOrder.deliveredPhoto) {
+      alert("⚠️ Teslimatı tamamlamak için kapıda teslimat fotoğrafı yüklemeniz zorunludur!");
+      return;
+    }
+
     setSubmittingDelivery(true);
 
     // FIX: Delivered photo must NOT fallback to prepared approval photo!
@@ -581,27 +653,44 @@ export default function CourierPortalPage() {
                   </div>
 
                   {/* ACTION BUTTON: COMPLETE DELIVERY / VIEW PROOF */}
-                  {order.status === "Teslim Edildi" ? (
-                    <div className="pt-1">
-                      {order.deliveredPhoto ? (
-                        <div className="flex items-center gap-3 p-2 bg-emerald-50 rounded-2xl border border-emerald-200">
-                          <img
-                            src={order.deliveredPhoto}
-                            alt="Teslimat Fotoğrafı"
-                            className="w-12 h-12 rounded-xl object-cover border"
-                          />
-                          <div className="text-xs">
-                            <div className="font-extrabold text-emerald-800">✓ Teslimat Kanıtı Yüklendi</div>
-                            <div className="text-[10px] text-slate-500">{order.deliveredAt}</div>
+                  {order.status === "Teslim Edildi" ? (() => {
+                    const punctuality = getDeliveryPunctuality(
+                      order.deliveredAt,
+                      order.deliveryDate || (order as any).date,
+                      order.deliveryTime
+                    );
+                    return (
+                      <div className="pt-1 space-y-2">
+                        <div
+                          className={`px-3 py-1.5 rounded-xl text-xs font-black flex items-center justify-between border ${
+                            punctuality.isOnTime
+                              ? "bg-emerald-50 border-emerald-300 text-emerald-900"
+                              : "bg-amber-50 border-amber-300 text-amber-900"
+                          }`}
+                        >
+                          <span>Teslimat Durumu:</span>
+                          <span>{punctuality.text}</span>
+                        </div>
+                        {order.deliveredPhoto ? (
+                          <div className="flex items-center gap-3 p-2 bg-emerald-50 rounded-2xl border border-emerald-200">
+                            <img
+                              src={order.deliveredPhoto}
+                              alt="Teslimat Fotoğrafı"
+                              className="w-12 h-12 rounded-xl object-cover border"
+                            />
+                            <div className="text-xs">
+                              <div className="font-extrabold text-emerald-800">✓ Teslimat Kanıtı Yüklendi</div>
+                              <div className="text-[10px] text-slate-500">{order.deliveredAt}</div>
+                            </div>
                           </div>
-                        </div>
-                      ) : (
-                        <div className="text-center p-2 bg-emerald-50 rounded-2xl text-xs font-bold text-emerald-800">
-                          ✅ Teslimat Başarıyla Yapıldı ({order.deliveredAt || "Bugün"})
-                        </div>
-                      )}
-                    </div>
-                  ) : (
+                        ) : (
+                          <div className="text-center p-2 bg-emerald-50 rounded-2xl text-xs font-bold text-emerald-800">
+                            ✅ Teslimat Başarıyla Yapıldı ({order.deliveredAt || "Bugün"})
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })() : (
                     <div className="pt-2">
                       <button
                         type="button"
@@ -634,7 +723,7 @@ export default function CourierPortalPage() {
             <div>
               <h3 className="font-black text-slate-900 text-lg">Teslimatı Tamamla</h3>
               <p className="text-xs text-slate-500 mt-1">
-                <strong>{deliveringOrder.recipientName}</strong> adlı alıcıya teslim ettiğinizi onaylamak için teslimat notunu ve varsa kanıt fotoğrafını kaydediniz.
+                <strong>{deliveringOrder.recipientName}</strong> adlı alıcıya teslim ettiğinizi onaylamak için teslimat notunu ve <span className="text-red-600 font-extrabold">zorunlu kapı teslimat fotoğrafını</span> kaydediniz.
               </p>
             </div>
 
@@ -667,10 +756,16 @@ export default function CourierPortalPage() {
               )}
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Teslimat Kanıt Fotoğrafı:</label>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Teslimat Kanıt Fotoğrafı <span className="text-red-600 font-extrabold">* (Zorunlu)</span>:
+                </label>
                 <label
                   style={{ backgroundColor: "#FAF6F0", color: "#2b2623" }}
-                  className="w-full py-2.5 px-4 rounded-xl border border-slate-300 font-bold text-xs flex items-center justify-center gap-2 cursor-pointer shadow-2xs hover:bg-slate-100 transition"
+                  className={`w-full py-2.5 px-4 rounded-xl border font-bold text-xs flex items-center justify-center gap-2 cursor-pointer shadow-2xs hover:bg-slate-100 transition ${
+                    !previewPhotoUrl && !deliveringOrder.deliveredPhoto
+                      ? "border-amber-400 ring-2 ring-amber-400/40"
+                      : "border-slate-300"
+                  }`}
                 >
                   <span>📷 {uploadingPhoto ? "Yükleniyor..." : previewPhotoUrl ? "Fotoğrafı Değiştir" : "Kameradan Çek / Fotoğraf Seç"}</span>
                   <input
@@ -682,6 +777,11 @@ export default function CourierPortalPage() {
                     onChange={handlePhotoSelect}
                   />
                 </label>
+                {!previewPhotoUrl && !deliveringOrder.deliveredPhoto && (
+                  <p className="text-[11px] font-extrabold text-amber-700 mt-1 bg-amber-50 p-2 rounded-xl border border-amber-200 text-center">
+                    ⚠️ Teslimatı tamamlamak için fotoğraf çekmeniz şarttır.
+                  </p>
+                )}
               </div>
 
               {/* SUBMIT BUTTON */}

@@ -121,6 +121,72 @@ function isOrderOverdue(deliveryDate?: string, deliveryTime?: string, status?: s
   return false;
 }
 
+function getDeliveryPunctuality(
+  deliveredAt?: string,
+  deliveryDate?: string,
+  deliveryTime?: string
+): { isOnTime: boolean; text: string } {
+  const targetDateIso = normalizeDateStr(deliveryDate);
+  if (!targetDateIso) {
+    return { isOnTime: true, text: "✅ Zamanında Teslim Edildi" };
+  }
+
+  let delivDateIso = "";
+  let delivHour: number | null = null;
+  let delivMin: number | null = null;
+
+  if (deliveredAt) {
+    const raw = String(deliveredAt).trim();
+    if (raw.includes("T")) {
+      const parts = raw.split("T");
+      delivDateIso = normalizeDateStr(parts[0]);
+      if (parts[1]) {
+        const timeParts = parts[1].split(".")[0].split(":");
+        if (timeParts.length >= 2) {
+          delivHour = parseInt(timeParts[0], 10);
+          delivMin = parseInt(timeParts[1], 10);
+        }
+      }
+    } else {
+      const tokens = raw.split(/[\s,]+/);
+      if (tokens.length >= 1) {
+        delivDateIso = normalizeDateStr(tokens[0]);
+      }
+      if (tokens.length >= 2) {
+        const timeParts = tokens[1].split(":");
+        if (timeParts.length >= 2) {
+          delivHour = parseInt(timeParts[0], 10);
+          delivMin = parseInt(timeParts[1], 10);
+        }
+      }
+    }
+  }
+
+  if (!delivDateIso) {
+    delivDateIso = targetDateIso;
+  }
+
+  if (delivDateIso > targetDateIso) {
+    return { isOnTime: false, text: "⚠️ Gecikmeli Teslim Edildi" };
+  }
+  if (delivDateIso < targetDateIso) {
+    return { isOnTime: true, text: "✅ Zamanında Teslim Edildi" };
+  }
+
+  if (delivHour !== null && delivMin !== null && deliveryTime) {
+    const matches = deliveryTime.match(/(\d{1,2})[:.](\d{2})\s*[-–]\s*(\d{1,2})[:.](\d{2})/);
+    if (matches && matches[3]) {
+      const endHour = parseInt(matches[3], 10);
+      const endMinute = parseInt(matches[4], 10);
+      if (delivHour > endHour || (delivHour === endHour && delivMin > endMinute)) {
+        return { isOnTime: false, text: "⚠️ Gecikmeli Teslim Edildi" };
+      }
+    }
+  }
+
+  return { isOnTime: true, text: "✅ Zamanında Teslim Edildi" };
+}
+
 export default function AdminOrdersPage() {
   const [orders, setOrders] = useState<any[]>([]);
   const [couriers, setCouriers] = useState<any[]>([]);
@@ -972,12 +1038,30 @@ export default function AdminOrdersPage() {
                           )}
 
                           {/* CASE 4: TESLİM EDİLDİ */}
-                          {canonicalStatus === "Teslim Edildi" && (
-                            <div className="p-2 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-black flex items-center justify-center gap-1.5">
-                              <span>✅</span>
-                              <span>Teslim Edildi</span>
-                            </div>
-                          )}
+                          {canonicalStatus === "Teslim Edildi" && (() => {
+                            const punctuality = getDeliveryPunctuality(
+                              o.deliveredAt,
+                              o.deliveryDate || o.delivery_date || o.date,
+                              o.deliveryTime || o.delivery_time
+                            );
+                            return (
+                              <div className="space-y-1">
+                                <div className="p-2 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-black flex items-center justify-center gap-1.5">
+                                  <span>✅</span>
+                                  <span>Teslim Edildi</span>
+                                </div>
+                                <div
+                                  className={`text-[10px] font-black px-2 py-0.5 rounded-full border flex items-center justify-center gap-1 ${
+                                    punctuality.isOnTime
+                                      ? "bg-emerald-100 border-emerald-300 text-emerald-900"
+                                      : "bg-amber-100 border-amber-300 text-amber-900"
+                                  }`}
+                                >
+                                  <span>{punctuality.text}</span>
+                                </div>
+                              </div>
+                            );
+                          })()}
 
                           {/* CASE 5: İPTAL */}
                           {canonicalStatus === "İptal" && (

@@ -18,11 +18,42 @@
   }
 }
 
-/* Scoped Dynamic Product Catalog Grid Utilities */
+/* Explicit Hero Layout Grid (Slider + 4 Promo Cards) */
+.hero-layout-grid {
+  display: grid;
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+  gap: 1rem;
+}
+@media (min-width: 768px) {
+  .hero-layout-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* 4 Promo Cards Grid (2x2) */
+.promo-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+/* 3 Horizontal Banners Grid */
+.banner-trio-grid {
+  display: grid;
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+  gap: 1rem;
+}
+@media (min-width: 768px) {
+  .banner-trio-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* Dynamic Product Catalog Grid Utilities */
 .product-catalog-grid.cols-mob-1 { grid-template-columns: repeat(1, minmax(0, 1fr)); }
 .product-catalog-grid.cols-mob-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 
-@media (min-width: 1024px) {
+@media (min-width: 640px) {
   .product-catalog-grid.cols-desk-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .product-catalog-grid.cols-desk-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
   .product-catalog-grid.cols-desk-5 { grid-template-columns: repeat(5, minmax(0, 1fr)); }

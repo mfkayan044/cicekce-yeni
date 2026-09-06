@@ -184,7 +184,7 @@ export default function CustomerHomePage() {
 
         {/* Hero Grid Section with Dynamic 4-Slide Slider */}
         <section className="mb-8">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="hero-layout-grid">
               {/* Left Big Carousel Slider */}
               <div className="relative rounded-2xl overflow-hidden min-h-[380px] bg-slate-900 border border-slate-200 shadow-sm flex flex-col items-center justify-between p-6 text-center group">
                 {currentSlide?.discountBadge && (
@@ -258,7 +258,7 @@ export default function CustomerHomePage() {
               </div>
 
               {/* Right 4 Promo Cards */}
-              <div className="grid grid-cols-2 grid-rows-2 gap-4">
+              <div className="promo-cards-grid">
                 {promoCards.map((promo: any, idx: number) => (
                   <a
                     key={idx}
@@ -279,7 +279,7 @@ export default function CustomerHomePage() {
         </section>
 
         {/* 3 Horizontal Banners */}
-        <section className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-10">
+        <section className="banner-trio-grid mb-10">
           {horizontalBanners.map((banner: any, idx: number) => (
             <a
               key={idx}

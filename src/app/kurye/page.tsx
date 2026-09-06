@@ -196,6 +196,43 @@ function getDeliveryPunctuality(
   return { isOnTime: true, text: "✅ Zamanında Teslim Edildi" };
 }
 
+function isOrderReadyForCourier(o: Order): boolean {
+  if (!o) return false;
+  const status = String(o.status || "").trim();
+  const lowerStatus = status.toLowerCase();
+
+  // Cancelled orders are never ready
+  if (lowerStatus.includes("iptal")) return false;
+
+  // 1. If a courier is explicitly assigned to this order, it is ready
+  if (o.courierId || o.courierName) return true;
+
+  // 2. If status explicitly indicates courier delivery or approval
+  if (
+    lowerStatus.includes("kurye") ||
+    lowerStatus.includes("dağıtım") ||
+    lowerStatus.includes("yolda") ||
+    lowerStatus.includes("teslimat") ||
+    lowerStatus.includes("onaylandı")
+  ) {
+    return true;
+  }
+
+  // 3. Check customer approval status (Customer approved or 15-min auto approved)
+  const appStatus = String((o as any).customerApprovalStatus || "").toLowerCase();
+  if (
+    appStatus.includes("onaylandı") ||
+    appStatus.includes("sistem") ||
+    appStatus.includes("otomatik") ||
+    appStatus.includes("müşteri")
+  ) {
+    return true;
+  }
+
+  // Otherwise (e.g. "Yeni Sipariş", "Hazırlanıyor", "Fotoğraflı Onay Bekliyor" without approval), it is NOT ready for courier!
+  return false;
+}
+
 export default function CourierPortalPage() {
   const [couriers, setCouriers] = useState<Courier[]>([]);
   const [selectedCourier, setSelectedCourier] = useState<Courier | null>(null);
@@ -295,7 +332,11 @@ export default function CourierPortalPage() {
   });
 
   const activeDeliveries = courierOrders.filter(
-    (o) => o.status !== "Teslim Edildi" && o.status !== "İptal" && o.status !== "İptal Edildi"
+    (o) =>
+      o.status !== "Teslim Edildi" &&
+      o.status !== "İptal" &&
+      o.status !== "İptal Edildi" &&
+      isOrderReadyForCourier(o)
   );
   const completedDeliveries = courierOrders.filter((o) => o.status === "Teslim Edildi");
 

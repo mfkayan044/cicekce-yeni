@@ -174,13 +174,10 @@ export default function StoreHeader({ onOpenAssistant }: { onOpenAssistant?: () 
 <svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z" /></svg>
 <span className="fav-count absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[10px] font-bold min-w-[18px] h-[18px] px-1 rounded-full flex items-center justify-center">0</span>
 </button>
-<button id="cartBtn" aria-label="Sepet" className="shrink-0 relative flex items-center justify-center w-8 h-8 lg:w-11 lg:h-11 border border-slate-200 hover:border-brand text-slate-700 hover:text-brand rounded-lg transition">
+<Link href="/sepet" id="cartBtn" aria-label="Sepet" className="shrink-0 relative flex items-center justify-center w-8 h-8 lg:w-11 lg:h-11 border border-slate-200 hover:border-brand text-slate-700 hover:text-brand rounded-lg transition">
 <svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="9" cy="21" r="1" /><circle cx="20" cy="21" r="1" /><path d="M1 1h4l2.7 13.4a2 2 0 0 0 2 1.6h9.7a2 2 0 0 0 2-1.6L23 6H6" /></svg>
 <span className="cart-count absolute -top-1.5 -right-1.5 bg-brand text-white text-[10px] font-bold min-w-[18px] h-[18px] px-1 rounded-full flex items-center justify-center">0</span>
-</button>
-<button id="langBtn" aria-label="Dil seçimi" className="hidden lg:flex shrink-0 items-center justify-center w-8 h-8 lg:w-11 lg:h-11 border border-slate-200 hover:border-brand rounded-lg transition">
-<span className="lang-flag block w-7 h-6 rounded-[20%] overflow-hidden shadow-sm"></span>
-</button>
+</Link>
 <button id="menuOpen" aria-label="Menü" className="lg:hidden shrink-0 flex items-center justify-center w-8 h-8 lg:w-11 lg:h-11 border border-slate-200 hover:border-brand text-slate-700 rounded-lg transition">
 <svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" /></svg>
 </button>
@@ -201,36 +198,6 @@ export default function StoreHeader({ onOpenAssistant }: { onOpenAssistant?: () 
     </li>
   ))}
 </ul>
-<div className="ml-auto hidden lg:flex items-center">
-<div id="navSearch" className="h-[37px] flex items-center border border-slate-200 rounded-lg overflow-hidden focus-within:border-brand transition">
-<input type="text" placeholder="" className="search-tw px-4 py-1.5 text-sm text-slate-600 placeholder-slate-400 outline-none min-w-0" />
-<button className="bg-brand hover:bg-blue-700 text-white w-10 h-full flex items-center justify-center transition shrink-0">
-<svg width={17} height={17} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><circle cx="11" cy="11" r="7" /><line x1="21" y1="21" x2="16.5" y2="16.5" /></svg>
-</button>
-</div>
-<div id="navExtras" className="flex items-center gap-2">
-<button type="button" className="aio-open aio-nav-btn" aria-label="Sipariş Asistanı" onClick={onOpenAssistant} title="Sipariş Asistanı">
-<svg className="aio-ico" width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-<path d="M3 11h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H4a1 1 0 0 1-1-1v-5a9 9 0 0 1 18 0v5a1 1 0 0 1-1 1h-2a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3" />
-<path d="M21 16v2a4 4 0 0 1-4 4h-5" />
-</svg>
-</button>
-<button id="loginBtnNav" aria-label="Üye Girişi" className="shrink-0 flex items-center justify-center w-9 h-9 border border-slate-200 hover:border-brand text-slate-700 hover:text-brand rounded-lg transition">
-<svg width={19} height={19} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
-</button>
-<button id="langBtnNav" aria-label="Dil" className="shrink-0 flex items-center justify-center w-9 h-9 border border-slate-200 hover:border-brand rounded-lg transition">
-<span className="lang-flag block w-6 h-5 rounded-[20%] overflow-hidden shadow-sm"></span>
-</button>
-<button id="favBtnNav" aria-label="Favoriler" className="shrink-0 relative flex items-center justify-center w-9 h-9 border border-slate-200 hover:border-brand text-slate-700 hover:text-red-500 rounded-lg transition">
-<svg width={19} height={19} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z" /></svg>
-<span className="fav-count absolute top-[9px] -right-1.5 bg-red-500 text-white text-[9px] font-bold min-w-[16px] h-[16px] px-1 rounded-full flex items-center justify-center leading-none">0</span>
-</button>
-<button id="cartBtnNav" aria-label="Sepet" className="shrink-0 relative flex items-center justify-center w-9 h-9 border border-slate-200 hover:border-brand text-slate-700 hover:text-brand rounded-lg transition">
-<svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="9" cy="21" r="1" /><circle cx="20" cy="21" r="1" /><path d="M1 1h4l2.7 13.4a2 2 0 0 0 2 1.6h9.7a2 2 0 0 0 2-1.6L23 6H6" /></svg>
-<span className="cart-count absolute top-[9px] -right-1.5 bg-brand text-white text-[9px] font-bold min-w-[16px] h-[16px] px-1 rounded-full flex items-center justify-center leading-none">0</span>
-</button>
-</div>
-</div>
 </div>
 </nav>
     </>

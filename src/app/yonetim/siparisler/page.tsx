@@ -866,7 +866,8 @@ export default function AdminOrdersPage() {
                     const itemTitle = firstItem?.title || firstItem?.product?.title || "Özel Çiçek Aranjmanı";
                     const itemImage = firstItem?.image || firstItem?.product?.image || "https://demo.procicek.com.tr/urunler/35-kirmizi-gul-buketi-13981-v2.webp";
 
-                    const approvalLink = `http://localhost:3000/siparis-onay/${o.id}`;
+                    const origin = typeof window !== "undefined" ? window.location.origin : "https://cicekce-yeni-two.vercel.app";
+                    const approvalLink = `${origin}/siparis-onay/${o.id}`;
                     const waMessage = `Merhaba Sayın ${o.customerName || "Müşterimiz"}, Çiçekçe'den sipariş ettiğiniz çiçeğiniz özenle hazırlandı! 🌸 Hazırlanan çiçeğinizin fotoğrafını incelemek ve onaylamak için tıklayın: ${approvalLink}`;
                     const waUrl = `https://wa.me/${(o.customerPhone || "").replace(/[^0-9]/g, "")}?text=${encodeURIComponent(waMessage)}`;
 

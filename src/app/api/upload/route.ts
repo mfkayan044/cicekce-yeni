@@ -101,16 +101,13 @@ export async function POST(req: Request) {
       console.warn("Supabase Storage bucket notice:", supErr);
     }
 
-    // 2. LOCAL & SERVERLESS FALLBACK
-    ensureUploadsDir();
-    const localFilePath = path.join(uploadsDir, uniqueFileName);
-    fs.writeFileSync(localFilePath, fileBuffer);
-    const localUrl = `/uploads/${uniqueFileName}`;
+    // 2. SERVERLESS DATA URL FALLBACK (Guarantees image renders 100% reliably everywhere on Vercel)
+    const base64DataUrl = `data:${mimeType};base64,${fileBuffer.toString("base64")}`;
 
     return NextResponse.json({
-      url: localUrl,
+      url: base64DataUrl,
       name: uniqueFileName,
-      storage: "local-persistent",
+      storage: "base64-data-url",
     });
 
   } catch (error: any) {

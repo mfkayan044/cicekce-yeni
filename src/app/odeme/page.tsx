@@ -140,7 +140,7 @@ export default function CheckoutPage() {
   const [couponError, setCouponError] = useState("");
   const [couponSuccess, setCouponSuccess] = useState("");
 
-  const handleApplyCoupon = (e: React.FormEvent) => {
+  const handleApplyCoupon = async (e: React.FormEvent) => {
     e.preventDefault();
     setCouponError("");
     setCouponSuccess("");
@@ -150,12 +150,42 @@ export default function CheckoutPage() {
       return;
     }
 
-    // Calculate 10% or 20% discount based on coupon code
     const totalBefore = (mainCartTotal || 2510) + (addonsTotal || 0);
+
+    try {
+      const res = await fetch(`/api/coupons?code=${encodeURIComponent(codeClean)}`);
+      if (res.ok) {
+        const coupon = await res.json();
+        if (coupon && coupon.active !== false) {
+          const minCartVal = parseFloat(String(coupon.minCart || "").replace(/[^0-9.]/g, "")) || 0;
+          if (minCartVal > 0 && totalBefore < minCartVal) {
+            setCouponError(`Bu kupon minimum ${minCartVal} ₺ sepet tutarında geçerlidir.`);
+            return;
+          }
+
+          const discStr = String(coupon.discount || "").trim();
+          let disc = 0;
+          if (discStr.includes("%")) {
+            const pct = parseFloat(discStr.replace(/[^0-9.]/g, "")) || 10;
+            disc = Math.round(totalBefore * (pct / 100));
+          } else {
+            disc = parseFloat(discStr.replace(/[^0-9.]/g, "")) || 100;
+          }
+
+          disc = Math.min(disc, totalBefore);
+          setDiscountAmount(disc);
+          setAppliedCouponName(`${coupon.code} (${coupon.discount} İndirim)`);
+          setCouponSuccess(`'${disc} ₺' tutarında indirim uygulandı!`);
+          return;
+        }
+      }
+    } catch (err) {}
+
+    // Fallbacks for default codes
     if (codeClean === "HOSGELDIN100" || codeClean === "HOSGELDIN") {
-      const disc = Math.round(totalBefore * 0.10);
+      const disc = 100;
       setDiscountAmount(disc);
-      setAppliedCouponName(`${codeClean} (%10 İndirim)`);
+      setAppliedCouponName(`${codeClean} (100 ₺ İndirim)`);
       setCouponSuccess(`'${disc} ₺' tutarında indirim uygulandı!`);
     } else if (codeClean === "CICEK20" || codeClean === "SEVGILILER20") {
       const disc = Math.round(totalBefore * 0.20);
@@ -163,10 +193,7 @@ export default function CheckoutPage() {
       setAppliedCouponName(`${codeClean} (%20 İndirim)`);
       setCouponSuccess(`'${disc} ₺' tutarında indirim uygulandı!`);
     } else {
-      const disc = Math.round(totalBefore * 0.10);
-      setDiscountAmount(disc);
-      setAppliedCouponName(`${codeClean} (%10 İndirim)`);
-      setCouponSuccess(`'${codeClean}' kuponu aktif edildi!`);
+      setCouponError("Girdiğiniz kupon kodu geçersiz veya süresi dolmuş.");
     }
   };
 

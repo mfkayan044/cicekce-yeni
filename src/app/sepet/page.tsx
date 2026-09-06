@@ -11,11 +11,34 @@ export default function CartPage() {
   const [couponInput, setCouponInput] = useState("");
   const [couponMsg, setCouponMsg] = useState("");
 
-  const handleApplyCoupon = (e: React.FormEvent) => {
+  const handleApplyCoupon = async (e: React.FormEvent) => {
     e.preventDefault();
-    const success = applyCoupon(couponInput);
-    if (success) setCouponMsg("HOSGELDIN100 İndirim Kuponu Uygulandı (-100 ₺)!");
-    else setCouponMsg("Geçersiz kupon kodu!");
+    const codeClean = couponInput.trim().toUpperCase();
+    if (!codeClean) return;
+
+    try {
+      const res = await fetch(`/api/coupons?code=${encodeURIComponent(codeClean)}`);
+      if (res.ok) {
+        const coupon = await res.json();
+        if (coupon && coupon.active !== false) {
+          const discStr = String(coupon.discount || "").trim();
+          let disc = 0;
+          if (discStr.includes("%")) {
+            const pct = parseFloat(discStr.replace(/[^0-9.]/g, "")) || 10;
+            disc = Math.round(itemsPrice * (pct / 100));
+          } else {
+            disc = parseFloat(discStr.replace(/[^0-9.]/g, "")) || 100;
+          }
+          applyCoupon(coupon.code, disc);
+          setCouponMsg(`'${coupon.code}' Kuponu Uygulandı (-${disc} ₺)!`);
+          return;
+        }
+      }
+    } catch (err) {}
+
+    const success = applyCoupon(codeClean);
+    if (success) setCouponMsg(`'${codeClean}' İndirim Kuponu Uygulandı (-100 ₺)!`);
+    else setCouponMsg("Geçersiz veya pasif kupon kodu!");
   };
 
   const curatedExtras: ExtraGift[] = [

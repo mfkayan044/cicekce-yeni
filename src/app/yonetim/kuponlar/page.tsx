@@ -16,16 +16,27 @@ export default function KuponlarPage() {
   const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [editingCoupon, setEditingCoupon] = useState<Coupon | null>(null);
+
   const [code, setCode] = useState("");
   const [discount, setDiscount] = useState("");
   const [minCart, setMinCart] = useState("500 ₺");
+  const [active, setActive] = useState(true);
   const [toastMsg, setToastMsg] = useState("");
 
   const fetchCoupons = async () => {
     try {
       const res = await fetch("/api/coupons");
       if (res.ok) {
-        const data = await res.json();
+        let data = await res.json();
+        if (!Array.isArray(data) || data.length === 0) {
+          // Default initial coupons if none exist in DB
+          data = [
+            { id: "1", code: "HOSGELDIN100", discount: "100 ₺", minCart: "500 ₺", usage: "12 / 100", active: true },
+            { id: "2", code: "CICEK20", discount: "%20", minCart: "1.000 ₺", usage: "45 / 200", active: true },
+            { id: "3", code: "BAHAR10", discount: "%10", minCart: "400 ₺", usage: "8 / 50", active: true },
+          ];
+        }
         setCoupons(data);
       }
     } catch (e) {
@@ -38,30 +49,69 @@ export default function KuponlarPage() {
     fetchCoupons();
   }, []);
 
-  const handleAdd = async (e: React.FormEvent) => {
+  const openAddModal = () => {
+    setEditingCoupon(null);
+    setCode("");
+    setDiscount("100 ₺");
+    setMinCart("500 ₺");
+    setActive(true);
+    setShowModal(true);
+  };
+
+  const openEditModal = (coupon: Coupon) => {
+    setEditingCoupon(coupon);
+    setCode(coupon.code);
+    setDiscount(coupon.discount);
+    setMinCart(coupon.minCart || "500 ₺");
+    setActive(coupon.active !== false);
+    setShowModal(true);
+  };
+
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!code) return;
 
+    const payload = {
+      id: editingCoupon ? editingCoupon.id : String(Date.now()),
+      code: code.toUpperCase().trim(),
+      discount: discount || "100 ₺",
+      minCart: minCart || "500 ₺",
+      usage: editingCoupon ? editingCoupon.usage : "0 / 100",
+      active,
+    };
+
     try {
       const res = await fetch("/api/coupons", {
-        method: "POST",
+        method: editingCoupon ? "PUT" : "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          code: code.toUpperCase().trim(),
-          discount: discount || "100 ₺",
-          minCart,
-          usage: "0 / 100",
-          active: true,
-        }),
+        body: JSON.stringify(payload),
       });
 
       if (res.ok) {
-        setToastMsg("Yeni indirim kuponu başarıyla oluşturuldu ve alışverişe açıldı!");
-        setCode("");
-        setDiscount("");
+        setToastMsg(
+          editingCoupon
+            ? `'${payload.code}' kuponu başarıyla güncellendi!`
+            : "Yeni indirim kuponu başarıyla oluşturuldu ve kullanıma açıldı!"
+        );
         setShowModal(false);
         fetchCoupons();
         setTimeout(() => setToastMsg(""), 3500);
+      }
+    } catch (e) {}
+  };
+
+  const handleToggleActive = async (coupon: Coupon) => {
+    const updated = { ...coupon, active: !coupon.active };
+    try {
+      const res = await fetch("/api/coupons", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updated),
+      });
+      if (res.ok) {
+        setCoupons(coupons.map((c) => (c.id === coupon.id ? updated : c)));
+        setToastMsg(`Kupon ${updated.active ? "aktif" : "pasif"} duruma getirildi.`);
+        setTimeout(() => setToastMsg(""), 2500);
       }
     } catch (e) {}
   };
@@ -89,9 +139,9 @@ export default function KuponlarPage() {
             </p>
           </div>
           <button
-            onClick={() => setShowModal(true)}
+            onClick={openAddModal}
             style={{ backgroundColor: "#2b2623", color: "#ffffff" }}
-            className="font-bold rounded-xl text-xs px-4 py-2.5 flex items-center gap-2 shadow-sm hover:opacity-95 transition"
+            className="font-bold rounded-xl text-xs px-4 py-2.5 flex items-center gap-2 shadow-sm hover:opacity-95 transition cursor-pointer"
           >
             <span>➕ Yeni Kupon Oluştur</span>
           </button>
@@ -113,7 +163,7 @@ export default function KuponlarPage() {
                   <th className="px-4 py-3">Min. Sepet Tutarı</th>
                   <th className="px-4 py-3">Kullanım Adedi</th>
                   <th className="px-4 py-3">Durum</th>
-                  <th style={{ width: "120px" }} className="px-4 py-3 text-end">İşlem</th>
+                  <th style={{ width: "180px" }} className="px-4 py-3 text-end">İşlemler</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -141,17 +191,35 @@ export default function KuponlarPage() {
                       <td className="px-4 py-3 text-slate-600 font-medium">{c.minCart}</td>
                       <td className="px-4 py-3 text-xs font-bold text-slate-500">{c.usage}</td>
                       <td className="px-4 py-3">
-                        <span className="badge bg-emerald-100 text-[#1a1918] border border-emerald-300 px-2.5 py-1 rounded-full text-xs font-bold">
-                          Aktif
-                        </span>
+                        <button
+                          type="button"
+                          onClick={() => handleToggleActive(c)}
+                          className={`badge border px-2.5 py-1 rounded-full text-xs font-bold cursor-pointer transition ${
+                            c.active !== false
+                              ? "bg-emerald-100 text-[#1a1918] border-emerald-300 hover:bg-emerald-200"
+                              : "bg-slate-100 text-slate-500 border-slate-300 hover:bg-slate-200"
+                          }`}
+                        >
+                          {c.active !== false ? "✓ Aktif" : "✕ Pasif"}
+                        </button>
                       </td>
                       <td className="px-4 py-3 text-end">
-                        <button
-                          onClick={() => handleDelete(c.id)}
-                          className="btn btn-sm btn-outline-danger rounded-lg text-xs px-2.5 py-1"
-                        >
-                          <span>🗑️ Sil</span>
-                        </button>
+                        <div className="flex items-center justify-end gap-1.5">
+                          <button
+                            onClick={() => openEditModal(c)}
+                            className="btn btn-sm btn-outline-primary rounded-lg text-xs px-2.5 py-1 flex items-center gap-1"
+                            title="Kuponu Düzenle"
+                          >
+                            <span>✏️ Düzenle</span>
+                          </button>
+                          <button
+                            onClick={() => handleDelete(c.id)}
+                            className="btn btn-sm btn-outline-danger rounded-lg text-xs px-2.5 py-1"
+                            title="Kuponu Sil"
+                          >
+                            <span>🗑️ Sil</span>
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))
@@ -165,15 +233,17 @@ export default function KuponlarPage() {
           <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 z-50">
             <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
               <div className="flex justify-between items-center border-b pb-3">
-                <h5 className="font-bold text-lg text-slate-800">Yeni İndirim Kuponu</h5>
+                <h5 className="font-bold text-lg text-slate-800">
+                  {editingCoupon ? "✏️ Kuponu Düzenle" : "➕ Yeni İndirim Kuponu"}
+                </h5>
                 <button
                   onClick={() => setShowModal(false)}
-                  className="w-8 h-8 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center font-bold"
+                  className="w-8 h-8 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center font-bold hover:bg-slate-200 transition cursor-pointer"
                 >
                   ✕
                 </button>
               </div>
-              <form onSubmit={handleAdd} className="space-y-4">
+              <form onSubmit={handleSave} className="space-y-4">
                 <div>
                   <label className="text-xs font-bold text-slate-700 block mb-1">Kupon Kodu *</label>
                   <input
@@ -181,7 +251,7 @@ export default function KuponlarPage() {
                     className="w-full p-3 border border-slate-200 rounded-xl text-sm font-bold uppercase outline-none focus:border-[#2b2623]"
                     value={code}
                     onChange={(e) => setCode(e.target.value)}
-                    placeholder="Örn: HEDIYE10 veya BAHAR20"
+                    placeholder="Örn: HOSGELDIN100 veya CICEK20"
                     required
                   />
                 </div>
@@ -193,20 +263,36 @@ export default function KuponlarPage() {
                     className="w-full p-3 border border-slate-200 rounded-xl text-sm font-semibold outline-none focus:border-[#2b2623]"
                     value={discount}
                     onChange={(e) => setDiscount(e.target.value)}
-                    placeholder="Örn: 150 ₺ veya %15"
+                    placeholder="Örn: 100 ₺ (Sabit) veya %10 (Yüzde)"
                     required
                   />
+                  <p className="text-[11px] text-slate-400 mt-1">
+                    Sabit indirim için <strong>100 ₺</strong>, oran indirimi için <strong>%10</strong> yazabilirsiniz.
+                  </p>
                 </div>
 
                 <div>
                   <label className="text-xs font-bold text-slate-700 block mb-1">Minimum Sepet Tutarı</label>
                   <input
                     type="text"
-                    className="w-full p-3 border border-slate-200 rounded-xl text-sm outline-none"
+                    className="w-full p-3 border border-slate-200 rounded-xl text-sm outline-none focus:border-[#2b2623]"
                     value={minCart}
                     onChange={(e) => setMinCart(e.target.value)}
                     placeholder="500 ₺"
                   />
+                </div>
+
+                <div className="flex items-center gap-2 pt-1">
+                  <input
+                    type="checkbox"
+                    id="couponActiveCheck"
+                    checked={active}
+                    onChange={(e) => setActive(e.target.checked)}
+                    className="w-4 h-4 text-[#2b2623] accent-[#2b2623] rounded cursor-pointer"
+                  />
+                  <label htmlFor="couponActiveCheck" className="text-xs font-bold text-slate-800 cursor-pointer">
+                    Kupon Aktif ve Kullanılabilir
+                  </label>
                 </div>
 
                 <div className="pt-2 flex justify-end gap-2 border-t">
@@ -216,9 +302,9 @@ export default function KuponlarPage() {
                   <button
                     type="submit"
                     style={{ backgroundColor: "#2b2623", color: "#ffffff" }}
-                    className="px-5 py-2.5 rounded-xl text-sm font-bold shadow-md hover:opacity-95 transition"
+                    className="px-5 py-2.5 rounded-xl text-sm font-bold shadow-md hover:opacity-95 transition cursor-pointer"
                   >
-                    Oluştur ve Yayına Al
+                    {editingCoupon ? "Değişiklikleri Kaydet" : "Oluştur ve Yayına Al"}
                   </button>
                 </div>
               </form>

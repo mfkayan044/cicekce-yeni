@@ -263,8 +263,15 @@ export function useStore<T>(selector?: (state: any) => T): any {
       notify();
     },
 
-    applyCoupon: (code: string) => {
-      if (code.toUpperCase() === "HOSGELDIN100") {
+    applyCoupon: (code: string, customAmount?: number) => {
+      const codeClean = code.toUpperCase().trim();
+      if (customAmount !== undefined && customAmount > 0) {
+        globalCoupon = codeClean;
+        globalDiscountAmount = customAmount;
+        notify();
+        return true;
+      }
+      if (codeClean === "HOSGELDIN100" || codeClean === "HOSGELDIN") {
         globalCoupon = "HOSGELDIN100";
         globalDiscountAmount = 100;
         notify();

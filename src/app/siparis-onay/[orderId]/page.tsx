@@ -130,10 +130,15 @@ export default function OrderPhotoApprovalPage({ params }: { params: Promise<{ o
     );
   }
 
+  const isSystemApproved =
+    String(order.customerApprovalStatus || "").includes("Sistem") ||
+    String(order.customerApprovalStatus || "").includes("Otomatik");
   const isApproved =
+    isSystemApproved ||
     order.customerApprovalStatus === "Onaylandı" ||
-    order.customerApprovalStatus === "Otomatik Onaylandı" ||
-    order.customerApprovalStatus === "Sistem Tarafından Onaylandı";
+    String(order.customerApprovalStatus || "").includes("Onaylandı") ||
+    String(order.status || "").includes("Kurye") ||
+    String(order.status || "").includes("Teslim");
   const isRejected = order.customerApprovalStatus === "Reddedildi";
 
   return (
@@ -173,17 +178,26 @@ export default function OrderPhotoApprovalPage({ params }: { params: Promise<{ o
 
             {/* APPROVAL STATUS / ACTION BUTTONS */}
             {isApproved ? (
-              <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-300 text-emerald-900 font-extrabold text-sm space-y-1">
+              <div
+                className={`p-4 rounded-2xl border font-extrabold text-sm space-y-1 ${
+                  isSystemApproved
+                    ? "bg-purple-50 border-purple-300 text-purple-950"
+                    : "bg-emerald-50 border-emerald-300 text-emerald-900"
+                }`}
+              >
                 <div>
-                  ✅{" "}
-                  {order.customerApprovalStatus === "Sistem Tarafından Onaylandı"
-                    ? "Sistem Tarafından Onaylandı!"
-                    : order.customerApprovalStatus === "Otomatik Onaylandı"
-                    ? "Siparişiniz Onaylandı!"
-                    : "Çiçek Fotoğrafını Onayladınız!"}
+                  {isSystemApproved
+                    ? "🤖 Siparişiniz Sistem Tarafından Otomatik Onaylandı!"
+                    : "✅ Çiçek Fotoğrafını Onayladınız!"}
                 </div>
-                <div className="text-xs text-emerald-700 font-semibold">
-                  Çiçeğiniz kuryemize teslim ediliyor ve alıcının adresine ulaştırılmak üzere yola çıkıyor.
+                <div
+                  className={`text-xs font-semibold ${
+                    isSystemApproved ? "text-purple-800" : "text-emerald-700"
+                  }`}
+                >
+                  {isSystemApproved
+                    ? "15 dakikalık süre dolduğu için çiçeğiniz sistem tarafından otomatik onaylanmış ve kuryemize teslim edilmiştir."
+                    : "Çiçeğiniz kuryemize teslim ediliyor ve alıcının adresine ulaştırılmak üzere yola çıkıyor."}
                 </div>
               </div>
             ) : isRejected ? (

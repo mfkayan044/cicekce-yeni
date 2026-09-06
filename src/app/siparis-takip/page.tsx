@@ -50,7 +50,12 @@ export default function OrderTrackingPage() {
       }
 
       setOrder(data);
-      if (data.customerApprovalStatus === "Onaylandı") {
+      if (
+        data.customerApprovalStatus === "Onaylandı" ||
+        String(data.customerApprovalStatus || "").includes("Onaylandı") ||
+        String(data.customerApprovalStatus || "").includes("Sistem") ||
+        String(data.customerApprovalStatus || "").includes("Otomatik")
+      ) {
         setApprovedSuccess(true);
       }
     } catch (err) {
@@ -267,20 +272,61 @@ export default function OrderTrackingPage() {
                         </p>
                       </div>
 
-                      {approvedSuccess || order.customerApprovalStatus === "Onaylandı" ? (
-                        <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl text-emerald-800 text-xs font-bold flex items-center gap-2">
-                          <span className="text-lg">✓</span>
-                          <span>Çiçek görseli tarafınızca onaylandı. Kuryemiz teslimat için adrese ilerliyor!</span>
-                        </div>
-                      ) : (
-                        <button
-                          onClick={handleApprovePhoto}
-                          disabled={approving}
-                          className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm rounded-xl transition shadow-md flex items-center justify-center gap-2"
-                        >
-                          {approving ? "Onaylanıyor..." : "✓ Hazırlanan Çiçeği Onaylıyorum"}
-                        </button>
-                      )}
+                      {(() => {
+                        const isSystemApproved =
+                          String(order.customerApprovalStatus || "").includes("Sistem") ||
+                          String(order.customerApprovalStatus || "").includes("Otomatik");
+                        const isCustomerApproved =
+                          approvedSuccess ||
+                          order.customerApprovalStatus === "Onaylandı" ||
+                          String(order.customerApprovalStatus || "").includes("Müşteri");
+                        const isAlreadyInDelivery =
+                          String(order.status || "").includes("Kurye") ||
+                          String(order.status || "").includes("Teslim") ||
+                          String(order.status || "").includes("Dağıtım");
+
+                        if (isSystemApproved) {
+                          return (
+                            <div className="p-4 bg-purple-50 border border-purple-200 rounded-2xl text-purple-950 text-xs font-bold space-y-1">
+                              <div className="flex items-center gap-1.5 font-extrabold text-sm text-purple-900">
+                                <span>🤖</span>
+                                <span>Siparişiniz Sistem Tarafından Otomatik Onaylandı</span>
+                              </div>
+                              <p className="text-purple-800 leading-relaxed font-medium">
+                                15 dakikalık yanıt süresi dolduğu için çiçek görseliniz sistemimiz tarafından otomatik onaylanmış ve kuryemiz teslimat için yola çıkarılmıştır.
+                              </p>
+                            </div>
+                          );
+                        }
+
+                        if (isCustomerApproved) {
+                          return (
+                            <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl text-emerald-800 text-xs font-bold flex items-center gap-2">
+                              <span className="text-lg">✓</span>
+                              <span>Çiçek görseli tarafınızca onaylandı. Kuryemiz teslimat için adrese ilerliyor!</span>
+                            </div>
+                          );
+                        }
+
+                        if (isAlreadyInDelivery) {
+                          return (
+                            <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl text-emerald-800 text-xs font-bold flex items-center gap-2">
+                              <span className="text-lg">✓</span>
+                              <span>Çiçek görseli onaylanarak sipariş teslimat sürecine geçmiştir.</span>
+                            </div>
+                          );
+                        }
+
+                        return (
+                          <button
+                            onClick={handleApprovePhoto}
+                            disabled={approving}
+                            className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm rounded-xl transition shadow-md flex items-center justify-center gap-2"
+                          >
+                            {approving ? "Onaylanıyor..." : "✓ Hazırlanan Çiçeği Onaylıyorum"}
+                          </button>
+                        );
+                      })()}
                     </div>
                   </div>
                 ) : (

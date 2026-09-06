@@ -3,12 +3,14 @@
 import Link from "next/link";
 import React, { useState, useEffect } from "react";
 import { getStoredMember, clearStoredMember, MemberUser } from "@/lib/member-auth";
+import { useStore } from "@/lib/store";
 
 import { getInitialDbData } from "@/lib/server-settings";
 
 const _hdrDb = getInitialDbData();
 
 export default function StoreHeader({ onOpenAssistant }: { onOpenAssistant?: () => void }) {
+  const { cart, favorites } = useStore();
   const [topbarData, setTopbarData] = useState<any>(_hdrDb.headerBant || null);
   const [dismissed, setDismissed] = useState(false);
   const [liveMenus, setLiveMenus] = useState<any[]>(_hdrDb.headerMenus ? _hdrDb.headerMenus.filter((m: any) => m.active !== false) : []);
@@ -170,13 +172,17 @@ export default function StoreHeader({ onOpenAssistant }: { onOpenAssistant?: () 
     </Link>
   </div>
 )}
-<button id="favBtn" aria-label="Favoriler" className="shrink-0 relative flex items-center justify-center w-8 h-8 lg:w-11 lg:h-11 border border-slate-200 hover:border-brand text-slate-700 hover:text-red-500 rounded-lg transition">
+<Link href="/favoriler" id="favBtn" aria-label="Favoriler" className="shrink-0 relative flex items-center justify-center w-8 h-8 lg:w-11 lg:h-11 border border-slate-200 hover:border-brand text-slate-700 hover:text-red-500 rounded-lg transition">
 <svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z" /></svg>
-<span className="fav-count absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[10px] font-bold min-w-[18px] h-[18px] px-1 rounded-full flex items-center justify-center">0</span>
-</button>
+<span className="fav-count absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[10px] font-bold min-w-[18px] h-[18px] px-1 rounded-full flex items-center justify-center">
+  {favorites ? favorites.length : 0}
+</span>
+</Link>
 <Link href="/sepet" id="cartBtn" aria-label="Sepet" className="shrink-0 relative flex items-center justify-center w-8 h-8 lg:w-11 lg:h-11 border border-slate-200 hover:border-brand text-slate-700 hover:text-brand rounded-lg transition">
 <svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="9" cy="21" r="1" /><circle cx="20" cy="21" r="1" /><path d="M1 1h4l2.7 13.4a2 2 0 0 0 2 1.6h9.7a2 2 0 0 0 2-1.6L23 6H6" /></svg>
-<span className="cart-count absolute -top-1.5 -right-1.5 bg-brand text-white text-[10px] font-bold min-w-[18px] h-[18px] px-1 rounded-full flex items-center justify-center">0</span>
+<span className="cart-count absolute -top-1.5 -right-1.5 bg-brand text-white text-[10px] font-bold min-w-[18px] h-[18px] px-1 rounded-full flex items-center justify-center">
+  {cart ? cart.length : 0}
+</span>
 </Link>
 <button id="menuOpen" aria-label="Menü" className="lg:hidden shrink-0 flex items-center justify-center w-8 h-8 lg:w-11 lg:h-11 border border-slate-200 hover:border-brand text-slate-700 rounded-lg transition">
 <svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" /></svg>

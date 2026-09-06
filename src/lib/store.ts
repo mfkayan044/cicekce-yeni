@@ -55,10 +55,13 @@ export const initialProducts: Product[] = _initialDb.products || [];
 let globalProducts: Product[] = initialProducts;
 let globalCategories: CategoryItem[] = initialCategories;
 let globalCart: CartItem[] = [];
+let globalFavorites: Product[] = [];
 if (typeof window !== "undefined") {
   try {
     const savedCart = localStorage.getItem("pro_flower_cart");
     if (savedCart) globalCart = JSON.parse(savedCart);
+    const savedFavs = localStorage.getItem("pro_flower_favorites");
+    if (savedFavs) globalFavorites = JSON.parse(savedFavs);
   } catch (e) {}
 }
 let globalCoupon: string | null = null;
@@ -97,6 +100,7 @@ export function useStore<T>(selector?: (state: any) => T): any {
     if (typeof window !== "undefined") {
       try {
         localStorage.setItem("pro_flower_cart", JSON.stringify(globalCart));
+        localStorage.setItem("pro_flower_favorites", JSON.stringify(globalFavorites));
       } catch (e) {}
     }
     listeners.forEach((l) => l());
@@ -106,6 +110,7 @@ export function useStore<T>(selector?: (state: any) => T): any {
     products: globalProducts,
     categories: globalCategories,
     cart: globalCart,
+    favorites: globalFavorites,
     coupon: globalCoupon,
     discountAmount: globalDiscountAmount,
 
@@ -272,6 +277,25 @@ export function useStore<T>(selector?: (state: any) => T): any {
       globalCart = [];
       globalCoupon = null;
       globalDiscountAmount = 0;
+      notify();
+    },
+
+    toggleFavorite: (product: Product) => {
+      const exists = globalFavorites.some((p) => String(p.id) === String(product.id));
+      if (exists) {
+        globalFavorites = globalFavorites.filter((p) => String(p.id) !== String(product.id));
+      } else {
+        globalFavorites = [...globalFavorites, product];
+      }
+      notify();
+    },
+
+    isFavorite: (productId: string | number) => {
+      return globalFavorites.some((p) => String(p.id) === String(productId));
+    },
+
+    clearFavorites: () => {
+      globalFavorites = [];
       notify();
     },
   };

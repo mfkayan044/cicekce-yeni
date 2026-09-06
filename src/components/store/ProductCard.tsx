@@ -29,7 +29,27 @@ export default function ProductCard({
   code,
   onQuickOrder,
 }: ProductCardProps) {
-  const { setSingleCartItem } = useStore();
+  const { setSingleCartItem, toggleFavorite, isFavorite } = useStore();
+  const isFav = isFavorite(id);
+
+  const handleToggleFav = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    toggleFavorite({
+      id: String(id),
+      slug,
+      title,
+      price,
+      oldPrice,
+      discount,
+      image,
+      code: code || `DM${id}`,
+      category: "Çiçek",
+      categorySlug: "cicekler",
+      stock: true,
+      featured: true,
+    });
+  };
 
   const handleDirectBuy = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -82,6 +102,19 @@ export default function ProductCard({
           </span>
         )}
 
+        <button
+          type="button"
+          onClick={handleToggleFav}
+          aria-label="Favorilere Ekle"
+          className={`absolute top-2.5 right-2.5 z-20 w-8 h-8 rounded-full flex items-center justify-center transition shadow-md ${
+            isFav ? "bg-red-500 text-white" : "bg-white/80 hover:bg-white text-slate-700 backdrop-blur-xs"
+          }`}
+        >
+          <svg width={15} height={15} viewBox="0 0 24 24" fill={isFav ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2">
+            <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z" />
+          </svg>
+        </button>
+
         {(() => {
           const parseNum = (str?: string) => {
             if (!str) return 0;
@@ -92,7 +125,7 @@ export default function ProductCard({
           const oNum = parseNum(oldPrice);
           if (discount && oNum > pNum) {
             return (
-              <span className="absolute top-2.5 right-2.5 z-10 bg-red-500 text-white text-[10px] font-black px-2 py-0.5 rounded-md shadow-xs">
+              <span className="absolute bottom-2.5 left-2.5 z-10 bg-red-500 text-white text-[10px] font-black px-2 py-0.5 rounded-md shadow-xs">
                 {discount}
               </span>
             );

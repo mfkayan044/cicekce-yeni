@@ -87,17 +87,17 @@ export async function GET(request: Request) {
       }
 
       const courierMap = await getOrderCouriersMap();
-      const extra = courierMap[order.id] || {};
+      const extra = courierMap[order.id] || memoryCourierMap[order.id] || {};
 
-      const preparedPhoto = extra.preparedPhoto || order.prepared_photo || order.preparedPhoto || "";
-      const customerApprovalStatus = extra.customerApprovalStatus || order.customer_approval_status || "Bekliyor";
-      const deliveredPhoto = extra.deliveredPhoto || order.delivered_photo || "";
-      const deliveryNote = extra.deliveryNote || order.delivery_note || "";
+      const preparedPhoto = order.prepared_photo || order.preparedPhoto || extra.preparedPhoto || "";
+      const customerApprovalStatus = order.customer_approval_status || order.customerApprovalStatus || extra.customerApprovalStatus || "Bekliyor";
+      const deliveredPhoto = order.delivered_photo || order.deliveredPhoto || extra.deliveredPhoto || "";
+      const deliveryNote = order.delivery_note || order.deliveryNote || extra.deliveryNote || "";
 
       return NextResponse.json({
         id: order.id,
         date: order.date,
-        status: extra.status || order.status || "Yeni Sipariş",
+        status: (extra.status === "Teslim Edildi" || extra.status === "Kuryede / Dağıtımda") ? extra.status : (order.status || extra.status || "Yeni Sipariş"),
         customerName: order.customer_name || order.customerName,
         customerPhone: order.customer_phone || order.customerPhone,
         recipientName: order.recipient_name || order.recipientName,
@@ -112,7 +112,7 @@ export async function GET(request: Request) {
         paymentMethod: order.payment_method || order.paymentMethod,
         totalAmount: order.total_amount || order.totalAmount,
         preparedPhoto,
-        preparedPhotoTime: extra.preparedPhotoTime || order.prepared_photo_time || "",
+        preparedPhotoTime: order.prepared_photo_time || order.preparedPhotoTime || extra.preparedPhotoTime || "",
         customerApprovalStatus,
         courierId: extra.courierId || order.courier_id || "",
         courierName: extra.courierName || order.courier_name || "",
@@ -135,13 +135,13 @@ export async function GET(request: Request) {
     const formatted = (orders || []).map((o: any) => {
       const extra = courierMap[o.id] || memoryCourierMap[o.id] || {};
 
-      const preparedPhoto = extra.preparedPhoto || o.prepared_photo || o.preparedPhoto || "";
-      let customerApprovalStatus = extra.customerApprovalStatus || o.customer_approval_status || o.customerApprovalStatus || "Bekliyor";
-      const preparedPhotoTime = extra.preparedPhotoTime || o.prepared_photo_time;
+      const preparedPhoto = o.prepared_photo || o.preparedPhoto || extra.preparedPhoto || "";
+      let customerApprovalStatus = o.customer_approval_status || o.customerApprovalStatus || extra.customerApprovalStatus || "Bekliyor";
+      const preparedPhotoTime = o.prepared_photo_time || o.preparedPhotoTime || extra.preparedPhotoTime;
 
       // 15-Minute Auto-Approval Check Engine (Measured EXCLUSIVELY from photo upload time):
-      let currentStatus = extra.status || o.status || "Yeni Sipariş";
-      const photoTimeStr = preparedPhotoTime || o.prepared_photo_time || extra.preparedPhotoTime || extra.photoTime;
+      let currentStatus = o.status || extra.status || "Yeni Sipariş";
+      const photoTimeStr = preparedPhotoTime;
 
       if (preparedPhoto && photoTimeStr && (customerApprovalStatus === "Bekliyor" || !customerApprovalStatus)) {
         const photoTimeMs = new Date(photoTimeStr).getTime();

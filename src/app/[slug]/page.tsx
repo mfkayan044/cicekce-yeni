@@ -19,24 +19,24 @@ export default function DynamicCmsPage({ params }: { params: Promise<{ slug: str
 
   const { products, setSingleCartItem } = useStore();
   const [selectedQuickProduct, setSelectedQuickProduct] = useState<QuickOrderProduct | null>(null);
-  const _initialMob = _pageDb.generalSettings?.mobileCols || "2";
-  const _initialDesk = _pageDb.generalSettings?.desktopCols || "4";
+  const _initialMob = _pageDb.generalSettings?.mobileCols || _pageDb.generalSettings?.grid_cols_mobile || "2";
+  const _initialDesk = _pageDb.generalSettings?.desktopCols || _pageDb.generalSettings?.grid_cols_desktop || "4";
   let _dInit = "lg:grid-cols-4";
-  if (_initialDesk === "3") _dInit = "lg:grid-cols-3";
-  if (_initialDesk === "4") _dInit = "lg:grid-cols-4";
-  if (_initialDesk === "5") _dInit = "lg:grid-cols-5";
-  if (_initialDesk === "6") _dInit = "lg:grid-cols-6";
+  if (String(_initialDesk) === "3") _dInit = "lg:grid-cols-3";
+  if (String(_initialDesk) === "4") _dInit = "lg:grid-cols-4";
+  if (String(_initialDesk) === "5") _dInit = "lg:grid-cols-5";
+  if (String(_initialDesk) === "6") _dInit = "lg:grid-cols-6";
   const [gridColsClass, setGridColsClass] = useState<string>(
-    `grid ${_initialMob === "1" ? "grid-cols-1" : "grid-cols-2"} ${_dInit} gap-4 sm:gap-6`
+    `grid ${String(_initialMob) === "1" ? "grid-cols-1" : "grid-cols-2"} ${_dInit} gap-4 sm:gap-6`
   );
 
   useEffect(() => {
     fetch("/api/settings/general")
       .then((res) => res.json())
       .then((data) => {
-        if (data && (data.mobileCols || data.desktopCols)) {
-          const mob = data.mobileCols || "2";
-          const desk = data.desktopCols || "4";
+        if (data) {
+          const mob = String(data.mobileCols || data.grid_cols_mobile || "2");
+          const desk = String(data.desktopCols || data.grid_cols_desktop || "4");
           let dClass = "lg:grid-cols-4";
           if (desk === "3") dClass = "lg:grid-cols-3";
           if (desk === "4") dClass = "lg:grid-cols-4";

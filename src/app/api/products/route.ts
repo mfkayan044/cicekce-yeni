@@ -42,15 +42,24 @@ export async function GET() {
   try {
     // Read directly from db.json to guarantee 100% SSR & Client hydration parity
     const db = readDb();
-    let productsList = db.products || [];
+    let productsList = (db.products || []).filter(
+      (p: any) => p.category !== "SETTINGS" && !String(p.id).startsWith("__SETTING_")
+    );
 
     // Try syncing Supabase if available
     try {
-      const { data } = await supabase.from("products").select("*").order("created_at", { ascending: false });
+      const { data } = await supabase
+        .from("products")
+        .select("*")
+        .neq("category", "SETTINGS")
+        .order("created_at", { ascending: false });
+
       if (data && data.length > 0) {
-        // If Supabase data matches our IDs, use Supabase prices if updated
+        const cleanData = data.filter(
+          (sbP: any) => sbP.category !== "SETTINGS" && !String(sbP.id).startsWith("__SETTING_")
+        );
         const dbMap = new Map(productsList.map((p: any) => [String(p.id), p]));
-        const merged = data.map((sbP: any) => {
+        const merged = cleanData.map((sbP: any) => {
           const localP: any = dbMap.get(String(sbP.id)) || {};
           return {
             id: String(sbP.id),

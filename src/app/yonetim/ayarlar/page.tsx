@@ -51,6 +51,8 @@ export default function AyarlarPage() {
           logoUrl,
           mobileCols,
           desktopCols,
+          grid_cols_mobile: mobileCols,
+          grid_cols_desktop: desktopCols,
           username,
           email
         }),

@@ -56,15 +56,15 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
   const [selectedQuickProduct, setSelectedQuickProduct] = useState<QuickOrderProduct | null>(null);
   const [cartItemIds, setCartItemIds] = useState<(string | number)[]>([]);
 
-  const [gridColsClass, setGridColsClass] = useState<string>("grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6");
+  const [gridColsClass, setGridColsClass] = useState<string>("grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6");
 
   useEffect(() => {
     fetch("/api/settings/general")
       .then((res) => res.json())
       .then((data) => {
-        if (data && (data.mobileCols || data.desktopCols)) {
-          const mob = data.mobileCols || "2";
-          const desk = data.desktopCols || "4";
+        if (data) {
+          const mob = String(data.mobileCols || data.grid_cols_mobile || "2");
+          const desk = String(data.desktopCols || data.grid_cols_desktop || "4");
           let dClass = "lg:grid-cols-4";
           if (desk === "3") dClass = "lg:grid-cols-3";
           if (desk === "4") dClass = "lg:grid-cols-4";

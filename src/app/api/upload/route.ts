@@ -3,8 +3,9 @@ import { supabase } from "@/lib/supabase";
 import fs from "fs";
 import path from "path";
 
-const ALLOWED_MIME_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif", "image/svg+xml"];
-const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB limit
+const ALLOWED_MIME_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+const ALLOWED_EXTENSIONS = ["jpg", "jpeg", "png", "webp"];
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB limit
 
 const uploadsDir = path.join(process.cwd(), "public", "uploads");
 
@@ -32,9 +33,10 @@ export async function POST(req: Request) {
         if (rawStr.startsWith("data:")) {
           const matches = rawStr.match(/^data:(image\/[a-zA-Z+]+);base64,(.+)$/);
           if (matches) {
-            mimeType = matches[1];
+            mimeType = matches[1].toLowerCase();
             fileBuffer = Buffer.from(matches[2], "base64");
             fileExt = mimeType.split("/")[1] || "jpg";
+            if (fileExt === "jpeg") fileExt = "jpg";
           }
         } else {
           fileBuffer = Buffer.from(rawStr, "base64");
@@ -44,13 +46,13 @@ export async function POST(req: Request) {
       const formData = await req.formData();
       const file = formData.get("file") as File | null;
       if (file) {
-        mimeType = file.type || "image/jpeg";
+        mimeType = (file.type || "image/jpeg").toLowerCase();
         originalName = file.name || "photo.jpg";
-        fileExt = originalName.split(".").pop() || "jpg";
+        fileExt = (originalName.split(".").pop() || "jpg").toLowerCase();
         
         if (file.size > MAX_FILE_SIZE) {
           return NextResponse.json(
-            { error: "Dosya boyutu çok büyük. Maksimum 10 MB yüklenebilir." },
+            { error: "Güvenlik Uyarısı: Dosya boyutu çok büyük. Maksimum 5 MB yüklenebilir." },
             { status: 400 }
           );
         }
@@ -60,11 +62,18 @@ export async function POST(req: Request) {
       }
     }
 
+    if (!ALLOWED_MIME_TYPES.includes(mimeType) || !ALLOWED_EXTENSIONS.includes(fileExt)) {
+      return NextResponse.json(
+        { error: "Güvenlik Uyarısı: Sadece JPG, PNG veya WEBP formatında görsel dosyaları yüklenebilir." },
+        { status: 400 }
+      );
+    }
+
     if (!fileBuffer || fileBuffer.length === 0) {
       return NextResponse.json({ error: "Görsel dosyası veya verisi bulunamadı." }, { status: 400 });
     }
 
-    const uniqueFileName = `${Date.now()}-${Math.random().toString(36).substring(2, 8)}.${fileExt}`;
+    const uniqueFileName = `${Date.now()}-${crypto.randomUUID().slice(0, 8)}.${fileExt}`;
 
     // 1. SUPABASE STORAGE BUCKET UPLOAD ('cicekce-uploads')
     try {

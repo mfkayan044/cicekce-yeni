@@ -88,3 +88,16 @@ export async function isRequestAuthorized(req: NextRequest | Request): Promise<b
   const { valid } = await verifyAdminToken(token);
   return valid;
 }
+
+export async function generateTrackingToken(orderId: string, phone: string): Promise<string> {
+  const cleanId = String(orderId || "").trim();
+  const cleanPhone = String(phone || "").replace(/[^0-9]/g, "");
+  const payload = `${cleanId}:${cleanPhone}`;
+  return await signData(payload, ADMIN_SECRET);
+}
+
+export async function verifyTrackingToken(orderId: string, phone: string, token?: string | null): Promise<boolean> {
+  if (!token) return false;
+  const expected = await generateTrackingToken(orderId, phone);
+  return token === expected;
+}

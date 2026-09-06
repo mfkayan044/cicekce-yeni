@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
-import { isRequestAuthorized } from "@/lib/auth";
+import { isRequestAuthorized, verifyTrackingToken, generateTrackingToken } from "@/lib/auth";
+import { checkRateLimit } from "@/lib/rate-limit";
+import { sanitizeObject, sanitizeString } from "@/lib/sanitize";
 
 // Helper to parse Turkish price string to number
 function parsePrice(val: any): number {
@@ -45,9 +47,19 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const orderId = searchParams.get("id");
     const phone = searchParams.get("phone");
+    const token = searchParams.get("token");
 
     // Public lookup for customer tracking if search query is passed
     if (orderId) {
+      // Rate limit single order lookups (15 requests/min per IP)
+      const rateCheck = checkRateLimit(request, "order_lookup", 15, 60 * 1000);
+      if (!rateCheck.success) {
+        return NextResponse.json(
+          { error: "Çok fazla sorgulama yapıldı. Lütfen 1 dakika sonra tekrar deneyiniz." },
+          { status: 429 }
+        );
+      }
+
       const cleanInputId = orderId.trim();
       const cleanPhone = phone ? phone.replace(/[^0-9]/g, "") : "";
 
@@ -57,16 +69,19 @@ export async function GET(request: Request) {
       }
 
       // SECURITY ENFORCEMENT:
-      // Single order public lookup MUST require matching customer_phone or recipient_phone!
+      // Single order public lookup MUST require matching customer_phone/recipient_phone OR valid HMAC tracking token!
       const custPhoneClean = String(order.customer_phone || order.customerPhone || "").replace(/[^0-9]/g, "");
       const recipPhoneClean = String(order.recipient_phone || order.recipientPhone || "").replace(/[^0-9]/g, "");
 
       const matchesCustomer = cleanPhone && cleanPhone.length >= 4 && custPhoneClean && (custPhoneClean.endsWith(cleanPhone) || cleanPhone.endsWith(custPhoneClean));
       const matchesRecipient = cleanPhone && cleanPhone.length >= 4 && recipPhoneClean && (recipPhoneClean.endsWith(cleanPhone) || cleanPhone.endsWith(recipPhoneClean));
 
-      if (!cleanPhone || (!matchesCustomer && !matchesRecipient)) {
+      const isTokenValidCust = token && (await verifyTrackingToken(order.id, custPhoneClean, token));
+      const isTokenValidRecip = token && (await verifyTrackingToken(order.id, recipPhoneClean, token));
+
+      if (!isTokenValidCust && !isTokenValidRecip && (!cleanPhone || (!matchesCustomer && !matchesRecipient))) {
         return NextResponse.json(
-          { error: "Güvenlik Uyarısı: Sipariş takibi yapabilmek için Sipariş Kodu ile birlikte siparişte kayıtlı Telefon Numarasını doğru girmelisiniz." },
+          { error: "Güvenlik Uyarısı: Sipariş takibi yapabilmek için Sipariş Kodu ile birlikte siparişte kayıtlı Telefon Numarasını girmelisiniz veya güvenli takip bağlantısını kullanmalısınız." },
           { status: 403 }
         );
       }
@@ -197,7 +212,8 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const orderData = await request.json();
+    const rawData = await request.json();
+    const orderData = sanitizeObject(rawData);
 
     if (!orderData.recipientName || !orderData.address) {
       return NextResponse.json({ error: "Eksik sipariş bilgisi." }, { status: 400 });
@@ -250,7 +266,7 @@ export async function POST(request: Request) {
 
 export async function PUT(request: Request) {
   try {
-    const body = await request.json();
+    const body = sanitizeObject(await request.json());
     const {
       id,
       status,

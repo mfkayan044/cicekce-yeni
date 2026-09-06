@@ -22,17 +22,18 @@ export default function OrderTrackingPage() {
       const params = new URLSearchParams(window.location.search);
       const qId = params.get("id");
       const qPhone = params.get("phone");
+      const qToken = params.get("token");
       if (qId) {
         setOrderIdInput(qId);
         if (qPhone) setPhoneInput(qPhone);
-        handleSearchWithParams(qId, qPhone || "");
+        handleSearchWithParams(qId, qPhone || "", qToken || "");
       }
     }
   }, []);
 
-  const handleSearchWithParams = async (id: string, phone: string) => {
-    if (!phone.trim()) {
-      setError("Güvenlik nedeniyle sipariş durumunu görüntülemek için siparişte kayıtlı telefon numaranızı da girmeniz gerekmektedir.");
+  const handleSearchWithParams = async (id: string, phone: string, token: string = "") => {
+    if (!phone.trim() && !token.trim()) {
+      setError("Güvenlik nedeniyle sipariş durumunu görüntülemek için siparişte kayıtlı telefon numaranızı girmeniz gerekmektedir.");
       return;
     }
 
@@ -41,7 +42,13 @@ export default function OrderTrackingPage() {
     setOrder(null);
 
     try {
-      let url = `/api/orders?id=${encodeURIComponent(id.trim())}&phone=${encodeURIComponent(phone.trim())}`;
+      let url = `/api/orders?id=${encodeURIComponent(id.trim())}`;
+      if (phone.trim()) {
+        url += `&phone=${encodeURIComponent(phone.trim())}`;
+      }
+      if (token.trim()) {
+        url += `&token=${encodeURIComponent(token.trim())}`;
+      }
 
       const res = await fetch(url);
       const data = await res.json();

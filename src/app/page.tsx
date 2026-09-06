@@ -159,22 +159,22 @@ export default function CustomerHomePage() {
 
       <main className="max-w-[1400px] mx-auto px-4 lg:px-6 py-4">
         {/* Story Category Circles */}
-        <section className="hidden lg:block pt-2 pb-6">
-          <div className="flex items-start gap-4 overflow-x-auto py-2 scrollbar-none">
+        <section className="pt-2 pb-4">
+          <div className="flex items-start gap-3 sm:gap-4 overflow-x-auto py-2 scrollbar-none">
             {categories.map((cat: CategoryItem) => (
               <a
                 key={cat.id}
                 href={`/kategori/${cat.slug}`}
-                className="group shrink-0 flex flex-col items-center gap-2 w-24"
+                className="group shrink-0 flex flex-col items-center gap-1.5 w-16 sm:w-24"
               >
-                <div className="w-20 h-20 rounded-full p-0.5 bg-gradient-to-tr from-emerald-400 to-[#2b2623] group-hover:scale-105 transition shadow-sm">
+                <div className="w-14 h-14 sm:w-20 sm:h-20 rounded-full p-0.5 bg-gradient-to-tr from-emerald-400 to-[#2b2623] group-hover:scale-105 transition shadow-sm">
                   <img
                     src={cat.image}
                     alt={cat.name}
                     className="w-full h-full object-cover rounded-full bg-white p-0.5"
                   />
                 </div>
-                <span className="text-[11px] font-semibold text-slate-700 text-center line-clamp-1 group-hover:text-[#2b2623] transition">
+                <span className="text-[10px] sm:text-[11px] font-bold text-slate-700 text-center line-clamp-1 group-hover:text-[#2b2623] transition">
                   {cat.name}
                 </span>
               </a>
@@ -186,7 +186,7 @@ export default function CustomerHomePage() {
         <section className="mb-8">
           <div className="hero-layout-grid">
               {/* Left Big Carousel Slider */}
-              <div className="relative rounded-2xl overflow-hidden min-h-[380px] bg-slate-900 border border-slate-200 shadow-sm flex flex-col items-center justify-between p-6 text-center group">
+              <div className="relative rounded-2xl overflow-hidden min-h-[320px] sm:min-h-[380px] bg-slate-900 border border-slate-200 shadow-sm flex flex-col items-center justify-between p-4 sm:p-6 text-center group">
                 {currentSlide?.discountBadge && (
                   <span style={{ backgroundColor: "#2b2623", color: "#ffffff" }} className="absolute top-4 left-4 z-20 text-xs font-extrabold px-3 py-1 rounded-lg shadow-md">
                     {currentSlide.discountBadge}
@@ -205,11 +205,11 @@ export default function CustomerHomePage() {
                 
                 {/* Product Info Box Overlay */}
                 {currentSlide?.title && (
-                  <div className="relative z-10 mt-2 bg-white/80 backdrop-blur-md rounded-2xl p-4 max-w-xs shadow-md border border-white/50">
-                    <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">Özel Koleksiyon</span>
-                    <h2 className="text-xl font-extrabold text-slate-800">{currentSlide.title}</h2>
+                  <div className="relative z-10 mt-2 bg-white/85 backdrop-blur-md rounded-2xl p-2.5 sm:p-4 max-w-[210px] sm:max-w-xs shadow-md border border-white/50">
+                    <span className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider block mb-0.5">Özel Koleksiyon</span>
+                    <h2 className="text-sm sm:text-xl font-extrabold text-slate-800 line-clamp-1">{currentSlide.title}</h2>
                     {currentSlide.price && (
-                      <div style={{ color: "#2b2623" }} className="text-2xl font-black mt-1">{currentSlide.price}</div>
+                      <div style={{ color: "#2b2623" }} className="text-base sm:text-2xl font-black mt-0.5">{currentSlide.price}</div>
                     )}
                   </div>
                 )}
@@ -362,31 +362,31 @@ export default function CustomerHomePage() {
       <OrderAssistantModal isOpen={isAssistantOpen} onClose={() => setIsAssistantOpen(false)} />
       
       {/* FLOATING ACTION BUTTONS (WhatsApp + Sipariş Asistanı) */}
-      <div className="fixed bottom-6 right-6 z-40 flex flex-col items-end gap-3">
+      <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-40 flex flex-col items-end gap-2 sm:gap-3">
         {/* Floating WhatsApp Button */}
         <a
           href={`https://wa.me/${whatsappNumber}`}
           target="_blank"
           rel="noopener noreferrer"
           style={{ backgroundColor: "#25D366", color: "#ffffff" }}
-          className="px-4 py-3 rounded-full shadow-2xl flex items-center gap-2 hover:scale-105 transition duration-300 font-extrabold text-xs"
+          className="px-3.5 py-2.5 sm:px-4 sm:py-3 rounded-full shadow-2xl flex items-center gap-2 hover:scale-105 transition duration-300 font-extrabold text-[11px] sm:text-xs"
           title="WhatsApp ile Sipariş"
         >
-          <svg width={20} height={20} viewBox="0 0 24 24" fill="currentColor">
+          <svg width={18} height={18} viewBox="0 0 24 24" fill="currentColor">
             <path d="M12.012 2c-5.506 0-9.989 4.478-9.99 9.984 0 1.762.459 3.48 1.333 5.001l-1.42 5.187 5.306-1.391c1.464.798 3.114 1.218 4.77 1.219h.004c5.504 0 9.987-4.478 9.989-9.985 0-2.667-1.037-5.175-2.924-7.062-1.886-1.887-4.394-2.923-7.068-2.923zm5.836 14.161c-.244.688-1.42 1.314-1.957 1.397-.487.075-1.12.106-1.801-.112-.413-.131-.944-.306-1.637-.607-2.909-1.263-4.802-4.204-4.949-4.399-.146-.197-1.192-1.587-1.192-3.027 0-1.44.754-2.146 1.022-2.438.268-.293.585-.366.78-.366.195 0 .39.002.56.01.181.008.423-.069.662.505.244.585.83 2.023.903 2.17.073.146.122.317.024.512-.097.195-.146.317-.293.488-.146.171-.307.382-.439.512-.146.146-.298.307-.128.599.171.293.758 1.25 1.626 2.023 1.117.994 2.06 1.303 2.353 1.45.293.146.463.122.634-.073.171-.195.731-.853.926-1.146.195-.293.39-.244.658-.146.268.098 1.706.805 2.00 1.00.293.195.488.293.56.415.073.122.073.707-.171 1.395z"/>
           </svg>
-          <span className="hidden sm:inline">WhatsApp İletişim</span>
+          <span className="inline">WhatsApp</span>
         </a>
 
         {/* Floating Sipariş Asistanı Button */}
         <button
           onClick={() => setIsAssistantOpen(true)}
           style={{ backgroundColor: "#2b2623", color: "#ffffff" }}
-          className="px-4 py-3 rounded-full shadow-2xl flex items-center gap-2 hover:scale-105 transition duration-300 font-extrabold text-xs"
+          className="px-3.5 py-2.5 sm:px-4 sm:py-3 rounded-full shadow-2xl flex items-center gap-2 hover:scale-105 transition duration-300 font-extrabold text-[11px] sm:text-xs"
           title="Sipariş Asistanı"
         >
-          <span className="text-lg">🎧</span>
-          <span className="hidden sm:inline">Sipariş Asistanı</span>
+          <span className="text-base sm:text-lg">🎧</span>
+          <span className="inline">Asistan</span>
         </button>
       </div>
       <StoreFooter />

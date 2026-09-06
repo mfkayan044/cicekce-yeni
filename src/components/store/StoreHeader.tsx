@@ -17,6 +17,9 @@ export default function StoreHeader({ onOpenAssistant }: { onOpenAssistant?: () 
   const [genSettings, setGenSettings] = useState<any>(_hdrDb.generalSettings || { logoMode: "text", logoUrl: "/logo.jpg" });
   const [member, setMember] = useState<MemberUser | null>(null);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     setMember(getStoredMember());
@@ -103,7 +106,7 @@ export default function StoreHeader({ onOpenAssistant }: { onOpenAssistant?: () 
 </span>
 </a>
 <div className="flex items-center gap-1.5 lg:gap-2 ml-auto">
-<button id="searchOpen" aria-label="Ara" className="lg:hidden shrink-0 flex items-center justify-center w-8 h-8 lg:w-11 lg:h-11 border border-slate-200 hover:border-brand text-slate-700 rounded-lg transition">
+<button id="searchOpen" type="button" onClick={() => setSearchOpen(!searchOpen)} aria-label="Ara" className="lg:hidden shrink-0 flex items-center justify-center w-8 h-8 lg:w-11 lg:h-11 border border-slate-200 hover:border-[#2b2623] text-slate-700 rounded-lg transition">
 <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><circle cx="11" cy="11" r="7" /><line x1="21" y1="21" x2="16.5" y2="16.5" /></svg>
 </button>
 <button type="button" className="aio-open aio-hdr-btn hidden lg:flex shrink-0 items-center gap-2" aria-label="Sipariş Asistanı" onClick={onOpenAssistant}>
@@ -184,11 +187,34 @@ export default function StoreHeader({ onOpenAssistant }: { onOpenAssistant?: () 
   {cart ? cart.length : 0}
 </span>
 </Link>
-<button id="menuOpen" aria-label="Menü" className="lg:hidden shrink-0 flex items-center justify-center w-8 h-8 lg:w-11 lg:h-11 border border-slate-200 hover:border-brand text-slate-700 rounded-lg transition">
-<svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" /></svg>
+<button id="menuOpen" type="button" onClick={() => setMobileMenuOpen(true)} aria-label="Menü" className="lg:hidden shrink-0 flex items-center justify-center w-8 h-8 lg:w-11 lg:h-11 border border-slate-200 hover:border-[#2b2623] text-slate-800 rounded-lg transition active:scale-95 bg-slate-50">
+<svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round"><line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" /></svg>
 </button>
 </div>
 </div>
+
+{searchOpen && (
+  <div className="lg:hidden px-4 pb-3 pt-1 border-t border-slate-100 animate-in slide-in-from-top duration-200">
+    <form onSubmit={(e) => {
+      e.preventDefault();
+      if (searchQuery.trim()) {
+        window.location.href = `/kategori/all?q=${encodeURIComponent(searchQuery.trim())}`;
+      }
+    }} className="flex items-center gap-2">
+      <input
+        type="text"
+        placeholder="Çiçek, buket veya ürün ara..."
+        value={searchQuery}
+        onChange={(e) => setSearchQuery(e.target.value)}
+        className="w-full py-2 px-3 bg-slate-100 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none"
+        autoFocus
+      />
+      <button type="submit" className="py-2 px-4 bg-[#2b2623] text-white font-extrabold text-xs rounded-xl shadow-xs shrink-0">
+        Ara
+      </button>
+    </form>
+  </div>
+)}
 </header>
 <nav id="mainNav" className="hidden lg:block border-b bg-white lg:sticky lg:top-0 z-40" style={{ "borderBottomColor": "rgba(203,213,225,.6)" }}>
 <div className="max-w-[1400px] mx-auto px-4 lg:px-6 flex items-center">
@@ -206,6 +232,159 @@ export default function StoreHeader({ onOpenAssistant }: { onOpenAssistant?: () 
 </ul>
 </div>
 </nav>
+
+{/* FULL RESPONSIVE SLIDE-OVER MOBILE DRAWER MENU */}
+{mobileMenuOpen && (
+  <div className="fixed inset-0 z-50 flex lg:hidden">
+    <div
+      className="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity animate-in fade-in"
+      onClick={() => setMobileMenuOpen(false)}
+    />
+
+    <div className="relative w-4/5 max-w-sm bg-white h-full shadow-2xl z-10 flex flex-col justify-between overflow-y-auto animate-in slide-in-from-left duration-300">
+      <div>
+        <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-[#2b2623] text-white">
+          <span className="font-serif font-bold text-lg tracking-wider">ÇİÇEKÇE</span>
+          <button
+            type="button"
+            onClick={() => setMobileMenuOpen(false)}
+            className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white text-sm transition"
+          >
+            ✕
+          </button>
+        </div>
+
+        <div className="p-4 bg-amber-50/70 border-b border-amber-100 flex items-center justify-between">
+          {member ? (
+            <div>
+              <div className="text-xs font-black text-slate-900">Hoş Geldiniz, {member.name}!</div>
+              <div className="text-[10px] text-slate-500 font-bold">{member.email}</div>
+            </div>
+          ) : (
+            <div>
+              <div className="text-xs font-black text-slate-900">Çiçekçe'ye Hoş Geldiniz!</div>
+              <div className="text-[10px] text-slate-500 font-bold">Hızlı ve güvenli çiçek siparişi</div>
+            </div>
+          )}
+          {member ? (
+            <Link
+              href="/hesabim"
+              onClick={() => setMobileMenuOpen(false)}
+              className="py-1 px-3 bg-[#2b2623] text-white text-[10px] font-black rounded-lg shadow-2xs"
+            >
+              Hesabım
+            </Link>
+          ) : (
+            <Link
+              href="/giris-yap"
+              onClick={() => setMobileMenuOpen(false)}
+              className="py-1.5 px-3 bg-[#2b2623] text-white text-[11px] font-black rounded-xl shadow-2xs"
+            >
+              Giriş Yap
+            </Link>
+          )}
+        </div>
+
+        <div className="p-4 space-y-1">
+          <div className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2">Kategoriler</div>
+          {liveMenus.map((m: any) => (
+            <Link
+              key={m.id}
+              href={m.url || "#"}
+              onClick={() => setMobileMenuOpen(false)}
+              className="flex items-center justify-between p-2.5 rounded-xl text-xs font-extrabold text-slate-800 hover:bg-slate-100 transition"
+            >
+              <span>{m.title}</span>
+              <span className="text-slate-400">›</span>
+            </Link>
+          ))}
+        </div>
+
+        <div className="p-4 border-t border-slate-100 space-y-1">
+          <div className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2">Hızlı Erişim</div>
+          <Link
+            href="/siparis-takip"
+            onClick={() => setMobileMenuOpen(false)}
+            className="flex items-center gap-2.5 p-2.5 rounded-xl text-xs font-bold text-slate-800 hover:bg-slate-100"
+          >
+            <span>📦</span>
+            <span>Sipariş Takip</span>
+          </Link>
+          <button
+            type="button"
+            onClick={() => {
+              setMobileMenuOpen(false);
+              if (onOpenAssistant) onOpenAssistant();
+            }}
+            className="w-full flex items-center gap-2.5 p-2.5 rounded-xl text-xs font-bold text-slate-800 hover:bg-slate-100 text-left"
+          >
+            <span>🎧</span>
+            <span>Sipariş Asistanı</span>
+          </button>
+          <Link
+            href="/favoriler"
+            onClick={() => setMobileMenuOpen(false)}
+            className="flex items-center justify-between p-2.5 rounded-xl text-xs font-bold text-slate-800 hover:bg-slate-100"
+          >
+            <div className="flex items-center gap-2.5">
+              <span>❤️</span>
+              <span>Favorilerim</span>
+            </div>
+            <span className="bg-red-100 text-red-700 text-[10px] font-black px-2 py-0.5 rounded-full">
+              {favorites ? favorites.length : 0}
+            </span>
+          </Link>
+          <Link
+            href="/sepet"
+            onClick={() => setMobileMenuOpen(false)}
+            className="flex items-center justify-between p-2.5 rounded-xl text-xs font-bold text-slate-800 hover:bg-slate-100"
+          >
+            <div className="flex items-center gap-2.5">
+              <span>🛒</span>
+              <span>Sepetim</span>
+            </div>
+            <span className="bg-amber-100 text-amber-900 text-[10px] font-black px-2 py-0.5 rounded-full">
+              {cart ? cart.length : 0}
+            </span>
+          </Link>
+        </div>
+      </div>
+
+      <div className="p-4 border-t border-slate-100 bg-slate-50 space-y-2">
+        {member ? (
+          <button
+            type="button"
+            onClick={() => {
+              clearStoredMember();
+              setMobileMenuOpen(false);
+              window.location.href = "/";
+            }}
+            className="w-full py-2 px-3 bg-red-50 text-red-700 border border-red-200 rounded-xl text-xs font-extrabold text-center hover:bg-red-100 transition"
+          >
+            🚪 Çıkış Yap
+          </button>
+        ) : (
+          <div className="grid grid-cols-2 gap-2">
+            <Link
+              href="/giris-yap"
+              onClick={() => setMobileMenuOpen(false)}
+              className="py-2.5 px-3 bg-[#2b2623] text-white rounded-xl text-xs font-extrabold text-center shadow-xs"
+            >
+              Giriş Yap
+            </Link>
+            <Link
+              href="/kayit-ol"
+              onClick={() => setMobileMenuOpen(false)}
+              className="py-2.5 px-3 bg-white border border-slate-300 text-slate-800 rounded-xl text-xs font-extrabold text-center hover:bg-slate-100"
+            >
+              Kayıt Ol
+            </Link>
+          </div>
+        )}
+      </div>
+    </div>
+  </div>
+)}
     </>
   );
 }

@@ -139,13 +139,13 @@ export async function GET(request: Request) {
       let customerApprovalStatus = extra.customerApprovalStatus || o.customer_approval_status || o.customerApprovalStatus || "Bekliyor";
       const preparedPhotoTime = extra.preparedPhotoTime || o.prepared_photo_time;
 
-      // 15-Minute Auto-Approval Check Engine:
+      // 15-Minute Auto-Approval Check Engine (Measured EXCLUSIVELY from photo upload time):
       let currentStatus = extra.status || o.status || "Yeni Sipariş";
-      const photoTime = preparedPhotoTime || o.prepared_photo_time || extra.photoTime || o.created_at;
+      const photoTimeStr = preparedPhotoTime || o.prepared_photo_time || extra.preparedPhotoTime || extra.photoTime;
 
-      if ((currentStatus === "Fotoğraflı Onay Bekliyor" || preparedPhoto) && (customerApprovalStatus === "Bekliyor" || !customerApprovalStatus)) {
-        const photoTimeMs = photoTime ? new Date(photoTime).getTime() : 0;
-        if (photoTimeMs > 0) {
+      if (preparedPhoto && photoTimeStr && (customerApprovalStatus === "Bekliyor" || !customerApprovalStatus)) {
+        const photoTimeMs = new Date(photoTimeStr).getTime();
+        if (!isNaN(photoTimeMs) && photoTimeMs > 0) {
           const photoAgeMs = nowMs - photoTimeMs;
           if (photoAgeMs >= 15 * 60 * 1000) {
             customerApprovalStatus = "Sistem Tarafından Onaylandı (15 dk Süre Doldu)";

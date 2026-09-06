@@ -153,9 +153,7 @@ export async function GET(request: Request) {
       return NextResponse.json({
         id: order.id,
         date: order.date,
-        status: (meta.courierName || meta.deliveredAt || extra.status === "Teslim Edildi" || extra.status === "Kuryede / Dağıtımda")
-          ? (extra.status || order.status || "Yeni Sipariş")
-          : (order.status || extra.status || "Yeni Sipariş"),
+        status: order.status || extra.status || "Yeni Sipariş",
         customerName: order.customer_name || order.customerName,
         customerPhone: order.customer_phone || order.customerPhone,
         recipientName: order.recipient_name || order.recipientName,
@@ -219,9 +217,7 @@ export async function GET(request: Request) {
         currentStatus = "Hazırlanıyor / Onaylandı";
       }
 
-      const status = (meta.deliveredAt || extra.status === "Teslim Edildi" || extra.status === "Kuryede / Dağıtımda")
-        ? (extra.status || currentStatus)
-        : currentStatus;
+      const status = currentStatus;
 
       return {
         id: o.id,

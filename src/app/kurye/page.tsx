@@ -34,6 +34,102 @@ interface Order {
   deliveredAt?: string;
 }
 
+function normalizeDateStr(dateVal?: string): string {
+  if (!dateVal) return "";
+  let str = String(dateVal).trim();
+  if (!str) return "";
+
+  if (str.includes("T")) {
+    str = str.split("T")[0];
+  }
+
+  const trMonths: Array<[string[], string]> = [
+    [["ocak", "oca"], "01"],
+    [["şubat", "şub", "subat", "sub"], "02"],
+    [["mart", "mar"], "03"],
+    [["nisan", "nis"], "04"],
+    [["mayıs", "may", "mayis"], "05"],
+    [["haziran", "haz"], "06"],
+    [["temmuz", "tem"], "07"],
+    [["ağustos", "ağust", "ağu", "agustos", "agu"], "08"],
+    [["eylül", "eyl", "eylul"], "09"],
+    [["ekim", "eki"], "10"],
+    [["kasım", "kas", "kasim"], "11"],
+    [["aralık", "ara", "aralik"], "12"],
+  ];
+
+  const lowerStr = str.toLowerCase();
+  for (const [aliases, mNum] of trMonths) {
+    for (const alias of aliases) {
+      if (lowerStr.includes(alias)) {
+        const parts = str.split(/\s+/);
+        if (parts.length >= 3) {
+          const rawDay = parts[0].replace(/\D/g, "");
+          const rawYear = parts[2].replace(/\D/g, "");
+          if (rawDay && rawYear) {
+            const day = rawDay.padStart(2, "0");
+            const year = rawYear.length === 2 ? `20${rawYear}` : rawYear;
+            return `${year}-${mNum}-${day}`;
+          }
+        }
+      }
+    }
+  }
+
+  if (str.includes(".") || str.includes("/")) {
+    const firstPart = str.split(" ")[0];
+    const parts = firstPart.split(/[./]/);
+    if (parts.length === 3) {
+      const day = parts[0].padStart(2, "0");
+      const month = parts[1].padStart(2, "0");
+      const year = parts[2].length === 2 ? `20${parts[2]}` : parts[2];
+      return `${year}-${month}-${day}`;
+    }
+  }
+
+  if (str.includes("-")) {
+    const parts = str.split("-");
+    if (parts.length >= 3) {
+      const year = parts[0];
+      const month = parts[1].padStart(2, "0");
+      const day = parts[2].slice(0, 2).padStart(2, "0");
+      return `${year}-${month}-${day}`;
+    }
+  }
+
+  return str;
+}
+
+function isOrderOverdue(deliveryDate?: string, deliveryTime?: string, status?: string): boolean {
+  if (!status || status.includes("Teslim Edildi")) return false;
+
+  const orderDateNorm = normalizeDateStr(deliveryDate);
+  if (!orderDateNorm) return false;
+
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  const todayIso = `${year}-${month}-${day}`;
+
+  if (orderDateNorm < todayIso) return true;
+
+  if (orderDateNorm === todayIso && deliveryTime) {
+    const matches = deliveryTime.match(/(\d{1,2})[:.](\d{2})\s*[-–]\s*(\d{1,2})[:.](\d{2})/);
+    if (matches && matches[3]) {
+      const endHour = parseInt(matches[3], 10);
+      const endMinute = parseInt(matches[4], 10);
+      const currentHour = now.getHours();
+      const currentMinute = now.getMinutes();
+      if (currentHour > endHour || (currentHour === endHour && currentMinute > endMinute)) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
 export default function CourierPortalPage() {
   const [couriers, setCouriers] = useState<Courier[]>([]);
   const [selectedCourier, setSelectedCourier] = useState<Courier | null>(null);
@@ -375,6 +471,17 @@ export default function CourierPortalPage() {
                   key={order.id}
                   className="bg-white rounded-3xl p-4 border border-slate-200 shadow-xs space-y-3.5 relative overflow-hidden"
                 >
+                  {/* URGENT OVERDUE ALERT BANNER */}
+                  {isOrderOverdue(order.deliveryDate, order.deliveryTime, order.status) && (
+                    <div className="p-2.5 bg-red-600 text-white rounded-2xl font-black text-xs shadow-md animate-pulse flex items-center justify-between border border-red-700">
+                      <span className="flex items-center gap-1.5">
+                        <span className="text-sm">🚨</span>
+                        <span>ACİL TESLİMAT YAPIN!</span>
+                      </span>
+                      <span className="bg-white/20 px-2 py-0.5 rounded-full text-[10px]">TESLİMAT ZAMANI GEÇTİ</span>
+                    </div>
+                  )}
+
                   {/* Top Header Card */}
                   <div className="flex items-center justify-between border-b pb-2.5">
                     <div>

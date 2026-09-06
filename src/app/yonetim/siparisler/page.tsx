@@ -89,6 +89,38 @@ function getTodayIsoStr(): string {
   return `${year}-${month}-${day}`;
 }
 
+function isOrderOverdue(deliveryDate?: string, deliveryTime?: string, status?: string): boolean {
+  if (!status || status.includes("Teslim Edildi")) return false;
+
+  const orderDateNorm = normalizeDateStr(deliveryDate);
+  if (!orderDateNorm) return false;
+
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  const todayIso = `${year}-${month}-${day}`;
+
+  // 1. Delivery date is in the past -> OVERDUE!
+  if (orderDateNorm < todayIso) return true;
+
+  // 2. Delivery date is today -> check if end time of delivery slot has passed
+  if (orderDateNorm === todayIso && deliveryTime) {
+    const matches = deliveryTime.match(/(\d{1,2})[:.](\d{2})\s*[-–]\s*(\d{1,2})[:.](\d{2})/);
+    if (matches && matches[3]) {
+      const endHour = parseInt(matches[3], 10);
+      const endMinute = parseInt(matches[4], 10);
+      const currentHour = now.getHours();
+      const currentMinute = now.getMinutes();
+      if (currentHour > endHour || (currentHour === endHour && currentMinute > endMinute)) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
 export default function AdminOrdersPage() {
   const [orders, setOrders] = useState<any[]>([]);
   const [couriers, setCouriers] = useState<any[]>([]);
@@ -964,6 +996,12 @@ export default function AdminOrdersPage() {
                           <div className="text-[11px] text-slate-500 font-extrabold">
                             ⏰ {o.deliveryTime || "09:00 - 18:00"}
                           </div>
+
+                          {isOrderOverdue(o.deliveryDate || o.delivery_date || o.date, o.deliveryTime || o.delivery_time, o.status) && (
+                            <div className="mt-1 px-2.5 py-1 rounded-xl bg-red-600 text-white font-black text-[10px] animate-pulse flex items-center justify-center gap-1 shadow-xs border border-red-700">
+                              <span>🚨 ACİL TESLİMAT YAPIN!</span>
+                            </div>
+                          )}
                         </td>
 
                         {/* 6. FİYAT */}

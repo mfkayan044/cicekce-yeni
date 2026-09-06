@@ -4,6 +4,15 @@ import { isRequestAuthorized, verifyTrackingToken, generateTrackingToken } from 
 import { checkRateLimit } from "@/lib/rate-limit";
 import { sanitizeObject, sanitizeString } from "@/lib/sanitize";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
+const NO_CACHE_HEADERS = {
+  "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+  "Pragma": "no-cache",
+  "Expires": "0",
+};
+
 // Helper to parse Turkish price string to number
 function parsePrice(val: any): number {
   if (!val) return 0;
@@ -120,7 +129,7 @@ export async function GET(request: Request) {
         deliveredPhoto,
         deliveryNote,
         updateRequest: extra.updateRequest || order.update_request || null
-      });
+      }, { headers: NO_CACHE_HEADERS });
     }
 
     // Full orders list
@@ -204,7 +213,7 @@ export async function GET(request: Request) {
       };
     });
 
-    return NextResponse.json(formatted);
+    return NextResponse.json(formatted, { headers: NO_CACHE_HEADERS });
   } catch (error) {
     return NextResponse.json({ error: "Failed to fetch orders from Supabase" }, { status: 500 });
   }

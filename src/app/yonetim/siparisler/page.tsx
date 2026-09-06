@@ -322,7 +322,7 @@ export default function AdminOrdersPage() {
 
   const fetchOrdersSilently = async () => {
     try {
-      const res = await fetch("/api/orders");
+      const res = await fetch(`/api/orders?_t=${Date.now()}`, { cache: "no-store" });
       if (res.ok) {
         const data = await res.json();
         setOrders(data);
@@ -332,7 +332,7 @@ export default function AdminOrdersPage() {
 
   const fetchCouriers = async () => {
     try {
-      const res = await fetch("/api/couriers");
+      const res = await fetch(`/api/couriers?_t=${Date.now()}`, { cache: "no-store" });
       if (res.ok) {
         const data = await res.json();
         setCouriers(Array.isArray(data.list) ? data.list : []);
@@ -342,7 +342,7 @@ export default function AdminOrdersPage() {
 
   const fetchOrders = async () => {
     try {
-      const res = await fetch("/api/orders");
+      const res = await fetch(`/api/orders?_t=${Date.now()}`, { cache: "no-store" });
       if (res.ok) {
         const data = await res.json();
         setOrders(data);

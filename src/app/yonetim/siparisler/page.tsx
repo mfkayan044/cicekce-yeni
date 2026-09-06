@@ -840,8 +840,8 @@ export default function AdminOrdersPage() {
                           {/* CASE 2: HAZIRLANIYOR / FOTOĞRAFLI ONAY BEKLİYOR */}
                           {(canonicalStatus === "Hazırlanıyor" || canonicalStatus === "Fotoğraflı Onay Bekliyor") && (
                             <div className="space-y-1.5">
-                              {/* Subcase A: Müşteri Onayladı -> Yeşil Kuryeye Teslim Edin */}
-                              {(o.customerApprovalStatus === "Onaylandı" || o.customerApprovalStatus === "Otomatik Onaylandı" || o.customerApprovalStatus === "Sistem Tarafından Onaylandı") ? (
+                              {/* Subcase A: Müşteri veya Sistem Onayladı -> Yeşil Kuryeye Teslim Edin */}
+                              {String(o.customerApprovalStatus || "").includes("Onaylandı") ? (
                                 <div className="space-y-1">
                                   <button
                                     type="button"

@@ -7,7 +7,7 @@ import Link from "next/link";
 import { useState } from "react";
 
 export default function CartPage() {
-  const { cart, removeFromCart, updateQuantity, applyCoupon, discountAmount, clearCart } = useStore();
+  const { cart, removeFromCart, updateQuantity, applyCoupon, discountAmount, clearCart, addExtraToCart, removeExtraFromCart } = useStore();
   const [couponInput, setCouponInput] = useState("");
   const [couponMsg, setCouponMsg] = useState("");
 
@@ -17,6 +17,15 @@ export default function CartPage() {
     if (success) setCouponMsg("HOSGELDIN100 İndirim Kuponu Uygulandı (-100 ₺)!");
     else setCouponMsg("Geçersiz kupon kodu!");
   };
+
+  const curatedExtras: ExtraGift[] = [
+    { id: "ext_choc", name: "Rocher Lüks Çikolata Kutusu", price: 250, image: "", icon: "🍫" },
+    { id: "ext_bear", name: "Sevimli Peluş Ayıcık (25cm)", price: 350, image: "", icon: "🧸" },
+    { id: "ext_balloon", name: "Kalpli Uçan Balon (Demeti)", price: 150, image: "", icon: "🎈" },
+    { id: "ext_card", name: "Özel Tasarım Kalın Mesaj Kartı", price: 50, image: "", icon: "💌" },
+    { id: "ext_candle", name: "Vanilya Kokulu Dekoratif Mum", price: 180, image: "", icon: "🕯️" },
+    { id: "ext_truffle", name: "Antep Fıstıklı Truff Box", price: 290, image: "", icon: "🍬" },
+  ];
 
   const cartItems: CartItem[] = cart || [];
 
@@ -38,59 +47,118 @@ export default function CartPage() {
 
           {cartItems.length > 0 ? (
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              {/* Cart List */}
-              <div className="lg:col-span-2 space-y-4">
-                {cartItems.map((item: CartItem) => (
-                  <div key={item.product.id} className="p-5 bg-white rounded-2xl border shadow-sm flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-4">
-                      <img
-                        src={item.product.image}
-                        alt={item.product.title}
-                        className="w-16 h-16 object-cover rounded-xl border"
-                      />
-                      <div>
-                        <h5 className="font-bold text-slate-900 text-base m-0">{item.product.title}</h5>
-                        <div className="text-xs text-[#2b2623] font-bold mt-1">{String(item.product.price)}</div>
-                        {item.selectedExtras && item.selectedExtras.length > 0 && (
-                          <div className="text-[11px] text-slate-400 mt-1">
-                            + {item.selectedExtras.map((e: ExtraGift) => e.name).join(", ")}
-                          </div>
-                        )}
+              {/* Cart List & Extras */}
+              <div className="lg:col-span-2 space-y-6">
+                <div className="space-y-4">
+                  {cartItems.map((item: CartItem) => (
+                    <div key={item.product.id} className="p-5 bg-white rounded-2xl border shadow-sm flex items-center justify-between gap-4">
+                      <div className="flex items-center gap-4">
+                        <img
+                          src={item.product.image}
+                          alt={item.product.title}
+                          className="w-16 h-16 object-cover rounded-xl border"
+                        />
+                        <div>
+                          <h5 className="font-bold text-slate-900 text-base m-0">{item.product.title}</h5>
+                          <div className="text-xs text-[#2b2623] font-bold mt-1">{String(item.product.price)}</div>
+                          {item.selectedExtras && item.selectedExtras.length > 0 && (
+                            <div className="text-[11px] text-amber-900 font-semibold mt-1">
+                              + Ekstralar: {item.selectedExtras.map((e: ExtraGift) => `${e.name} (+${e.price} ₺)`).join(", ")}
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    </div>
 
-                    <div className="flex items-center gap-3">
-                      <div className="flex items-center border rounded-xl overflow-hidden bg-slate-50">
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center border rounded-xl overflow-hidden bg-slate-50">
+                          <button
+                            onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
+                            className="px-3 py-1 font-bold hover:bg-slate-200 text-slate-600"
+                          >
+                            -
+                          </button>
+                          <span className="px-3 text-xs font-bold text-slate-800">{item.quantity}</span>
+                          <button
+                            onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
+                            className="px-3 py-1 font-bold hover:bg-slate-200 text-slate-600"
+                          >
+                            +
+                          </button>
+                        </div>
                         <button
-                          onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
-                          className="px-3 py-1 font-bold hover:bg-slate-200 text-slate-600"
+                          onClick={() => removeFromCart(item.product.id)}
+                          className="text-slate-400 hover:text-red-500 p-2 text-xl"
                         >
-                          -
-                        </button>
-                        <span className="px-3 text-xs font-bold text-slate-800">{item.quantity}</span>
-                        <button
-                          onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
-                          className="px-3 py-1 font-bold hover:bg-slate-200 text-slate-600"
-                        >
-                          +
+                          ✕
                         </button>
                       </div>
-                      <button
-                        onClick={() => removeFromCart(item.product.id)}
-                        className="text-slate-400 hover:text-red-500 p-2 text-xl"
-                      >
-                        ✕
-                      </button>
                     </div>
+                  ))}
+
+                  <div className="flex justify-between items-center">
+                    <button
+                      onClick={() => clearCart()}
+                      className="text-xs font-semibold text-slate-400 hover:text-red-500 transition"
+                    >
+                      Sepeti Temizle
+                    </button>
+                    <span className="text-xs text-slate-500 font-medium">Toplam {cartItems.length} Kalem Ürün</span>
                   </div>
-                ))}
+                </div>
 
-                <button
-                  onClick={() => clearCart()}
-                  className="text-xs font-semibold text-slate-400 hover:text-red-500 transition"
-                >
-                  Sepeti Temizle
-                </button>
+                {/* Cross-Selling & Upselling Addons Section */}
+                <div className="bg-white p-6 rounded-2xl border shadow-xs space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="font-extrabold text-slate-900 text-base flex items-center gap-2">
+                        <span>🎁</span>
+                        <span>Çiçeğinizin Yanına Harika Eklemeler</span>
+                      </h3>
+                      <p className="text-xs text-slate-500 mt-0.5">Siparişinizi daha da unutulmaz kılacak özel hediye alternatifleri</p>
+                    </div>
+                    <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
+                      ⚡ 1-Tıkla Ekle
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    {curatedExtras.map((extra) => {
+                      const isAdded = cartItems.some((item) => item.selectedExtras?.some((e) => e.id === extra.id));
+                      return (
+                        <div
+                          key={extra.id}
+                          className={`p-3.5 rounded-xl border transition flex flex-col justify-between ${
+                            isAdded ? "border-amber-800 bg-amber-50/40" : "border-slate-200 bg-slate-50/50 hover:border-slate-300"
+                          }`}
+                        >
+                          <div className="flex items-center gap-2.5">
+                            <span className="text-2xl">{extra.icon}</span>
+                            <div>
+                              <div className="font-bold text-slate-800 text-xs line-clamp-1">{extra.name}</div>
+                              <div className="text-xs font-black text-[#2b2623] mt-0.5">+{extra.price} ₺</div>
+                            </div>
+                          </div>
+
+                          {isAdded ? (
+                            <button
+                              onClick={() => removeExtraFromCart(extra.id)}
+                              className="mt-3 w-full py-1.5 rounded-lg text-xs font-bold bg-[#2b2623] text-white hover:bg-black transition"
+                            >
+                              ✓ Eklendi (Kaldır)
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => addExtraToCart(extra)}
+                              className="mt-3 w-full py-1.5 rounded-lg text-xs font-bold bg-white text-slate-800 border border-slate-300 hover:border-[#2b2623] hover:text-[#2b2623] transition"
+                            >
+                              + Sepete Ekle
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
               </div>
 
               {/* Summary Card */}

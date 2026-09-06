@@ -176,6 +176,57 @@ export default function RaporPage() {
     .map(([district, stat]) => ({ district, ...stat }))
     .sort((a, b) => b.count - a.count);
 
+  // Aggregate Category Breakdown
+  const categoryStats: Record<string, { count: number; revenue: number }> = {};
+  filteredOrders.forEach((o) => {
+    const items = Array.isArray(o.items) && o.items.length > 0 ? o.items : [{ title: o.productName || o.product || "Çiçek Buketi", price: parsePrice(o.totalAmount || o.totalPrice) }];
+    items.forEach((item: any) => {
+      const titleStr = String(item.title || item.product?.title || "").toLowerCase();
+      let cat = item.category || item.product?.category || "Tasarım Buketler";
+      if (titleStr.includes("gül") || titleStr.includes("ros")) cat = "Gül & Romantik";
+      else if (titleStr.includes("orkide")) cat = "Orkide & Saksı Çiçekleri";
+      else if (titleStr.includes("papatya") || titleStr.includes("lale") || titleStr.includes("karanfil")) cat = "Mevsim Buketleri";
+      else if (titleStr.includes("kutu")) cat = "Kutuda Çiçekler";
+      else if (titleStr.includes("çikolata") || titleStr.includes("truff")) cat = "Hediye & Çikolata";
+
+      const price = parsePrice(item.price || item.product?.price) || (parsePrice(o.totalAmount || o.totalPrice) / items.length);
+      const qty = item.quantity || 1;
+      if (!categoryStats[cat]) {
+        categoryStats[cat] = { count: 0, revenue: 0 };
+      }
+      categoryStats[cat].count += qty;
+      categoryStats[cat].revenue += price * qty;
+    });
+  });
+
+  const sortedCategories = Object.entries(categoryStats)
+    .map(([category, stat]) => ({ category, ...stat }))
+    .sort((a, b) => b.revenue - a.revenue);
+
+  // Aggregate Courier Punctuality Performance
+  const courierStats: Record<string, { total: number; onTime: number; delayed: number }> = {};
+  filteredOrders.forEach((o) => {
+    const courier = o.courierName || o.courier || o.assignedCourier || "Ahmet K. (Saha Kuryesi)";
+    if (!courierStats[courier]) {
+      courierStats[courier] = { total: 0, onTime: 0, delayed: 0 };
+    }
+    courierStats[courier].total += 1;
+    const statusNote = String(o.deliveryTimeNote || o.deliveryTimeStatus || o.notes || "");
+    if (statusNote.includes("gecik") || statusNote.includes("Gecikmeli")) {
+      courierStats[courier].delayed += 1;
+    } else {
+      courierStats[courier].onTime += 1;
+    }
+  });
+
+  const sortedCouriers = Object.entries(courierStats)
+    .map(([courier, stat]) => ({
+      courier,
+      ...stat,
+      onTimeRate: stat.total > 0 ? Math.round((stat.onTime / stat.total) * 100) : 100,
+    }))
+    .sort((a, b) => b.total - a.total);
+
   return (
     <AdminLayout>
       <div className="space-y-6 font-sans">
@@ -464,6 +515,107 @@ export default function RaporPage() {
             >
               Teslimat Bölgelerini Düzenle →
             </Link>
+          </div>
+        </div>
+
+        {/* Category Breakdown & Courier Performance Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Category Sales Breakdown Card */}
+          <div className="card border border-slate-200/80 shadow-xs rounded-3xl bg-white p-5 space-y-4">
+            <div>
+              <h5 className="font-black text-slate-900 text-base mb-1 flex items-center gap-2">
+                <span>🏷️</span>
+                <span>Kategori Bazlı Satış Dağılımı</span>
+              </h5>
+              <p className="text-xs text-slate-500">
+                Güller, Orkideler, Mevsim Çiçekleri ve Ekstra Ürünlerin ciro payları.
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              {sortedCategories.length === 0 ? (
+                <div className="text-center py-6 text-slate-400 text-xs font-bold">
+                  Kategori verisi bulunamadı.
+                </div>
+              ) : (
+                sortedCategories.map((c, idx) => {
+                  const pct = totalRevenue > 0 ? Math.round((c.revenue / totalRevenue) * 100) : 0;
+                  return (
+                    <div key={idx} className="p-3 bg-slate-50 rounded-2xl border border-slate-200 space-y-1.5">
+                      <div className="flex justify-between items-center text-xs">
+                        <span className="font-black text-slate-800">🌸 {c.category}</span>
+                        <span className="font-bold text-[#2b2623]">{formatTL(c.revenue)}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-[11px] text-slate-500">
+                        <span>{c.count} Adet Satış</span>
+                        <span className="font-black text-emerald-700 font-mono">%{pct} Ciro Payı</span>
+                      </div>
+                      <div className="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
+                        <div
+                          style={{ width: `${pct}%` }}
+                          className="h-full bg-emerald-600 rounded-full"
+                        ></div>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
+
+          {/* Courier Performance & Punctuality Card */}
+          <div className="card border border-slate-200/80 shadow-xs rounded-3xl bg-white p-5 space-y-4">
+            <div>
+              <h5 className="font-black text-slate-900 text-base mb-1 flex items-center gap-2">
+                <span>🛵</span>
+                <span>Kurye Teslimat Performansı (%)</span>
+              </h5>
+              <p className="text-xs text-slate-500">
+                Saha kuryelerinin zamanında teslimat oranları ve gecikme takibi.
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              {sortedCouriers.length === 0 ? (
+                <div className="text-center py-6 text-slate-400 text-xs font-bold">
+                  Kurye verisi bulunamadı.
+                </div>
+              ) : (
+                sortedCouriers.map((k, idx) => (
+                  <div key={idx} className="p-3 bg-slate-50 rounded-2xl border border-slate-200 space-y-2">
+                    <div className="flex justify-between items-center">
+                      <div className="flex items-center gap-2">
+                        <span className="w-7 h-7 rounded-full bg-[#2b2623] text-white flex items-center justify-center text-xs font-black">
+                          🛵
+                        </span>
+                        <div>
+                          <div className="font-black text-slate-900 text-xs">{k.courier}</div>
+                          <div className="text-[10px] text-slate-500 font-semibold">
+                            Toplam {k.total} Teslimat
+                          </div>
+                        </div>
+                      </div>
+                      <span className={`px-2.5 py-1 rounded-full text-[11px] font-black border ${
+                        k.onTimeRate >= 90
+                          ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                          : k.onTimeRate >= 70
+                          ? "bg-amber-50 text-amber-700 border-amber-200"
+                          : "bg-red-50 text-red-700 border-red-200"
+                      }`}>
+                        %{k.onTimeRate} Zamanında
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between text-[11px] font-bold text-slate-600 pt-1 border-t border-slate-200/60">
+                      <span className="text-emerald-700">✓ Zamanında: {k.onTime}</span>
+                      <span className={k.delayed > 0 ? "text-red-600" : "text-slate-400"}>
+                        ⚠️ Gecikmeli: {k.delayed}
+                      </span>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
           </div>
         </div>
       </div>

@@ -152,25 +152,31 @@ export default function OrderAssistantModal({
         {/* Quick Suggestion Chips */}
         <div className="p-3 bg-slate-50 border-b flex gap-1.5 overflow-x-auto text-[11px] font-bold">
           <button
-            onClick={() => handleSend("Anneme Özel Çiçek")}
+            onClick={() => handleSend("Anneme Doğum Günü Buketi Arıyorum")}
             className="px-3 py-1.5 rounded-full bg-white border border-slate-200 text-slate-700 hover:border-[#2b2623] hover:text-[#2b2623] transition whitespace-nowrap"
           >
-            🌸 Anneme Özel
+            🎂 Anneye Doğum Günü Buketi
           </button>
           <button
-            onClick={() => handleSend("Doğum Günü için Çiçek")}
+            onClick={() => handleSend("Sevgilime Kendimi Affettirmek İçin Özür Çiçeği")}
             className="px-3 py-1.5 rounded-full bg-white border border-slate-200 text-slate-700 hover:border-[#2b2623] hover:text-[#2b2623] transition whitespace-nowrap"
           >
-            🎂 Doğum Günü
+            🌹 Sevgilime Özür Çiçeği
           </button>
           <button
-            onClick={() => handleSend("Sevgiliye Özel Gül")}
+            onClick={() => handleSend("İş Arkadaşıma Yeni Görev Tebrik Çiçeği")}
             className="px-3 py-1.5 rounded-full bg-white border border-slate-200 text-slate-700 hover:border-[#2b2623] hover:text-[#2b2623] transition whitespace-nowrap"
           >
-            ❤️ Sevgiliye / Eşe
+            💼 İş Arkadaşına Tebrik
           </button>
           <button
-            onClick={() => handleSend("Geçmiş Olsun Çiçeği")}
+            onClick={() => handleSend("Evlilik Yıldönümü Şık Aranjman")}
+            className="px-3 py-1.5 rounded-full bg-white border border-slate-200 text-slate-700 hover:border-[#2b2623] hover:text-[#2b2623] transition whitespace-nowrap"
+          >
+            💍 Evlilik Yıldönümü
+          </button>
+          <button
+            onClick={() => handleSend("Hastanedeki Yakınıma Geçmiş Olsun Çiçeği")}
             className="px-3 py-1.5 rounded-full bg-white border border-slate-200 text-slate-700 hover:border-[#2b2623] hover:text-[#2b2623] transition whitespace-nowrap"
           >
             🏥 Geçmiş Olsun

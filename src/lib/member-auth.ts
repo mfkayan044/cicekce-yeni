@@ -9,6 +9,15 @@ export interface MemberAddress {
   fullAddress: string;
 }
 
+export interface SpecialDate {
+  id: string;
+  title: string;
+  date: string;
+  recipientName: string;
+  relationship?: string;
+  note?: string;
+}
+
 export interface MemberUser {
   id: string;
   name: string;
@@ -18,6 +27,7 @@ export interface MemberUser {
   status?: string;
   orders?: number;
   addresses?: MemberAddress[];
+  specialDates?: SpecialDate[];
 }
 
 const STORAGE_KEY = "cicekce_customer_member";

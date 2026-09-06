@@ -31,6 +31,7 @@ export interface ExtraGift {
   name: string;
   price: number;
   image: string;
+  icon?: string;
 }
 
 export interface CartItem {
@@ -220,6 +221,29 @@ export function useStore<T>(selector?: (state: any) => T): any {
 
     removeFromCart: (productId: string) => {
       globalCart = globalCart.filter((item) => item.product.id !== productId);
+      notify();
+    },
+
+    addExtraToCart: (extra: ExtraGift) => {
+      if (globalCart.length === 0) return;
+      globalCart = globalCart.map((item, idx) => {
+        if (idx === 0) {
+          const extras = item.selectedExtras || [];
+          const exists = extras.some((e) => e.id === extra.id);
+          if (!exists) {
+            return { ...item, selectedExtras: [...extras, extra] };
+          }
+        }
+        return item;
+      });
+      notify();
+    },
+
+    removeExtraFromCart: (extraId: string) => {
+      globalCart = globalCart.map((item) => ({
+        ...item,
+        selectedExtras: (item.selectedExtras || []).filter((e) => e.id !== extraId),
+      }));
       notify();
     },
 

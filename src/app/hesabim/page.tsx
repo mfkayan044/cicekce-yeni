@@ -12,7 +12,7 @@ export default function MemberAccountPage() {
   const router = useRouter();
   const [member, setMember] = useState<MemberUser | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"orders" | "addresses" | "profile">("orders");
+  const [activeTab, setActiveTab] = useState<"orders" | "addresses" | "profile" | "special_dates">("orders");
 
   // Orders State
   const [myOrders, setMyOrders] = useState<any[]>([]);
@@ -32,6 +32,14 @@ export default function MemberAccountPage() {
   const [addrCity, setAddrCity] = useState("İstanbul");
   const [addrDistrict, setAddrDistrict] = useState("Kadıköy");
   const [addrFull, setAddrFull] = useState("");
+
+  // Special Dates State
+  const [showSpecialDateModal, setShowSpecialDateModal] = useState(false);
+  const [spTitle, setSpTitle] = useState("");
+  const [spDate, setSpDate] = useState("");
+  const [spRecipient, setSpRecipient] = useState("");
+  const [spRelationship, setSpRelationship] = useState("Eş / Sevgili");
+  const [spNote, setSpNote] = useState("");
 
   useEffect(() => {
     const current = getStoredMember();
@@ -164,6 +172,73 @@ export default function MemberAccountPage() {
     } catch (e) {}
   };
 
+  const handleAddSpecialDate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!member || !spTitle || !spDate || !spRecipient) return;
+
+    const newDate = {
+      id: `SP-${Date.now()}`,
+      title: spTitle,
+      date: spDate,
+      recipientName: spRecipient,
+      relationship: spRelationship || "Yakını",
+      note: spNote || "",
+    };
+
+    const updatedDates = [...(member.specialDates || []), newDate];
+    const updatedMember = { ...member, specialDates: updatedDates };
+
+    try {
+      const res = await fetch("/api/members", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "update",
+          id: member.id,
+          updatedData: { specialDates: updatedDates },
+        }),
+      });
+
+      if (res.ok) {
+        setStoredMember(updatedMember);
+        setMember(updatedMember);
+        setShowSpecialDateModal(false);
+        setSpTitle("");
+        setSpDate("");
+        setSpRecipient("");
+        setSpRelationship("Eş / Sevgili");
+        setSpNote("");
+      } else {
+        alert("Özel gün kaydedilirken bir hata oluştu.");
+      }
+    } catch (err) {
+      alert("Bağlantı hatası.");
+    }
+  };
+
+  const handleDeleteSpecialDate = async (id: string) => {
+    if (!member) return;
+    const updatedDates = (member.specialDates || []).filter((d) => d.id !== id);
+    const updatedMember = { ...member, specialDates: updatedDates };
+
+    try {
+      const res = await fetch("/api/members", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "update",
+          id: member.id,
+          updatedData: { specialDates: updatedDates },
+        }),
+      });
+
+      if (res.ok) {
+        setStoredMember(updatedMember);
+        setMember(updatedMember);
+      }
+    } catch (err) {}
+  };
+
   const handleLogout = () => {
     clearStoredMember();
     router.push("/");
@@ -210,7 +285,7 @@ export default function MemberAccountPage() {
           </div>
 
           {/* NAVIGATION TABS */}
-          <div className="grid grid-cols-3 gap-2 bg-slate-200/70 p-1.5 rounded-2xl">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 bg-slate-200/70 p-1.5 rounded-2xl">
             <button
               type="button"
               onClick={() => setActiveTab("orders")}
@@ -226,12 +301,25 @@ export default function MemberAccountPage() {
 
             <button
               type="button"
+              onClick={() => setActiveTab("special_dates")}
+              className={`py-3 rounded-xl font-black text-xs transition flex items-center justify-center gap-1.5 ${
+                activeTab === "special_dates" ? "bg-white text-[#2b2623] shadow-xs" : "text-slate-600 hover:text-slate-900"
+              }`}
+            >
+              <span>📅 Özel Günler</span>
+              <span className="px-2 py-0.5 rounded-full text-[10px] bg-purple-100 text-purple-900 font-bold">
+                {member.specialDates?.length || 0}
+              </span>
+            </button>
+
+            <button
+              type="button"
               onClick={() => setActiveTab("addresses")}
               className={`py-3 rounded-xl font-black text-xs transition flex items-center justify-center gap-1.5 ${
                 activeTab === "addresses" ? "bg-white text-[#2b2623] shadow-xs" : "text-slate-600 hover:text-slate-900"
               }`}
             >
-              <span>📍 Kayıtlı Adreslerim</span>
+              <span>📍 Adreslerim</span>
               <span className="px-2 py-0.5 rounded-full text-[10px] bg-slate-100 text-slate-700 font-bold">
                 {member.addresses?.length || 0}
               </span>
@@ -244,7 +332,7 @@ export default function MemberAccountPage() {
                 activeTab === "profile" ? "bg-white text-[#2b2623] shadow-xs" : "text-slate-600 hover:text-slate-900"
               }`}
             >
-              <span>👤 Profil Bilgilerim</span>
+              <span>👤 Profilim</span>
             </button>
           </div>
 
@@ -461,7 +549,81 @@ export default function MemberAccountPage() {
             </div>
           )}
 
-          {/* TAB 3: PROFİL BİLGİLERİM */}
+          {/* TAB 3: ÖZEL GÜN TAKVİMİM */}
+          {activeTab === "special_dates" && (
+            <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-xs space-y-6">
+              <div className="flex flex-wrap items-center justify-between gap-3 border-b pb-4">
+                <div>
+                  <h3 className="font-extrabold text-base text-slate-900 m-0 flex items-center gap-2">
+                    <span>📅</span> <span>Özel Gün Takvimim & Hatırlatıcı</span>
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-1 m-0">
+                    Sevdiklerinizin doğum günü, evlilik yıldönümü gibi özel günlerini ekleyin; zamanı geldiğinde indirimli çiçek fırsatlarını kaçırmayın!
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowSpecialDateModal(true)}
+                  style={{ backgroundColor: "#2b2623", color: "#ffffff" }}
+                  className="py-2.5 px-4 rounded-2xl text-xs font-extrabold shadow-md hover:opacity-95 transition flex items-center gap-1.5 shrink-0"
+                >
+                  <span>✨ Yeni Özel Gün Ekle</span>
+                </button>
+              </div>
+
+              {(!member.specialDates || member.specialDates.length === 0) ? (
+                <div className="text-center py-10 space-y-3 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+                  <div className="text-4xl">🎂</div>
+                  <div className="font-bold text-slate-800 text-sm">Henüz Kayıtlı Bir Özel Gününüz Yok</div>
+                  <p className="text-xs text-slate-500 max-w-sm mx-auto">
+                    Sevdiklerinizin doğum gününü veya yıldönümünü kaydedin, günü geldiğinde çiçek hediyenizi ilk siz hazırlayın.
+                  </p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {member.specialDates.map((sp) => (
+                    <div
+                      key={sp.id}
+                      className="p-4 rounded-2xl bg-purple-50/60 border border-purple-200 text-purple-950 space-y-2 relative"
+                    >
+                      <div className="flex justify-between items-start">
+                        <div className="flex items-center gap-2">
+                          <span className="text-lg">🎉</span>
+                          <div>
+                            <div className="font-black text-sm text-purple-950">{sp.title}</div>
+                            <div className="text-[11px] font-bold text-purple-700">
+                              Kişi: <strong>{sp.recipientName}</strong> ({sp.relationship || "Yakını"})
+                            </div>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteSpecialDate(sp.id)}
+                          className="text-red-500 hover:text-red-700 text-xs font-bold p-1"
+                          title="Özel Günü Sil"
+                        >
+                          🗑️
+                        </button>
+                      </div>
+
+                      <div className="p-2.5 bg-white rounded-xl border border-purple-200 flex items-center justify-between text-xs">
+                        <span className="font-bold text-slate-500">Tarih:</span>
+                        <span className="font-black text-purple-900 font-mono">📅 {sp.date}</span>
+                      </div>
+
+                      {sp.note && (
+                        <div className="text-[11px] text-purple-800 italic bg-purple-100/50 p-2 rounded-lg">
+                          "{sp.note}"
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* TAB 4: PROFİL BİLGİLERİM */}
           {activeTab === "profile" && (
             <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-xs space-y-6">
               <div>
@@ -612,6 +774,106 @@ export default function MemberAccountPage() {
                   className="px-5 py-2.5 rounded-xl text-xs font-black shadow-md hover:opacity-95 transition"
                 >
                   Adresi Kaydet
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* NEW SPECIAL DATE MODAL */}
+      {showSpecialDateModal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4 border border-slate-100">
+            <div className="flex justify-between items-center border-b pb-3">
+              <h5 className="font-extrabold text-sm text-slate-900">🎂 Yeni Özel Gün Ekle</h5>
+              <button
+                type="button"
+                onClick={() => setShowSpecialDateModal(false)}
+                className="w-8 h-8 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center font-bold"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleAddSpecialDate} className="space-y-3">
+              <div>
+                <label className="text-xs font-bold text-slate-700 block mb-1">Özel Gün Adı / Başlığı *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Örn: Eşimin Doğum Günü, Evlilik Yıldönümümüz"
+                  value={spTitle}
+                  onChange={(e) => setSpTitle(e.target.value)}
+                  className="w-full p-2.5 border rounded-xl text-xs font-semibold"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="text-xs font-bold text-slate-700 block mb-1">Kendi/Alıcı Adı *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Örn: Ayşe Yılmaz"
+                    value={spRecipient}
+                    onChange={(e) => setSpRecipient(e.target.value)}
+                    className="w-full p-2.5 border rounded-xl text-xs font-semibold"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold text-slate-700 block mb-1">Yakınlık Derecesi</label>
+                  <select
+                    value={spRelationship}
+                    onChange={(e) => setSpRelationship(e.target.value)}
+                    className="w-full p-2.5 border rounded-xl text-xs font-semibold bg-slate-50"
+                  >
+                    <option value="Eş / Sevgili">Eş / Sevgili</option>
+                    <option value="Anne / Baba">Anne / Baba</option>
+                    <option value="Kardeş / Aile">Kardeş / Aile</option>
+                    <option value="Arkadaş / Dost">Arkadaş / Dost</option>
+                    <option value="İş Arkadaşı / Ortak">İş Arkadaşı / Ortak</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-slate-700 block mb-1">Tarih *</label>
+                <input
+                  type="date"
+                  required
+                  value={spDate}
+                  onChange={(e) => setSpDate(e.target.value)}
+                  className="w-full p-2.5 border rounded-xl text-xs font-semibold"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-slate-700 block mb-1">Özel Not (Opsiyonel)</label>
+                <input
+                  type="text"
+                  placeholder="Örn: Kırmızı gül seviyor"
+                  value={spNote}
+                  onChange={(e) => setSpNote(e.target.value)}
+                  className="w-full p-2.5 border rounded-xl text-xs font-semibold"
+                />
+              </div>
+
+              <div className="pt-2 flex justify-end gap-2 border-t">
+                <button
+                  type="button"
+                  onClick={() => setShowSpecialDateModal(false)}
+                  className="btn btn-light px-4 py-2 text-xs font-bold"
+                >
+                  Vazgeç
+                </button>
+                <button
+                  type="submit"
+                  style={{ backgroundColor: "#2b2623", color: "#ffffff" }}
+                  className="px-5 py-2.5 rounded-xl text-xs font-black shadow-md hover:opacity-95 transition"
+                >
+                  Özel Günü Kaydet
                 </button>
               </div>
             </form>

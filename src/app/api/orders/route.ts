@@ -48,15 +48,27 @@ export async function GET(request: Request) {
 
     // Public lookup for customer tracking if search query is passed
     if (orderId) {
-      let query = supabase.from("orders").select("*").eq("id", orderId);
-      if (phone) {
-        const cleanPhone = phone.replace(/[^0-9]/g, "");
-        query = query.or(`customer_phone.ilike.%${cleanPhone}%,recipient_phone.ilike.%${cleanPhone}%`);
+      const cleanInputId = orderId.trim();
+      const cleanPhone = phone ? phone.replace(/[^0-9]/g, "") : "";
+
+      const { data: order, error } = await supabase.from("orders").select("*").eq("id", cleanInputId).single();
+      if (error || !order) {
+        return NextResponse.json({ error: "Sipariş bulunamadı." }, { status: 404 });
       }
 
-      const { data: order, error } = await query.single();
-      if (error || !order) {
-        return NextResponse.json({ error: "Sipariş bulunamadı" }, { status: 404 });
+      // SECURITY ENFORCEMENT:
+      // Single order public lookup MUST require matching customer_phone or recipient_phone!
+      const custPhoneClean = String(order.customer_phone || order.customerPhone || "").replace(/[^0-9]/g, "");
+      const recipPhoneClean = String(order.recipient_phone || order.recipientPhone || "").replace(/[^0-9]/g, "");
+
+      const matchesCustomer = cleanPhone && cleanPhone.length >= 4 && custPhoneClean && (custPhoneClean.endsWith(cleanPhone) || cleanPhone.endsWith(custPhoneClean));
+      const matchesRecipient = cleanPhone && cleanPhone.length >= 4 && recipPhoneClean && (recipPhoneClean.endsWith(cleanPhone) || cleanPhone.endsWith(recipPhoneClean));
+
+      if (!cleanPhone || (!matchesCustomer && !matchesRecipient)) {
+        return NextResponse.json(
+          { error: "Güvenlik Uyarısı: Sipariş takibi yapabilmek için Sipariş Kodu ile birlikte siparişte kayıtlı Telefon Numarasını doğru girmelisiniz." },
+          { status: 403 }
+        );
       }
 
       const courierMap = await getOrderCouriersMap();

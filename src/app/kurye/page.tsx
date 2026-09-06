@@ -288,6 +288,9 @@ export default function CourierPortalPage() {
       selectedName &&
       (orderCourierName.includes(selectedName.slice(0, 5)) || selectedName.includes(orderCourierName.slice(0, 5)));
 
+    // If order has no specific courier assigned yet, show it so any courier can view and complete delivery
+    if (!orderCourierId && !orderCourierName) return true;
+
     return matchesId || matchesName;
   });
 

@@ -31,21 +31,23 @@ export default function OrderTrackingPage() {
   }, []);
 
   const handleSearchWithParams = async (id: string, phone: string) => {
+    if (!phone.trim()) {
+      setError("Güvenlik nedeniyle sipariş durumunu görüntülemek için siparişte kayıtlı telefon numaranızı da girmeniz gerekmektedir.");
+      return;
+    }
+
     setLoading(true);
     setError("");
     setOrder(null);
 
     try {
-      let url = `/api/orders?id=${encodeURIComponent(id.trim())}`;
-      if (phone.trim()) {
-        url += `&phone=${encodeURIComponent(phone.trim())}`;
-      }
+      let url = `/api/orders?id=${encodeURIComponent(id.trim())}&phone=${encodeURIComponent(phone.trim())}`;
 
       const res = await fetch(url);
       const data = await res.json();
 
       if (!res.ok || data.error) {
-        setError("Belirtilen kriterlere uygun sipariş bulunamadı. Lütfen sipariş numaranızı kontrol ediniz.");
+        setError(data.error || "Belirtilen kriterlere uygun sipariş bulunamadı. Lütfen sipariş numaranızı ve telefon numaranızı kontrol ediniz.");
         return;
       }
 
@@ -69,6 +71,10 @@ export default function OrderTrackingPage() {
     e.preventDefault();
     if (!orderIdInput.trim()) {
       setError("Lütfen sipariş numaranızı giriniz.");
+      return;
+    }
+    if (!phoneInput.trim()) {
+      setError("Lütfen siparişte kayıtlı telefon numaranızı giriniz.");
       return;
     }
     handleSearchWithParams(orderIdInput, phoneInput);
@@ -162,7 +168,7 @@ export default function OrderTrackingPage() {
               </div>
               <div>
                 <label className="text-xs font-bold text-slate-700 block mb-1">
-                  Telefon Numarası (Opsiyonel)
+                  Telefon Numarası * <span className="text-[10px] text-amber-700 font-semibold">(Güvenlik İçin Zorunlu)</span>
                 </label>
                 <input
                   type="text"
@@ -170,6 +176,7 @@ export default function OrderTrackingPage() {
                   className="w-full p-3 border border-slate-200 rounded-xl text-sm outline-none focus:border-[#2b2623]"
                   value={phoneInput}
                   onChange={(e) => setPhoneInput(e.target.value)}
+                  required
                 />
               </div>
               <div className="flex items-end">

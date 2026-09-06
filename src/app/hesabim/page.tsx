@@ -62,9 +62,16 @@ export default function MemberAccountPage() {
       const res = await fetch("/api/orders");
       if (res.ok) {
         const all = await res.json();
+        const cleanUserEmail = (email || "").trim().toLowerCase();
+        const cleanUserPhone = (phone || "").replace(/\D/g, "");
+
         const filtered = (all || []).filter((o: any) => {
-          const emailMatch = email && o.customerEmail && o.customerEmail.toLowerCase() === email.toLowerCase();
-          const phoneMatch = phone && o.customerPhone && o.customerPhone.replace(/\D/g, "") === phone.replace(/\D/g, "");
+          const oEmail = (o.customerEmail || o.customer_email || "").trim().toLowerCase();
+          const oPhone = (o.customerPhone || o.customer_phone || "").replace(/\D/g, "");
+
+          const emailMatch = cleanUserEmail.length > 3 && oEmail === cleanUserEmail;
+          const phoneMatch = cleanUserPhone.length >= 7 && oPhone.length >= 7 && (oPhone.endsWith(cleanUserPhone) || cleanUserPhone.endsWith(oPhone));
+
           return emailMatch || phoneMatch;
         });
         setMyOrders(filtered);
@@ -475,7 +482,7 @@ export default function MemberAccountPage() {
                         )}
 
                         <Link
-                          href={`/siparis-takip?id=${o.id}`}
+                          href={`/siparis-takip?id=${o.id}&phone=${encodeURIComponent(member.phone || o.customerPhone || "")}`}
                           className="py-2 px-4 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-800 transition"
                         >
                           🔍 Siparişi Takip Et

@@ -2,6 +2,10 @@ import { NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
 import { isRequestAuthorized } from "@/lib/auth";
 
+const cacheHeaders = {
+  "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300",
+};
+
 export async function GET() {
   try {
     const { data, error } = await supabase.from("categories").select("*").order("display_order", { ascending: true });
@@ -15,7 +19,7 @@ export async function GET() {
       order: c.display_order || c.order || 0
     }));
 
-    return NextResponse.json(formatted);
+    return NextResponse.json(formatted, { headers: cacheHeaders });
   } catch (error) {
     return NextResponse.json({ error: "Failed to fetch categories from Supabase" }, { status: 500 });
   }

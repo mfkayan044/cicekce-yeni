@@ -67,16 +67,20 @@ function saveLocalHero(data: any) {
   } catch (e) {}
 }
 
+const cacheHeaders = {
+  "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300",
+};
+
 export async function GET() {
   try {
     const { data, error } = await supabase.from("site_settings").select("*").eq("id", "hero").single();
     if (!error && data && data.value) {
-      return NextResponse.json(data.value);
+      return NextResponse.json(data.value, { headers: cacheHeaders });
     }
   } catch (error) {}
 
   const localData = getLocalHero();
-  return NextResponse.json(localData);
+  return NextResponse.json(localData, { headers: cacheHeaders });
 }
 
 export async function POST(request: Request) {

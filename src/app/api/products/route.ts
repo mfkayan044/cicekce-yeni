@@ -38,6 +38,10 @@ function writeDbAndTs(dbObj: any) {
   } catch (e) {}
 }
 
+const cacheHeaders = {
+  "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300",
+};
+
 export async function GET() {
   try {
     // Read directly from db.json to guarantee 100% SSR & Client hydration parity
@@ -77,14 +81,14 @@ export async function GET() {
             description: sbP.description || localP.description
           };
         });
-        if (merged.length > 0) return NextResponse.json(merged);
+        if (merged.length > 0) return NextResponse.json(merged, { headers: cacheHeaders });
       }
     } catch (sbErr) {}
 
-    return NextResponse.json(productsList);
+    return NextResponse.json(productsList, { headers: cacheHeaders });
   } catch (error) {
     const db = readDb();
-    return NextResponse.json(db.products || []);
+    return NextResponse.json(db.products || [], { headers: cacheHeaders });
   }
 }
 

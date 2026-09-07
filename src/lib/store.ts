@@ -68,7 +68,15 @@ let globalCoupon: string | null = null;
 let globalDiscountAmount = 0;
 const listeners: Array<() => void> = [];
 
-async function fetchFromApi() {
+let lastFetchTime = 0;
+let isFetching = false;
+
+async function fetchFromApi(force = false) {
+  const now = Date.now();
+  if (isFetching) return;
+  if (!force && now - lastFetchTime < 15000) return;
+
+  isFetching = true;
   try {
     const [pRes, cRes] = await Promise.all([
       fetch("/api/products"),
@@ -76,9 +84,12 @@ async function fetchFromApi() {
     ]);
     if (pRes.ok) globalProducts = await pRes.json();
     if (cRes.ok) globalCategories = await cRes.json();
+    lastFetchTime = Date.now();
     listeners.forEach((l) => l());
   } catch (e) {
     console.error("API Fetch Error:", e);
+  } finally {
+    isFetching = false;
   }
 }
 

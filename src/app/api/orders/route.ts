@@ -378,6 +378,26 @@ export async function PUT(request: Request) {
       console.error("Supabase orders table update error:", dbError);
     }
 
+    // Trigger NetGSM Automatic SMS Notification if status changed
+    if (status && status !== existingOrder?.status) {
+      const targetPhone = existingOrder?.customer_phone || existingOrder?.customerPhone || existingOrder?.recipient_phone;
+      const custName = existingOrder?.customer_name || existingOrder?.customerName || "Müşterimiz";
+      if (targetPhone) {
+        let msg = "";
+        if (status === "Hazırlanıyor" || status === "Hazırlanıyor / Onaylandı") {
+          msg = `Sayin ${custName}, ${id} nolu cicek siparisiniz ozenle hazirlanmaya baslanmistir. Cicekce`;
+        } else if (status === "Kuryede / Dağıtımda") {
+          msg = `Sayin ${custName}, ${id} nolu siparisiniz kuryemiz tarafindan teslimat adresine yola cikarilmistir. Cicekce`;
+        } else if (status === "Teslim Edildi") {
+          msg = `Sayin ${custName}, ${id} nolu cicek siparisiniz alicisina basariyla teslim edilmistir. Bizi tercih ettiginiz icin tesekkur ederiz. Cicekce`;
+        }
+        if (msg) {
+          const { sendNetgsmSms } = await import("@/lib/netgsm-sms");
+          sendNetgsmSms({ phone: targetPhone, message: msg }).catch(() => {});
+        }
+      }
+    }
+
     // Backup update to courierMap memory
     courierMap[id] = {
       ...(courierMap[id] || {}),

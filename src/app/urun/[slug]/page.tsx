@@ -6,6 +6,7 @@ import ProductCard from "@/components/store/ProductCard";
 import QuickOrderModal, { QuickOrderProduct } from "@/components/store/QuickOrderModal";
 import AddressSelectionModal from "@/components/store/AddressSelectionModal";
 import { useStore, Product } from "@/lib/store";
+import { getStoredMember } from "@/lib/member-auth";
 import { useState, use, useEffect } from "react";
 import Link from "next/link";
 
@@ -75,12 +76,14 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
     fetchLiveDeliverySlots();
   }, []);
 
-  // Live Customer Reviews State
+  // Live Customer Reviews State & Member Verification
   const [liveReviews, setLiveReviews] = useState<any[]>([]);
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [newReviewAuthor, setNewReviewAuthor] = useState("");
   const [newReviewText, setNewReviewText] = useState("");
   const [newReviewRating, setNewReviewRating] = useState(5);
+  const [newReviewOrderId, setNewReviewOrderId] = useState("");
+  const [memberCompletedOrders, setMemberCompletedOrders] = useState<any[]>([]);
   const [reviewToast, setReviewToast] = useState("");
 
   const fetchLiveReviews = async () => {
@@ -102,11 +105,40 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
 
   useEffect(() => {
     fetchLiveReviews();
-  }, []);
+    const mem = getStoredMember();
+    if (mem) {
+      setNewReviewAuthor(mem.name || "");
+      fetch(`/api/orders`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (Array.isArray(data)) {
+            const userOrders = data.filter(
+              (o: any) =>
+                (o.customerPhone && mem.phone && o.customerPhone.includes(mem.phone)) ||
+                (o.customerEmail && mem.email && o.customerEmail.toLowerCase() === mem.email.toLowerCase())
+            );
+            setMemberCompletedOrders(userOrders);
+            if (userOrders.length > 0) setNewReviewOrderId(userOrders[0].id);
+          }
+        })
+        .catch(() => {});
+    }
+  }, [product.title]);
+
+  const handleOpenReviewModal = () => {
+    const mem = getStoredMember();
+    if (!mem) {
+      alert("Yorum yapabilmek için lütfen üye girişi yapınız veya sipariş oluşturunuz.");
+      window.location.href = "/giris-yap";
+      return;
+    }
+    setShowReviewModal(true);
+  };
 
   const handleUserSubmitReview = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newReviewAuthor.trim() || !newReviewText.trim()) return;
+    const mem = getStoredMember();
 
     try {
       const res = await fetch("/api/reviews", {
@@ -114,16 +146,19 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           product: product.title,
+          productId: product.id,
           author: newReviewAuthor,
           rating: Number(newReviewRating),
           text: newReviewText,
-          status: "Onaylandı"
+          orderId: newReviewOrderId,
+          phone: mem?.phone || "",
+          status: "Onaylandı",
+          source: newReviewOrderId ? "Doğrulanmış Müşteri" : "Web Site"
         })
       });
 
       if (res.ok) {
-        setReviewToast("Değerlendirmeniz alındı ve yayına alındı! Teşekkür ederiz.");
-        setNewReviewAuthor("");
+        setReviewToast("Değerlendirmeniz başarıyla kaydedildi! Teşekkür ederiz.");
         setNewReviewText("");
         setShowReviewModal(false);
         fetchLiveReviews();
@@ -601,9 +636,9 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
             </div>
             <button
               type="button"
-              onClick={() => setShowReviewModal(true)}
+              onClick={handleOpenReviewModal}
               style={{ backgroundColor: "#2b2623", color: "#ffffff" }}
-              className="px-4 py-2 rounded-xl text-xs font-extrabold shadow-sm hover:opacity-95 transition flex items-center gap-1.5"
+              className="px-4 py-2 rounded-xl text-xs font-extrabold shadow-sm hover:opacity-95 transition flex items-center gap-1.5 cursor-pointer"
             >
               <span>✍️ Değerlendirme Yap</span>
             </button>
@@ -626,9 +661,9 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
               </p>
               <button
                 type="button"
-                onClick={() => setShowReviewModal(true)}
+                onClick={handleOpenReviewModal}
                 style={{ backgroundColor: "#2b2623", color: "#ffffff" }}
-                className="px-5 py-2.5 rounded-xl text-xs font-extrabold shadow-sm hover:opacity-95 transition inline-flex items-center gap-1.5"
+                className="px-5 py-2.5 rounded-xl text-xs font-extrabold shadow-sm hover:opacity-95 transition inline-flex items-center gap-1.5 cursor-pointer"
               >
                 <span>✍️ İlk Değerlendirmeyi Sen Yap</span>
               </button>
@@ -637,18 +672,19 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {liveReviews.map((rev) => {
                 const initials = (rev.author || "Müşteri").split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2);
-              
 
-  return (
-                  <div key={rev.id} className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs flex flex-col justify-between">
+                return (
+                  <div key={rev.id} className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs flex flex-col justify-between space-y-3">
                     <div>
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-full bg-emerald-100 text-[#2b2623] font-bold text-xs flex items-center justify-center">
+                          <div className="w-9 h-9 rounded-full bg-[#F5EFE6] text-[#2b2623] font-bold text-xs flex items-center justify-center border border-amber-900/15">
                             {initials || "MŞ"}
                           </div>
                           <div>
-                            <div className="text-xs font-bold text-slate-800">{rev.author}</div>
+                            <div className="text-xs font-extrabold text-slate-800 flex items-center gap-1.5">
+                              <span>{rev.author}</span>
+                            </div>
                             <div className="text-[10px] text-slate-400">{rev.date}</div>
                           </div>
                         </div>
@@ -656,6 +692,14 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
                       </div>
                       <p className="text-xs text-slate-600 italic">"{rev.text}"</p>
                     </div>
+
+                    {rev.verifiedPurchase && (
+                      <div className="pt-2 border-t flex justify-end">
+                        <span className="text-[10px] bg-emerald-50 text-emerald-800 border border-emerald-200 px-2 py-0.5 rounded-full font-bold flex items-center gap-1">
+                          <span>✓</span> <span>Doğrulanmış Müşteri</span>
+                        </span>
+                      </div>
+                    )}
                   </div>
                 );
               })}
@@ -667,10 +711,32 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
             <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 z-50">
               <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
                 <div className="flex justify-between items-center border-b pb-3">
-                  <h5 className="font-bold text-lg text-slate-800">Ürünü Değerlendir</h5>
-                  <button onClick={() => setShowReviewModal(false)} className="w-8 h-8 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center font-bold">✕</button>
+                  <h5 className="font-bold text-lg text-slate-800">⭐ Ürünü Değerlendir</h5>
+                  <button onClick={() => setShowReviewModal(false)} className="w-8 h-8 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center font-bold hover:bg-slate-200 transition cursor-pointer">✕</button>
                 </div>
                 <form onSubmit={handleUserSubmitReview} className="space-y-4">
+                  {memberCompletedOrders.length > 0 ? (
+                    <div>
+                      <label className="text-xs font-bold text-slate-700 block mb-1">Değerlendirilecek Siparişiniz *</label>
+                      <select
+                        className="w-full p-3 border border-slate-200 rounded-xl text-xs font-extrabold text-slate-800 bg-slate-50 outline-none"
+                        value={newReviewOrderId}
+                        onChange={(e) => setNewReviewOrderId(e.target.value)}
+                      >
+                        {memberCompletedOrders.map((ord: any) => (
+                          <option key={ord.id} value={ord.id}>
+                            Sipariş No: {ord.id} ({ord.date || "Tamamlandı"})
+                          </option>
+                        ))}
+                      </select>
+                      <p className="text-[10px] text-emerald-600 font-bold mt-1">✓ Siparişiniz doğrulandı. Değerlendirmenizde "Doğrulanmış Müşteri" rozeti yer alacaktır.</p>
+                    </div>
+                  ) : (
+                    <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-900 font-semibold">
+                      Görüşlerinizi bizimle paylaştığınız için teşekkür ederiz.
+                    </div>
+                  )}
+
                   <div>
                     <label className="text-xs font-bold text-slate-700 block mb-1">Adınız Soyadınız *</label>
                     <input
@@ -689,9 +755,9 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
                       value={newReviewRating}
                       onChange={(e) => setNewReviewRating(Number(e.target.value))}
                     >
-                      <option value={5}>⭐⭐⭐⭐⭐ (5 Yıldız)</option>
-                      <option value={4}>⭐⭐⭐⭐ (4 Yıldız)</option>
-                      <option value={3}>⭐⭐⭐ (3 Yıldız)</option>
+                      <option value={5}>⭐⭐⭐⭐⭐ (5 Yıldız - Mükemmel)</option>
+                      <option value={4}>⭐⭐⭐⭐ (4 Yıldız - Çok İyi)</option>
+                      <option value={3}>⭐⭐⭐ (3 Yıldız - Orta)</option>
                     </select>
                   </div>
                   <div>
@@ -710,7 +776,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
                     <button
                       type="submit"
                       style={{ backgroundColor: "#2b2623", color: "#ffffff" }}
-                      className="px-5 py-2.5 rounded-xl text-sm font-bold shadow-md hover:opacity-95 transition"
+                      className="px-5 py-2.5 rounded-xl text-sm font-bold shadow-md hover:opacity-95 transition cursor-pointer"
                     >
                       Değerlendirmeyi Gönder
                     </button>

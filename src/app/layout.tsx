@@ -1,7 +1,13 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import AnalyticsTracker from "@/components/analytics/AnalyticsTracker";
 import PwaRegister from "@/components/pwa/PwaRegister";
+
+export const viewport: Viewport = {
+  themeColor: "#2b2623",
+  width: "device-width",
+  initialScale: 1,
+};
 
 export const metadata: Metadata = {
   title: "Çiçekçe | Çiçek Siparişi & Aynı Gün Teslimat (www.cicekce.com)",
@@ -11,7 +17,6 @@ export const metadata: Metadata = {
     icon: "/logo-cicekce.jpg",
     apple: "/logo-cicekce.jpg",
   },
-  themeColor: "#2b2623",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
@@ -28,7 +33,7 @@ export default function RootLayout({
     <html lang="tr" className="antialiased">
       <head>
         <link rel="manifest" href="/manifest.json" />
-        <meta name="theme-color" content="#2b2623" />
+        <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="Çiçekçe" />

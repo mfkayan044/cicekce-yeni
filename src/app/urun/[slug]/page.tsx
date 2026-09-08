@@ -9,6 +9,7 @@ import { useStore, Product } from "@/lib/store";
 import { getStoredMember } from "@/lib/member-auth";
 import { useState, use, useEffect } from "react";
 import Link from "next/link";
+import { MapPin, Calendar, Clock, Zap, Camera, Edit3, Star, CheckCircle, ShieldCheck, Heart, Search } from "lucide-react";
 
 interface TimeSlot {
   id?: string;
@@ -342,7 +343,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
               {/* Hover Lens Badge */}
               {isHovered && (
                 <span className="absolute bottom-4 left-4 z-10 bg-slate-900/80 text-white text-[11px] font-extrabold px-3 py-1.5 rounded-xl backdrop-blur-md pointer-events-none shadow-md flex items-center gap-1.5">
-                  <span>🔍</span> <span>Büyüteç Aktif (%220)</span>
+                  <Search className="w-3.5 h-3.5" /> <span>Büyüteç Aktif (%220)</span>
                 </span>
               )}
 
@@ -398,8 +399,9 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
 
               {/* 1. Teslimat Bölgesi */}
               <div className="mt-6 mb-5">
-                <label className="block text-xs font-bold text-slate-700 mb-2 flex items-center gap-1">
-                  <span>📍</span> <span>Teslimat Bölgesi</span>
+                <label className="block text-xs font-bold text-slate-700 mb-2 flex items-center gap-1.5">
+                  <MapPin className="w-4 h-4 text-amber-900" />
+                  <span>Teslimat Bölgesi</span>
                 </label>
                 <div
                   onClick={() => setShowAddressModal(true)}
@@ -407,7 +409,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
                 >
                   <div className="flex items-center gap-2.5">
                     <div className="w-7 h-7 rounded-full bg-[#F5EFE6] text-[#2b2623] flex items-center justify-center font-bold">
-                      📍
+                      <MapPin className="w-4 h-4 text-[#2b2623]" />
                     </div>
                     <div>
                       <div className="text-[10px] font-bold text-slate-400 uppercase">Teslimat Adresi (Değiştir)</div>
@@ -420,13 +422,13 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
 
               {/* 2. Teslimat Tarihi */}
               <div className="mb-5">
-                <label className="block text-xs font-bold text-slate-700 mb-2 flex items-center gap-1">
-                  <span>📅</span> <span>Teslimat Tarihi</span>
+                <label className="block text-xs font-bold text-slate-700 mb-2 flex items-center gap-1.5">
+                  <Calendar className="w-4 h-4 text-amber-900" />
+                  <span>Teslimat Tarihi</span>
                 </label>
                 <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5">
                   {dates.map((item) => {
                     const isSelected = selectedDate === item.label;
-                  
 
   return (
                       <button
@@ -442,16 +444,16 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
                           isSelected ? "font-extrabold ring-2 ring-[#2b2623]/20 shadow-xs" : "hover:border-slate-300"
                         }`}
                       >
-                        <div className="text-[10px] font-medium opacity-80">{item.label}</div>
-                        <div className="text-xs font-bold">{item.date}</div>
+                        <div className="text-[10px] font-medium opacity-80" suppressHydrationWarning>{item.label}</div>
+                        <div className="text-xs font-bold" suppressHydrationWarning>{item.date}</div>
                       </button>
                     );
                   })}
                   <button
                     type="button"
-                    className="py-2 px-1 rounded-xl border border-slate-200 bg-white text-slate-600 text-center hover:border-slate-300 transition flex flex-col items-center justify-center"
+                    className="py-2 px-1 rounded-xl border border-slate-200 bg-white text-slate-600 text-center hover:border-slate-300 transition flex flex-col items-center justify-center gap-0.5"
                   >
-                    <span className="text-[10px]">📅</span>
+                    <Calendar className="w-3.5 h-3.5 text-slate-500" />
                     <span className="text-[10px] font-bold">Tarih Seç</span>
                   </button>
                 </div>
@@ -460,12 +462,14 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
               {/* 3. Teslimat Saati (DYNAMIC ACCORDING TO CLOCK TIME) */}
               <div className="mb-6">
                 <label className="block text-xs font-bold text-slate-700 mb-2 flex items-center justify-between">
-                  <span className="flex items-center gap-1">
-                    <span>🕒</span> <span>Teslimat Saati</span>
+                  <span className="flex items-center gap-1.5">
+                    <Clock className="w-4 h-4 text-amber-900" />
+                    <span>Teslimat Saati</span>
                   </span>
                   {selectedDate === "Bugün" && (
-                    <span className="text-[10px] text-amber-600 font-semibold bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
-                      ⚡ Anlık Saat Uyarlamalı
+                    <span className="text-[10px] text-amber-600 font-semibold bg-amber-50 px-2 py-0.5 rounded border border-amber-200 inline-flex items-center gap-1">
+                      <Zap className="w-3 h-3 text-amber-600" />
+                      <span>Anlık Saat Uyarlamalı</span>
                     </span>
                   )}
                 </label>
@@ -475,8 +479,6 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
                     const cleanSlot = (slotObj.range || slotObj.slot || "").split("(")[0].trim();
                     const available = isTimeAvailable(slotObj);
                     const isSelected = selectedTime === cleanSlot;
-
-                  
 
   return (
                       <button
@@ -516,8 +518,9 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
                 </div>
 
                 {!selectedTime && selectedDate === "Bugün" && (
-                  <div className="mt-2 p-2 bg-amber-50 border border-amber-200 rounded-xl text-[11px] text-amber-800 font-bold flex items-center gap-1">
-                    <span>⚠️</span> <span>Bugün için teslimat saatleri doldu. Lütfen teslimat tarihini Yarın olarak seçiniz.</span>
+                  <div className="mt-2 p-2 bg-amber-50 border border-amber-200 rounded-xl text-[11px] text-amber-800 font-bold flex items-center gap-1.5">
+                    <Zap className="w-4 h-4 text-amber-700 shrink-0" />
+                    <span>Bugün için teslimat saatleri doldu. Lütfen teslimat tarihini Yarın olarak seçiniz.</span>
                   </div>
                 )}
               </div>
@@ -559,7 +562,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
                 {/* Yellow Timer Box */}
                 <div className="bg-amber-50/80 border border-amber-200/80 rounded-2xl p-3.5 text-xs text-amber-900">
                   <div className="font-bold flex items-center gap-1.5 mb-1.5">
-                    <span>🕒</span>
+                    <Clock className="w-4 h-4 text-amber-700 shrink-0" />
                     <span>21:00 saatine kadar teslimat için son sipariş saati 20:00</span>
                   </div>
                   <div className="w-full bg-amber-200/80 rounded-full h-1.5 mb-2 overflow-hidden">
@@ -572,7 +575,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
 
                 {/* Green Camera Box */}
                 <div className="bg-[#F5EFE6]/80 border border-amber-900/15/80 rounded-2xl p-3.5 text-xs text-emerald-900 flex items-start gap-2.5">
-                  <div className="text-xl shrink-0">📷</div>
+                  <Camera className="w-5 h-5 text-emerald-800 shrink-0 mt-0.5" />
                   <div>
                     <div className="font-extrabold mb-0.5">Görsel Onayı ile Kontrol Sizde!</div>
                     <div className="text-[11px] opacity-90">
@@ -640,13 +643,15 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
               style={{ backgroundColor: "#2b2623", color: "#ffffff" }}
               className="px-4 py-2 rounded-xl text-xs font-extrabold shadow-sm hover:opacity-95 transition flex items-center gap-1.5 cursor-pointer"
             >
-              <span>✍️ Değerlendirme Yap</span>
+              <Edit3 className="w-3.5 h-3.5" />
+              <span>Değerlendirme Yap</span>
             </button>
           </div>
 
           {reviewToast && (
-            <div className="mb-4 p-3 bg-[#F5EFE6] text-[#1a1918] border border-amber-900/15 rounded-xl text-xs font-bold">
-              ✓ {reviewToast}
+            <div className="mb-4 p-3 bg-[#F5EFE6] text-[#1a1918] border border-amber-900/15 rounded-xl text-xs font-bold flex items-center gap-2">
+              <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0" />
+              <span>{reviewToast}</span>
             </div>
           )}
 
@@ -665,7 +670,8 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
                 style={{ backgroundColor: "#2b2623", color: "#ffffff" }}
                 className="px-5 py-2.5 rounded-xl text-xs font-extrabold shadow-sm hover:opacity-95 transition inline-flex items-center gap-1.5 cursor-pointer"
               >
-                <span>✍️ İlk Değerlendirmeyi Sen Yap</span>
+                <Edit3 className="w-3.5 h-3.5" />
+                <span>İlk Değerlendirmeyi Sen Yap</span>
               </button>
             </div>
           ) : (
@@ -688,7 +694,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
                             <div className="text-[10px] text-slate-400">{rev.date}</div>
                           </div>
                         </div>
-                        <div className="text-amber-400 text-xs">{"⭐".repeat(rev.rating || 5)}</div>
+                        <div className="text-amber-400 text-xs">{"★".repeat(rev.rating || 5)}</div>
                       </div>
                       <p className="text-xs text-slate-600 italic">"{rev.text}"</p>
                     </div>
@@ -696,7 +702,8 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
                     {rev.verifiedPurchase && (
                       <div className="pt-2 border-t flex justify-end">
                         <span className="text-[10px] bg-emerald-50 text-emerald-800 border border-emerald-200 px-2 py-0.5 rounded-full font-bold flex items-center gap-1">
-                          <span>✓</span> <span>Doğrulanmış Müşteri</span>
+                          <ShieldCheck className="w-3.5 h-3.5 text-emerald-700" />
+                          <span>Doğrulanmış Müşteri</span>
                         </span>
                       </div>
                     )}

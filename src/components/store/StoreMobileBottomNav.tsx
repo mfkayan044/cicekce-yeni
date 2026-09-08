@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
 import { useStore } from "@/lib/store";
 import { getStoredMember } from "@/lib/member-auth";
+import { Home, LayoutGrid, Search, ShoppingCart, User } from "lucide-react";
 
 export default function StoreMobileBottomNav() {
   const pathname = usePathname();
@@ -18,7 +19,6 @@ export default function StoreMobileBottomNav() {
     return () => window.removeEventListener("cicekce_auth_change", handler);
   }, []);
 
-  // Hide on admin routes or payment page if desired
   if (pathname?.startsWith("/yonetim")) {
     return null;
   }
@@ -48,8 +48,8 @@ export default function StoreMobileBottomNav() {
             isActive("/") ? "text-[#2b2623] font-black" : "text-slate-500 font-semibold"
           }`}
         >
-          <span className="text-lg leading-none">🏠</span>
-          <span className="text-[10px] mt-0.5">Anasayfa</span>
+          <Home className="w-5 h-5 mb-0.5" />
+          <span className="text-[10px]">Anasayfa</span>
         </Link>
 
         {/* Kategoriler */}
@@ -59,8 +59,8 @@ export default function StoreMobileBottomNav() {
             isActive("/kategori") ? "text-[#2b2623] font-black" : "text-slate-500 font-semibold"
           }`}
         >
-          <span className="text-lg leading-none">🌸</span>
-          <span className="text-[10px] mt-0.5">Kategoriler</span>
+          <LayoutGrid className="w-5 h-5 mb-0.5" />
+          <span className="text-[10px]">Kategoriler</span>
         </Link>
 
         {/* Arama */}
@@ -69,8 +69,8 @@ export default function StoreMobileBottomNav() {
           onClick={triggerSearch}
           className="flex flex-col items-center justify-center py-1 text-slate-500 font-semibold transition hover:text-[#2b2623]"
         >
-          <span className="text-lg leading-none">🔍</span>
-          <span className="text-[10px] mt-0.5">Arama</span>
+          <Search className="w-5 h-5 mb-0.5" />
+          <span className="text-[10px]">Arama</span>
         </button>
 
         {/* Sepet */}
@@ -81,14 +81,14 @@ export default function StoreMobileBottomNav() {
           }`}
         >
           <div className="relative">
-            <span className="text-lg leading-none">🛒</span>
+            <ShoppingCart className="w-5 h-5 mb-0.5" />
             {cart && cart.length > 0 && (
               <span suppressHydrationWarning className="absolute -top-1.5 -right-2.5 bg-red-500 text-white text-[9px] font-black w-4 h-4 rounded-full flex items-center justify-center">
                 {cart.length}
               </span>
             )}
           </div>
-          <span className="text-[10px] mt-0.5">Sepetim</span>
+          <span className="text-[10px]">Sepetim</span>
         </Link>
 
         {/* Hesabım / Giriş */}
@@ -98,8 +98,8 @@ export default function StoreMobileBottomNav() {
             isActive("/hesabim") || isActive("/giris-yap") ? "text-[#2b2623] font-black" : "text-slate-500 font-semibold"
           }`}
         >
-          <span className="text-lg leading-none">👤</span>
-          <span className="text-[10px] mt-0.5 truncate max-w-[55px]">
+          <User className="w-5 h-5 mb-0.5" />
+          <span className="text-[10px] truncate max-w-[55px]">
             {member ? member.name.split(" ")[0] : "Giriş"}
           </span>
         </Link>

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState, useEffect } from "react";
+import { Phone, MessageCircle } from "lucide-react";
 
 import { getInitialDbData } from "@/lib/server-settings";
 
@@ -139,16 +140,18 @@ export default function StoreFooter() {
           <div className="flex items-center gap-3">
             <a
               href={`tel:${footerData?.phone || "+90 555 000 00 00"}`}
-              className="px-4 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 hover:border-[#2b2623] transition"
+              className="inline-flex items-center gap-2 px-4 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 hover:border-[#2b2623] transition"
             >
-              📞 {footerData?.phone || "+90 555 000 00 00"}
+              <Phone className="w-3.5 h-3.5 text-slate-600" />
+              <span>{footerData?.phone || "+90 555 000 00 00"}</span>
             </a>
             <a
               href={`https://wa.me/${footerData?.whatsapp || "905550000000"}`}
               style={{ backgroundColor: "#25D366", color: "#ffffff" }}
-              className="px-4 py-2 rounded-xl text-xs font-bold shadow-xs hover:opacity-95 transition"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold shadow-xs hover:opacity-95 transition"
             >
-              💬 WhatsApp
+              <MessageCircle className="w-3.5 h-3.5 fill-white" />
+              <span>WhatsApp</span>
             </a>
           </div>
         </div>

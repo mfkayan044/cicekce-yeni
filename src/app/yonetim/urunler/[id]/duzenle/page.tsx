@@ -71,7 +71,7 @@ export default function AdminEditProductPage({ params }: { params: Promise<{ id:
         color: (currentProduct as any).color || "Kırmızı",
       });
     }
-  }, [currentProduct]);
+  }, [currentProduct?.id]);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

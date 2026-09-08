@@ -87,7 +87,12 @@ export async function GET() {
             code: sbP.code || localP.code || `DM${sbP.id}`,
             stock: sbP.stock !== false && localP.stock !== false,
             featured: sbP.featured === true || localP.featured === true,
-            description: sbP.description || localP.description
+            description: sbP.description || localP.description,
+            selectedCategorySlugs: localP.selectedCategorySlugs || [sbP.category_slug || localP.categorySlug || "cicekler"],
+            designType: localP.designType || "Buket",
+            recipient: localP.recipient || "Sevgiliye",
+            purpose: localP.purpose || "Doğum Günü",
+            color: localP.color || "Kırmızı"
           };
         });
         if (merged.length > 0) {

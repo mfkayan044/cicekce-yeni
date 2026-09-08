@@ -9,7 +9,7 @@ import { useStore, Product } from "@/lib/store";
 import { getStoredMember } from "@/lib/member-auth";
 import { useState, use, useEffect } from "react";
 import Link from "next/link";
-import { MapPin, Calendar, Clock, Zap, Camera, Edit3, Star, CheckCircle, ShieldCheck, Heart, Search } from "lucide-react";
+import { MapPin, Calendar, Clock, Zap, Camera, Edit3, Star, CheckCircle, ShieldCheck, Heart, Search, Flower2 } from "lucide-react";
 
 interface TimeSlot {
   id?: string;
@@ -657,7 +657,9 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
 
           {liveReviews.length === 0 ? (
             <div className="bg-white rounded-2xl p-8 border border-slate-200/80 text-center space-y-3">
-              <div className="text-3xl">🌸</div>
+              <div className="w-12 h-12 rounded-2xl bg-[#F5EFE6] text-[#2b2623] flex items-center justify-center mx-auto">
+                <Flower2 className="w-6 h-6 text-[#2b2623]" />
+              </div>
               <div className="font-extrabold text-slate-800 text-sm">
                 Henüz bu çiçek için yapılmış bir değerlendirme bulunmuyor.
               </div>

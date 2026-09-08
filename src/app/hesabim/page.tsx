@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { getStoredMember, setStoredMember, clearStoredMember, MemberUser, MemberAddress } from "@/lib/member-auth";
 import Link from "next/link";
 import OrderUpdateRequestModal from "@/components/orders/OrderUpdateRequestModal";
+import { Package, Calendar, MapPin, User, Flower2, Clock, CheckCircle, AlertCircle, Edit, Trash2, Plus, LogOut, Search, Cake, Sparkles, ShieldCheck } from "lucide-react";
 
 export default function MemberAccountPage() {
   const router = useRouter();
@@ -278,16 +279,18 @@ export default function MemberAccountPage() {
                 <p className="text-xs text-slate-500 m-0 mt-0.5">
                   {member.email} · {member.phone || "Telefon Belirtilmedi"}
                 </p>
-                <div className="text-[11px] font-bold text-emerald-700 mt-1">✓ Çiçekçe Üyesi</div>
+                <div className="text-[11px] font-bold text-emerald-700 mt-1 flex items-center gap-1">
+                  <ShieldCheck className="w-3.5 h-3.5" /> Çiçekçe Üyesi
+                </div>
               </div>
             </div>
 
             <button
               type="button"
               onClick={handleLogout}
-              className="py-2.5 px-4 rounded-xl text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 transition"
+              className="py-2.5 px-4 rounded-xl text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 transition flex items-center gap-1.5"
             >
-              🚪 Çıkış Yap
+              <LogOut className="w-4 h-4" /> Çıkış Yap
             </button>
           </div>
 
@@ -300,7 +303,8 @@ export default function MemberAccountPage() {
                 activeTab === "orders" ? "bg-white text-[#2b2623] shadow-xs" : "text-slate-600 hover:text-slate-900"
               }`}
             >
-              <span>📦 Siparişlerim</span>
+              <Package className="w-4 h-4" />
+              <span>Siparişlerim</span>
               <span className="px-2 py-0.5 rounded-full text-[10px] bg-amber-100 text-amber-900 font-bold">
                 {myOrders.length}
               </span>
@@ -313,7 +317,8 @@ export default function MemberAccountPage() {
                 activeTab === "special_dates" ? "bg-white text-[#2b2623] shadow-xs" : "text-slate-600 hover:text-slate-900"
               }`}
             >
-              <span>📅 Özel Günler</span>
+              <Calendar className="w-4 h-4" />
+              <span>Özel Günler</span>
               <span className="px-2 py-0.5 rounded-full text-[10px] bg-purple-100 text-purple-900 font-bold">
                 {member.specialDates?.length || 0}
               </span>
@@ -326,7 +331,8 @@ export default function MemberAccountPage() {
                 activeTab === "addresses" ? "bg-white text-[#2b2623] shadow-xs" : "text-slate-600 hover:text-slate-900"
               }`}
             >
-              <span>📍 Adreslerim</span>
+              <MapPin className="w-4 h-4" />
+              <span>Adreslerim</span>
               <span className="px-2 py-0.5 rounded-full text-[10px] bg-slate-100 text-slate-700 font-bold">
                 {member.addresses?.length || 0}
               </span>
@@ -339,7 +345,8 @@ export default function MemberAccountPage() {
                 activeTab === "profile" ? "bg-white text-[#2b2623] shadow-xs" : "text-slate-600 hover:text-slate-900"
               }`}
             >
-              <span>👤 Profilim</span>
+              <User className="w-4 h-4" />
+              <span>Profilim</span>
             </button>
           </div>
 
@@ -352,7 +359,9 @@ export default function MemberAccountPage() {
                 </div>
               ) : myOrders.length === 0 ? (
                 <div className="bg-white rounded-3xl p-10 text-center space-y-3 border border-slate-200 shadow-xs">
-                  <div className="text-4xl">🌸</div>
+                  <div className="w-12 h-12 rounded-2xl bg-[#F5EFE6] text-[#2b2623] flex items-center justify-center mx-auto">
+                    <Flower2 className="w-6 h-6 text-[#2b2623]" />
+                  </div>
                   <h3 className="font-bold text-slate-800 text-base">Henüz Verilmiş Bir Siparişiniz Yok</h3>
                   <p className="text-xs text-slate-500 max-w-sm mx-auto">
                     Özel anlarınızı güzelleştirmek için en taze çiçek koleksiyonlarımızı hemen keşfedin.
@@ -396,8 +405,8 @@ export default function MemberAccountPage() {
                           >
                             {o.status || "Yeni Sipariş"}
                           </span>
-                          <div className="text-[11px] text-slate-500 font-bold mt-0.5">
-                            📅 {o.deliveryDate || o.date} ({o.deliveryTime || "Tüm Gün"})
+                          <div className="text-[11px] text-slate-500 font-bold mt-0.5 flex items-center gap-1">
+                            <Calendar className="w-3.5 h-3.5 text-slate-400" /> {o.deliveryDate || o.date} ({o.deliveryTime || "Tüm Gün"})
                           </div>
                         </div>
                       </div>
@@ -408,7 +417,7 @@ export default function MemberAccountPage() {
                           {o.updateRequest.status === "PENDING" && (
                             <div className="p-3 bg-amber-50 border border-amber-200 rounded-2xl text-amber-950">
                               <div className="font-extrabold text-xs text-amber-900 flex items-center gap-1.5">
-                                <span>⏳</span>
+                                <Clock className="w-4 h-4 text-amber-600" />
                                 <span>Bilgi Güncelleme Talebiniz İnceleniyor</span>
                               </div>
                               <p className="text-[11px] text-slate-600 mt-0.5">
@@ -420,7 +429,7 @@ export default function MemberAccountPage() {
                           {o.updateRequest.status === "APPROVED" && (
                             <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-2xl text-emerald-950">
                               <div className="font-extrabold text-xs text-emerald-900 flex items-center gap-1.5">
-                                <span>✅</span>
+                                <CheckCircle className="w-4 h-4 text-emerald-600" />
                                 <span>Bilgi Güncelleme Talebiniz Onaylandı</span>
                               </div>
                             </div>
@@ -429,7 +438,7 @@ export default function MemberAccountPage() {
                           {o.updateRequest.status === "REJECTED" && (
                             <div className="p-3 bg-red-50 border border-red-200 rounded-2xl text-red-950">
                               <div className="font-extrabold text-xs text-red-900 flex items-center gap-1.5">
-                                <span>❌</span>
+                                <AlertCircle className="w-4 h-4 text-red-600" />
                                 <span>Güncelleme Talebiniz Kabul Edilemedi</span>
                               </div>
                               {o.updateRequest.adminNote && (
@@ -465,9 +474,10 @@ export default function MemberAccountPage() {
                           <Link
                             href={`/siparis-onay/${o.id}`}
                             style={{ backgroundColor: "#2b2623", color: "#ffffff" }}
-                            className="py-2 px-4 rounded-xl text-xs font-bold shadow-2xs hover:opacity-95 transition"
+                            className="py-2 px-4 rounded-xl text-xs font-bold shadow-2xs hover:opacity-95 transition flex items-center gap-1.5"
                           >
-                            🌸 Hazırlanan Çiçek Fotoğrafını İncele
+                            <Flower2 className="w-3.5 h-3.5 text-pink-300" />
+                            <span>Hazırlanan Çiçek Fotoğrafını İncele</span>
                           </Link>
                         ) : null}
 
@@ -475,17 +485,19 @@ export default function MemberAccountPage() {
                           <button
                             type="button"
                             onClick={() => setEditingOrderForUpdate(o)}
-                            className="py-2 px-4 rounded-xl text-xs font-bold bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 transition"
+                            className="py-2 px-4 rounded-xl text-xs font-bold bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 transition flex items-center gap-1.5"
                           >
-                            ✏️ Bilgileri Güncelle
+                            <Edit className="w-3.5 h-3.5" />
+                            <span>Bilgileri Güncelle</span>
                           </button>
                         )}
 
                         <Link
                           href={`/siparis-takip?id=${o.id}&phone=${encodeURIComponent(member.phone || o.customerPhone || "")}`}
-                          className="py-2 px-4 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-800 transition"
+                          className="py-2 px-4 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-800 transition flex items-center gap-1.5"
                         >
-                          🔍 Siparişi Takip Et
+                          <Search className="w-3.5 h-3.5" />
+                          <span>Siparişi Takip Et</span>
                         </Link>
                       </div>
                     </div>
@@ -521,9 +533,9 @@ export default function MemberAccountPage() {
                   type="button"
                   onClick={() => setShowAddressModal(true)}
                   style={{ backgroundColor: "#2b2623", color: "#ffffff" }}
-                  className="py-2 px-4 rounded-xl text-xs font-bold shadow-xs hover:opacity-95 transition"
+                  className="py-2 px-4 rounded-xl text-xs font-bold shadow-xs hover:opacity-95 transition flex items-center gap-1.5"
                 >
-                  + Yeni Adres Ekle
+                  <Plus className="w-4 h-4" /> Yeni Adres Ekle
                 </button>
               </div>
 
@@ -536,13 +548,15 @@ export default function MemberAccountPage() {
                   {member.addresses.map((a) => (
                     <div key={a.id} className="p-4 rounded-2xl border border-slate-200 bg-slate-50 space-y-2 relative">
                       <div className="flex justify-between items-center">
-                        <span className="font-extrabold text-xs text-slate-900">🏷️ {a.title}</span>
+                        <span className="font-extrabold text-xs text-slate-900 flex items-center gap-1.5">
+                          <MapPin className="w-3.5 h-3.5 text-[#2b2623]" /> {a.title}
+                        </span>
                         <button
                           type="button"
                           onClick={() => handleDeleteAddress(a.id)}
-                          className="text-red-500 hover:text-red-700 text-xs font-bold"
+                          className="text-red-500 hover:text-red-700 text-xs font-bold flex items-center gap-1"
                         >
-                          Sil
+                          <Trash2 className="w-3.5 h-3.5" /> Sil
                         </button>
                       </div>
                       <div className="text-xs font-bold text-slate-700">
@@ -562,7 +576,8 @@ export default function MemberAccountPage() {
               <div className="flex flex-wrap items-center justify-between gap-3 border-b pb-4">
                 <div>
                   <h3 className="font-extrabold text-base text-slate-900 m-0 flex items-center gap-2">
-                    <span>📅</span> <span>Özel Gün Takvimim & Hatırlatıcı</span>
+                    <Calendar className="w-5 h-5 text-purple-700" />
+                    <span>Özel Gün Takvimim & Hatırlatıcı</span>
                   </h3>
                   <p className="text-xs text-slate-500 mt-1 m-0">
                     Sevdiklerinizin doğum günü, evlilik yıldönümü gibi özel günlerini ekleyin; zamanı geldiğinde indirimli çiçek fırsatlarını kaçırmayın!
@@ -574,13 +589,16 @@ export default function MemberAccountPage() {
                   style={{ backgroundColor: "#2b2623", color: "#ffffff" }}
                   className="py-2.5 px-4 rounded-2xl text-xs font-extrabold shadow-md hover:opacity-95 transition flex items-center gap-1.5 shrink-0"
                 >
-                  <span>✨ Yeni Özel Gün Ekle</span>
+                  <Sparkles className="w-4 h-4 text-amber-300" />
+                  <span>Yeni Özel Gün Ekle</span>
                 </button>
               </div>
 
               {(!member.specialDates || member.specialDates.length === 0) ? (
                 <div className="text-center py-10 space-y-3 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
-                  <div className="text-4xl">🎂</div>
+                  <div className="w-12 h-12 rounded-2xl bg-purple-100 text-purple-700 flex items-center justify-center mx-auto">
+                    <Cake className="w-6 h-6" />
+                  </div>
                   <div className="font-bold text-slate-800 text-sm">Henüz Kayıtlı Bir Özel Gününüz Yok</div>
                   <p className="text-xs text-slate-500 max-w-sm mx-auto">
                     Sevdiklerinizin doğum gününü veya yıldönümünü kaydedin, günü geldiğinde çiçek hediyenizi ilk siz hazırlayın.
@@ -595,7 +613,7 @@ export default function MemberAccountPage() {
                     >
                       <div className="flex justify-between items-start">
                         <div className="flex items-center gap-2">
-                          <span className="text-lg">🎉</span>
+                          <Cake className="w-5 h-5 text-purple-700 shrink-0" />
                           <div>
                             <div className="font-black text-sm text-purple-950">{sp.title}</div>
                             <div className="text-[11px] font-bold text-purple-700">
@@ -609,13 +627,15 @@ export default function MemberAccountPage() {
                           className="text-red-500 hover:text-red-700 text-xs font-bold p-1"
                           title="Özel Günü Sil"
                         >
-                          🗑️
+                          <Trash2 className="w-4 h-4" />
                         </button>
                       </div>
 
                       <div className="p-2.5 bg-white rounded-xl border border-purple-200 flex items-center justify-between text-xs">
                         <span className="font-bold text-slate-500">Tarih:</span>
-                        <span className="font-black text-purple-900 font-mono">📅 {sp.date}</span>
+                        <span className="font-black text-purple-900 font-mono flex items-center gap-1">
+                          <Calendar className="w-3.5 h-3.5 text-purple-700" /> {sp.date}
+                        </span>
                       </div>
 
                       {sp.note && (

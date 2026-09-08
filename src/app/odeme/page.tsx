@@ -8,6 +8,7 @@ import Link from "next/link";
 import { trackPurchase } from "@/components/analytics/AnalyticsTracker";
 import { initialDbData } from "@/lib/initial-db";
 import { getStoredMember } from "@/lib/member-auth";
+import { Tag, MapPin } from "lucide-react";
 
 // Robust Turkish Price Parser ("3.510 ₺" -> 3510)
 function parseTurkishPrice(priceStr: any): number {
@@ -623,7 +624,7 @@ export default function CheckoutPage() {
                   <div className="p-4 bg-[#FAF6F0] border border-amber-200/80 rounded-2xl space-y-2">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-black text-amber-950 flex items-center gap-1.5">
-                        <span>🏷️</span> <span>Kayıtlı Teslimat Adreslerimden Hızlı Seçin:</span>
+                        <MapPin className="w-3.5 h-3.5 text-amber-900" /> <span>Kayıtlı Teslimat Adreslerimden Hızlı Seçin:</span>
                       </span>
                       <span className="text-[11px] text-amber-900 font-bold">Tek tıkla formu doldurur</span>
                     </div>
@@ -1021,7 +1022,7 @@ export default function CheckoutPage() {
                         className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 font-medium cursor-pointer hover:border-[#2b2623] hover:bg-[#F5EFE6]/50 transition flex items-center justify-between"
                       >
                         <span>"{tmpl}"</span>
-                        <span className="text-[10px] font-bold text-[#2b2623] bg-emerald-100 px-2 py-0.5 rounded shrink-0">Karta Yaz ✍️</span>
+                        <span className="text-[10px] font-bold text-[#2b2623] bg-emerald-100 px-2 py-0.5 rounded shrink-0">Karta Yaz</span>
                       </div>
                     ))}
                   </div>
@@ -1279,7 +1280,7 @@ export default function CheckoutPage() {
                 {/* DISCOUNT COUPON CODE SECTION */}
                 <div className="border-t pt-3 space-y-2">
                   <div className="text-xs font-bold text-slate-700 flex items-center justify-between">
-                    <span>🎟️ İndirim Kuponu</span>
+                    <span className="flex items-center gap-1.5"><Tag className="w-3.5 h-3.5 text-amber-900" /> İndirim Kuponu</span>
                     {appliedCouponName && (
                       <button
                         type="button"

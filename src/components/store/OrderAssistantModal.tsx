@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { useStore } from "@/lib/store";
+import { Headphones, X, Sparkles, Heart, Briefcase, Gift, Stethoscope, Send, Flower2 } from "lucide-react";
 
 interface Message {
   sender: "bot" | "user";
@@ -22,7 +23,7 @@ export default function OrderAssistantModal({
   const [messages, setMessages] = useState<Message[]>([
     {
       sender: "bot",
-      text: "Merhaba! Ben Demo Çiçekçilik Akıllı Sipariş Asistanı. 🌸 Sevdikleriniz için en doğru çiçeği seçmenize ve özel kart notu hazırlamanıza yardımcı olmaktan mutluluk duyarım. Kime veya hangi özel gün için çiçek arıyorsunuz?",
+      text: "Merhaba! Ben Demo Çiçekçilik Akıllı Sipariş Asistanı. Sevdikleriniz için en doğru çiçeği seçmenize ve özel kart notu hazırlamanıza yardımcı olmaktan mutluluk duyarım. Kime veya hangi özel gün için çiçek arıyorsunuz?",
     },
   ]);
   const [input, setInput] = useState("");
@@ -103,9 +104,9 @@ export default function OrderAssistantModal({
     } catch (e) {
       const fallbackMsg: Message = {
         sender: "bot",
-        text: "Zarafeti ve tazeliğiyle sevdiklerinizi çok mutlu edecek özel tasarımımızı sizin için seçtik. 🌸",
+        text: "Zarafeti ve tazeliğiyle sevdiklerinizi çok mutlu edecek özel tasarımımızı sizin için seçtik.",
         recommendedProduct: products[0],
-        cardNoteAdvice: "💡 Kart Notu Tavsiyesi: 'Varlığınla hayatımı güzelleştirdiğin için teşekkür ederim. İyi ki varsın! ❤️'",
+        cardNoteAdvice: "Kart Notu Tavsiyesi: 'Varlığınla hayatımı güzelleştirdiğin için teşekkür ederim. İyi ki varsın!'",
       };
       const updatedMsgs = [...newMessages, fallbackMsg];
       setMessages(updatedMsgs);
@@ -131,8 +132,8 @@ export default function OrderAssistantModal({
         {/* Chat Header */}
         <div style={{ backgroundColor: "#2b2623" }} className="p-4 text-white flex items-center justify-between shadow-xs">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-xl font-bold">
-              🎧
+            <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center font-bold">
+              <Headphones className="w-5 h-5 text-white" />
             </div>
             <div>
               <h3 className="font-extrabold text-sm leading-tight">Sipariş Asistanı (AI Live Chat)</h3>
@@ -145,7 +146,7 @@ export default function OrderAssistantModal({
             onClick={onClose}
             className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 transition flex items-center justify-center font-bold text-sm"
           >
-            ✕
+            <X className="w-4 h-4 text-white" />
           </button>
         </div>
 
@@ -153,33 +154,33 @@ export default function OrderAssistantModal({
         <div className="p-3 bg-slate-50 border-b flex gap-1.5 overflow-x-auto text-[11px] font-bold">
           <button
             onClick={() => handleSend("Anneme Doğum Günü Buketi Arıyorum")}
-            className="px-3 py-1.5 rounded-full bg-white border border-slate-200 text-slate-700 hover:border-[#2b2623] hover:text-[#2b2623] transition whitespace-nowrap"
+            className="px-3 py-1.5 rounded-full bg-white border border-slate-200 text-slate-700 hover:border-[#2b2623] hover:text-[#2b2623] transition whitespace-nowrap flex items-center gap-1.5"
           >
-            🎂 Anneye Doğum Günü Buketi
+            <Sparkles className="w-3.5 h-3.5 text-pink-500" /> Anneye Doğum Günü Buketi
           </button>
           <button
             onClick={() => handleSend("Sevgilime Kendimi Affettirmek İçin Özür Çiçeği")}
-            className="px-3 py-1.5 rounded-full bg-white border border-slate-200 text-slate-700 hover:border-[#2b2623] hover:text-[#2b2623] transition whitespace-nowrap"
+            className="px-3 py-1.5 rounded-full bg-white border border-slate-200 text-slate-700 hover:border-[#2b2623] hover:text-[#2b2623] transition whitespace-nowrap flex items-center gap-1.5"
           >
-            🌹 Sevgilime Özür Çiçeği
+            <Heart className="w-3.5 h-3.5 text-red-500" /> Sevgilime Özür Çiçeği
           </button>
           <button
             onClick={() => handleSend("İş Arkadaşıma Yeni Görev Tebrik Çiçeği")}
-            className="px-3 py-1.5 rounded-full bg-white border border-slate-200 text-slate-700 hover:border-[#2b2623] hover:text-[#2b2623] transition whitespace-nowrap"
+            className="px-3 py-1.5 rounded-full bg-white border border-slate-200 text-slate-700 hover:border-[#2b2623] hover:text-[#2b2623] transition whitespace-nowrap flex items-center gap-1.5"
           >
-            💼 İş Arkadaşına Tebrik
+            <Briefcase className="w-3.5 h-3.5 text-blue-500" /> İş Arkadaşına Tebrik
           </button>
           <button
             onClick={() => handleSend("Evlilik Yıldönümü Şık Aranjman")}
-            className="px-3 py-1.5 rounded-full bg-white border border-slate-200 text-slate-700 hover:border-[#2b2623] hover:text-[#2b2623] transition whitespace-nowrap"
+            className="px-3 py-1.5 rounded-full bg-white border border-slate-200 text-slate-700 hover:border-[#2b2623] hover:text-[#2b2623] transition whitespace-nowrap flex items-center gap-1.5"
           >
-            💍 Evlilik Yıldönümü
+            <Gift className="w-3.5 h-3.5 text-purple-500" /> Evlilik Yıldönümü
           </button>
           <button
             onClick={() => handleSend("Hastanedeki Yakınıma Geçmiş Olsun Çiçeği")}
-            className="px-3 py-1.5 rounded-full bg-white border border-slate-200 text-slate-700 hover:border-[#2b2623] hover:text-[#2b2623] transition whitespace-nowrap"
+            className="px-3 py-1.5 rounded-full bg-white border border-slate-200 text-slate-700 hover:border-[#2b2623] hover:text-[#2b2623] transition whitespace-nowrap flex items-center gap-1.5"
           >
-            🏥 Geçmiş Olsun
+            <Stethoscope className="w-3.5 h-3.5 text-emerald-500" /> Geçmiş Olsun
           </button>
         </div>
 

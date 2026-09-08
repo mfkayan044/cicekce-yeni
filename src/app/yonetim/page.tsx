@@ -3,6 +3,7 @@
 import AdminLayout from "@/components/layout/AdminLayout";
 import Link from "next/link";
 import { useState, useEffect } from "react";
+import { Flower2, RefreshCw, ShoppingBag, Wallet, Bike, MessageCircle, Package, Headphones } from "lucide-react";
 
 function parsePrice(val: any): number {
   if (typeof val === "number") return val;
@@ -76,12 +77,12 @@ export default function DashboardPage() {
   // Compute live financial & order metrics
   const totalOrders = orders.length;
   const totalRevenue = orders.reduce((sum, o) => sum + parsePrice(o.totalAmount || o.totalPrice), 0);
-  const deliveredOrders = orders.filter((o) => o.status === "Teslim Edildi");
+  const deliveredOrders = orders.filter((o) => String(o.status || "").includes("Teslim"));
   const deliveredRevenue = deliveredOrders.reduce((sum, o) => sum + parsePrice(o.totalAmount || o.totalPrice), 0);
 
-  const newOrdersCount = orders.filter((o) => o.status === "Yeni Sipariş").length;
-  const preparingCount = orders.filter((o) => o.status === "Hazırlanıyor" || o.status === "Fotoğraflı Onay Bekliyor").length;
-  const shippingCount = orders.filter((o) => o.status === "Kuryede / Dağıtımda").length;
+  const newOrdersCount = orders.filter((o) => String(o.status || "").includes("Yeni")).length;
+  const preparingCount = orders.filter((o) => String(o.status || "").includes("Hazırlanıyor") || String(o.status || "").includes("Fotoğraf")).length;
+  const shippingCount = orders.filter((o) => String(o.status || "").includes("Kuryede") || String(o.status || "").includes("Arabaya")).length;
 
   const recentOrders = orders.slice(0, 6);
 
@@ -91,8 +92,8 @@ export default function DashboardPage() {
         {/* Title & Live Refresh Banner */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-6 rounded-3xl border border-slate-200/80 shadow-xs">
           <div>
-            <div className="text-[11px] font-black uppercase text-amber-900 tracking-wider mb-1">
-              🌸 ÇİÇEKÇE CANLI MAĞAZA ANALİTİĞİ
+            <div className="text-[11px] font-black uppercase text-amber-900 tracking-wider mb-1 flex items-center gap-1.5">
+              <Flower2 className="w-4 h-4 text-[#2b2623]" /> ÇİÇEKÇE CANLI MAĞAZA ANALİTİĞİ
             </div>
             <h4 className="font-black text-2xl lg:text-3xl text-slate-900 m-0">
               Genel Bakış & Performans
@@ -108,7 +109,8 @@ export default function DashboardPage() {
               style={{ backgroundColor: "#2b2623", color: "#ffffff" }}
               className="px-4 py-2.5 rounded-2xl font-extrabold text-xs shadow-xs hover:opacity-95 transition flex items-center gap-1.5"
             >
-              <span>🔄 Verileri Yenile</span>
+              <RefreshCw className="w-4 h-4" />
+              <span>Verileri Yenile</span>
             </button>
             <Link
               href="/yonetim/siparisler"
@@ -125,8 +127,8 @@ export default function DashboardPage() {
           <div className="card border border-slate-200/80 shadow-xs rounded-3xl p-5 bg-white space-y-2">
             <div className="flex justify-between items-start">
               <span className="text-slate-500 text-xs font-black uppercase tracking-wider">Toplam Sipariş</span>
-              <div className="w-9 h-9 rounded-2xl bg-purple-50 text-purple-700 flex items-center justify-center text-lg font-bold">
-                🛒
+              <div className="w-9 h-9 rounded-2xl bg-purple-50 text-purple-700 flex items-center justify-center font-bold">
+                <ShoppingBag className="w-5 h-5 text-purple-700" />
               </div>
             </div>
             <div className="text-3xl font-black text-slate-900">{totalOrders}</div>
@@ -139,8 +141,8 @@ export default function DashboardPage() {
           <div className="card border border-slate-200/80 shadow-xs rounded-3xl p-5 bg-white space-y-2">
             <div className="flex justify-between items-start">
               <span className="text-slate-500 text-xs font-black uppercase tracking-wider">Toplam Ciro</span>
-              <div className="w-9 h-9 rounded-2xl bg-emerald-50 text-emerald-700 flex items-center justify-center text-lg font-bold">
-                💰
+              <div className="w-9 h-9 rounded-2xl bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold">
+                <Wallet className="w-5 h-5 text-emerald-700" />
               </div>
             </div>
             <div className="text-2xl font-black text-slate-900">{formatPriceTL(totalRevenue)}</div>
@@ -153,8 +155,8 @@ export default function DashboardPage() {
           <div className="card border border-slate-200/80 shadow-xs rounded-3xl p-5 bg-white space-y-2">
             <div className="flex justify-between items-start">
               <span className="text-slate-500 text-xs font-black uppercase tracking-wider">Aktif Çiçekler</span>
-              <div className="w-9 h-9 rounded-2xl bg-amber-50 text-amber-700 flex items-center justify-center text-lg font-bold">
-                🛵
+              <div className="w-9 h-9 rounded-2xl bg-amber-50 text-amber-700 flex items-center justify-center font-bold">
+                <Bike className="w-5 h-5 text-amber-700" />
               </div>
             </div>
             <div className="text-3xl font-black text-slate-900">{preparingCount + shippingCount}</div>
@@ -167,8 +169,8 @@ export default function DashboardPage() {
           <div className="card border border-slate-200/80 shadow-xs rounded-3xl p-5 bg-white space-y-2">
             <div className="flex justify-between items-start">
               <span className="text-slate-500 text-xs font-black uppercase tracking-wider">Aktif Ürünler</span>
-              <div className="w-9 h-9 rounded-2xl bg-blue-50 text-blue-700 flex items-center justify-center text-lg font-bold">
-                💐
+              <div className="w-9 h-9 rounded-2xl bg-blue-50 text-blue-700 flex items-center justify-center font-bold">
+                <Flower2 className="w-5 h-5 text-blue-700" />
               </div>
             </div>
             <div className="text-3xl font-black text-slate-900">{productsCount}</div>
@@ -181,8 +183,8 @@ export default function DashboardPage() {
           <div className="card border border-slate-200/80 shadow-xs rounded-3xl p-5 bg-white space-y-2">
             <div className="flex justify-between items-start">
               <span className="text-slate-500 text-xs font-black uppercase tracking-wider">WhatsApp İletişim</span>
-              <div className="w-9 h-9 rounded-2xl bg-green-50 text-green-700 flex items-center justify-center text-lg font-bold">
-                💬
+              <div className="w-9 h-9 rounded-2xl bg-green-50 text-green-700 flex items-center justify-center font-bold">
+                <MessageCircle className="w-5 h-5 text-green-700" />
               </div>
             </div>
             <div className="text-3xl font-black text-slate-900">{whatsappClicksCount}</div>
@@ -305,7 +307,7 @@ export default function DashboardPage() {
                 className="p-3 bg-slate-50 hover:bg-slate-100 rounded-2xl border border-slate-200 flex items-center justify-between transition group"
               >
                 <div className="flex items-center gap-2.5">
-                  <span className="text-lg">📦</span>
+                  <Package className="w-5 h-5 text-amber-900" />
                   <div>
                     <div className="font-bold text-xs text-slate-800 group-hover:text-amber-900">Sipariş & Dağıtım</div>
                     <div className="text-[10px] text-slate-400">{orders.length} aktif sipariş kaydı</div>
@@ -319,7 +321,7 @@ export default function DashboardPage() {
                 className="p-3 bg-slate-50 hover:bg-slate-100 rounded-2xl border border-slate-200 flex items-center justify-between transition group"
               >
                 <div className="flex items-center gap-2.5">
-                  <span className="text-lg">🛍️</span>
+                  <ShoppingBag className="w-5 h-5 text-amber-900" />
                   <div>
                     <div className="font-bold text-xs text-slate-800 group-hover:text-amber-900">Yarım Kalan Sepetler</div>
                     <div className="text-[10px] text-slate-400">{abandonedCount} terk edilen sepet</div>
@@ -334,7 +336,7 @@ export default function DashboardPage() {
                 className="p-3 bg-slate-50 hover:bg-slate-100 rounded-2xl border border-slate-200 flex items-center justify-between transition group"
               >
                 <div className="flex items-center gap-2.5">
-                  <span className="text-lg">🛵</span>
+                  <Bike className="w-5 h-5 text-amber-900" />
                   <div>
                     <div className="font-bold text-xs text-slate-800 group-hover:text-amber-900">Mobil Kurye Portalı</div>
                     <div className="text-[10px] text-slate-400">Kuryeler için telefon ekranı</div>
@@ -348,7 +350,7 @@ export default function DashboardPage() {
                 className="p-3 bg-slate-50 hover:bg-slate-100 rounded-2xl border border-slate-200 flex items-center justify-between transition group"
               >
                 <div className="flex items-center gap-2.5">
-                  <span className="text-lg">🎧</span>
+                  <Headphones className="w-5 h-5 text-amber-900" />
                   <div>
                     <div className="font-bold text-xs text-slate-800 group-hover:text-amber-900">AI Asistan Konuşmaları</div>
                     <div className="text-[10px] text-slate-400">Canlı chatbot logları</div>
@@ -358,8 +360,8 @@ export default function DashboardPage() {
               </Link>
             </div>
 
-            <div className="p-3 rounded-2xl bg-amber-50 border border-amber-200 text-center text-xs font-black text-amber-950">
-              🌸 Çiçekçe E-Ticaret v2.4 Canlı
+            <div className="p-3 rounded-2xl bg-amber-50 border border-amber-200 text-center text-xs font-black text-amber-950 flex items-center justify-center gap-1.5">
+              <Flower2 className="w-4 h-4 text-amber-900" /> Çiçekçe E-Ticaret v2.4 Canlı
             </div>
           </div>
         </div>

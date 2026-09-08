@@ -5,6 +5,7 @@ import StoreFooter from "@/components/store/StoreFooter";
 import ProductCard from "@/components/store/ProductCard";
 import { useStore, Product } from "@/lib/store";
 import Link from "next/link";
+import { Heart } from "lucide-react";
 
 export default function FavoritesPage() {
   const { favorites, clearFavorites } = useStore();
@@ -19,7 +20,7 @@ export default function FavoritesPage() {
           <div className="max-w-[1400px] mx-auto px-4 lg:px-6 flex justify-between items-center">
             <div>
               <h1 className="text-3xl font-black text-slate-900 flex items-center gap-2">
-                <span>❤️</span>
+                <Heart className="w-8 h-8 text-red-500 fill-red-500" />
                 <span>Favorilerim</span>
               </h1>
               <p className="text-xs text-slate-500 mt-1">
@@ -58,7 +59,9 @@ export default function FavoritesPage() {
             </div>
           ) : (
             <div className="text-center py-20 bg-white rounded-3xl border border-slate-200 shadow-sm space-y-4 max-w-lg mx-auto">
-              <div className="text-6xl">❤️</div>
+              <div className="w-16 h-16 rounded-full bg-red-50 flex items-center justify-center mx-auto text-red-500">
+                <Heart className="w-8 h-8 text-red-500" />
+              </div>
               <h3 className="text-2xl font-bold text-slate-900">Favori Listeniz Henüz Boş</h3>
               <p className="text-xs text-slate-500 max-w-sm mx-auto">
                 Ürün kartlarının üzerindeki kalp butonuna tıklayarak beğendiğiniz çiçekleri buraya ekleyebilirsiniz.

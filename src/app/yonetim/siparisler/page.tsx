@@ -2,6 +2,7 @@
 
 import AdminLayout from "@/components/layout/AdminLayout";
 import { useState, useEffect } from "react";
+import { Calendar, RefreshCw, Clock, CalendarDays, Globe, Truck, CheckCircle2, AlertTriangle, Search, Flower2, Bike, Camera, MessageSquare, Bot, UserCheck } from "lucide-react";
 
 function getCanonicalStatus(status?: string, courierId?: string) {
   if (!status) return "Yeni Sipariş";
@@ -595,7 +596,9 @@ export default function AdminOrdersPage() {
         {/* LUXURY PAGE HEADER BANNER */}
         <div className="bg-white rounded-3xl p-6 lg:p-8 border border-slate-200/80 shadow-xs flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
-            <div className="text-xs font-black uppercase text-amber-900 tracking-wider mb-1">🌸 ÇİÇEKÇE CANLI SİPARİŞ MERKEZİ</div>
+            <div className="text-xs font-black uppercase text-amber-900 tracking-wider mb-1 flex items-center gap-1.5">
+              <Flower2 className="w-4 h-4 text-[#2b2623]" /> ÇİÇEKÇE CANLI SİPARİŞ MERKEZİ
+            </div>
             <h1 className="text-2xl lg:text-3xl font-black text-slate-900">Sipariş Yönetim & Kurye Dağıtım Paneli</h1>
             <p className="text-xs sm:text-sm text-slate-500 mt-1">
               Gelen siparişler, hazırlanan buket fotoğrafları, WhatsApp müşteri onayları ve canlı kurye atamaları.
@@ -606,7 +609,8 @@ export default function AdminOrdersPage() {
             style={{ backgroundColor: "#2b2623", color: "#ffffff" }}
             className="hover:opacity-95 px-5 py-2.5 rounded-2xl font-extrabold text-xs shadow-sm transition flex items-center gap-2 shrink-0"
           >
-            <span>🔄 Canlı Yenile</span>
+            <RefreshCw className="w-4 h-4" />
+            <span>Canlı Yenile</span>
           </button>
         </div>
 
@@ -614,8 +618,8 @@ export default function AdminOrdersPage() {
         <div className="bg-white rounded-3xl p-5 border border-slate-200/80 shadow-xs space-y-4">
           <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 border-b border-slate-100 pb-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-[#2b2623] text-white flex items-center justify-center font-bold text-lg shadow-xs">
-                📅
+              <div className="w-10 h-10 rounded-2xl bg-[#2b2623] text-white flex items-center justify-center font-bold shadow-xs">
+                <Calendar className="w-5 h-5" />
               </div>
               <div>
                 <h4 className="font-extrabold text-base text-slate-900 m-0">Sipariş Tarihi ve Teslimat Takvimi</h4>
@@ -692,7 +696,8 @@ export default function AdminOrdersPage() {
                   : "bg-emerald-50 text-emerald-900 hover:bg-emerald-100 border border-emerald-200"
               }`}
             >
-              <span>📅 Bugünün Siparişleri</span>
+              <Calendar className="w-4 h-4" />
+              <span>Bugünün Siparişleri</span>
               <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${dateFilterType === "today" ? "bg-white/20 text-white" : "bg-emerald-200/80 text-emerald-950"}`}>
                 {countTodayOrders}
               </span>
@@ -707,7 +712,8 @@ export default function AdminOrdersPage() {
                   : "bg-blue-50 text-blue-900 hover:bg-blue-100 border border-blue-200"
               }`}
             >
-              <span>⏩ İleri Tarihli Siparişler</span>
+              <CalendarDays className="w-4 h-4" />
+              <span>İleri Tarihli Siparişler</span>
               <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${dateFilterType === "upcoming" ? "bg-white/20 text-white" : "bg-blue-200/80 text-blue-950"}`}>
                 {countUpcomingOrders}
               </span>
@@ -722,7 +728,8 @@ export default function AdminOrdersPage() {
                   : "bg-purple-50 text-purple-900 hover:bg-purple-100 border border-purple-200"
               }`}
             >
-              <span>⏪ Geçmiş Tarihli Siparişler</span>
+              <Clock className="w-4 h-4" />
+              <span>Geçmiş Tarihli Siparişler</span>
               <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${dateFilterType === "past" ? "bg-white/20 text-white" : "bg-purple-200/80 text-purple-950"}`}>
                 {countPastOrders}
               </span>
@@ -741,7 +748,8 @@ export default function AdminOrdersPage() {
                   : "bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200"
               }`}
             >
-              <span>🌐 Tüm Zamanlar</span>
+              <Globe className="w-4 h-4" />
+              <span>Tüm Zamanlar</span>
               <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${dateFilterType === "all" ? "bg-white/20 text-white" : "bg-slate-200 text-slate-800"}`}>
                 {orders.length}
               </span>
@@ -773,7 +781,8 @@ export default function AdminOrdersPage() {
                 : "bg-red-50 text-red-700 hover:bg-red-100"
             }`}
           >
-            <span>🔴 Yeni Sipariş</span>
+            <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse"></span>
+            <span>Yeni Sipariş</span>
             <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${activeTab === "new" ? "bg-white/20 text-white" : "bg-red-200 text-red-900"}`}>
               {countNew}
             </span>
@@ -787,7 +796,8 @@ export default function AdminOrdersPage() {
                 : "bg-amber-50 text-amber-700 hover:bg-amber-100"
             }`}
           >
-            <span>🟡 Hazırlanıyor</span>
+            <span className="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+            <span>Hazırlanıyor</span>
             <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${activeTab === "preparing" ? "bg-white/20 text-white" : "bg-amber-200 text-amber-900"}`}>
               {countPreparing}
             </span>
@@ -801,7 +811,8 @@ export default function AdminOrdersPage() {
                 : "bg-blue-50 text-blue-700 hover:bg-blue-100"
             }`}
           >
-            <span>🚚 Arabaya Verildi / Kuryede</span>
+            <Truck className="w-4 h-4" />
+            <span>Arabaya Verildi / Kuryede</span>
             <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${activeTab === "shipping" ? "bg-white/20 text-white" : "bg-blue-200 text-blue-900"}`}>
               {countShipping}
             </span>
@@ -815,7 +826,8 @@ export default function AdminOrdersPage() {
                 : "bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
             }`}
           >
-            <span>🟢 Teslim Edildi</span>
+            <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+            <span>Teslim Edildi</span>
             <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${activeTab === "delivered" ? "bg-white/20 text-white" : "bg-emerald-200 text-emerald-900"}`}>
               {countDelivered}
             </span>
@@ -825,14 +837,14 @@ export default function AdminOrdersPage() {
         {/* SEARCH BAR */}
         <div className="bg-white rounded-3xl p-4 border border-slate-200/80 shadow-xs">
           <div className="relative">
+            <Search className="absolute left-4 top-3.5 text-slate-400 w-4 h-4" />
             <input
               type="text"
               className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs sm:text-sm font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#2b2623] transition placeholder:text-slate-400"
-              placeholder="🔍 Sipariş kuralı, Sipariş No (#SIP-...), Alıcı Adı, Telefon veya Teslimat Adresi ile arama yapın..."
+              placeholder="Sipariş kuralı, Sipariş No (#SIP-...), Alıcı Adı, Telefon veya Teslimat Adresi ile arama yapın..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
-            <span className="absolute left-4 top-3.5 text-slate-400 text-sm"></span>
           </div>
         </div>
 
@@ -857,7 +869,10 @@ export default function AdminOrdersPage() {
                 {filteredOrders.length === 0 ? (
                   <tr>
                     <td colSpan={8} className="text-center py-16 text-slate-400 font-extrabold">
-                      🌸 Seçilen filtre kriterlerine uygun sipariş bulunamadı.
+                      <div className="flex items-center justify-center gap-2">
+                        <Flower2 className="w-5 h-5 text-slate-400" />
+                        <span>Seçilen filtre kriterlerine uygun sipariş bulunamadı.</span>
+                      </div>
                     </td>
                   </tr>
                 ) : (
@@ -913,7 +928,8 @@ export default function AdminOrdersPage() {
                               onClick={() => setReviewingUpdateRequestOrder(o)}
                               className="mt-1.5 w-full py-1.5 px-2 bg-red-600 hover:bg-red-700 text-white rounded-xl font-black text-[10px] transition shadow-xs flex items-center justify-center gap-1 animate-pulse"
                             >
-                              <span>⚠️ Güncelleme Talebi Var!</span>
+                              <AlertTriangle className="w-3.5 h-3.5" />
+                              <span>Güncelleme Talebi Var!</span>
                             </button>
                           )}
                         </td>
@@ -928,10 +944,11 @@ export default function AdminOrdersPage() {
                                 onClick={() => handleStatusChange(o.id, "Hazırlanıyor")}
                                 className="w-full py-2 px-3 rounded-xl font-black text-xs bg-amber-500 text-white shadow-xs hover:bg-amber-600 transition flex items-center justify-center gap-1.5"
                               >
-                                <span>🟡 Hazırlanıyor'a Al</span>
+                                <span className="w-2 h-2 rounded-full bg-amber-200"></span>
+                                <span>Hazırlanıyor'a Al</span>
                               </button>
-                              <span className="inline-block text-[10px] font-bold text-red-700 bg-red-50 px-2 py-0.5 rounded border border-red-200">
-                                🔴 Yeni Sipariş
+                              <span className="inline-flex items-center gap-1 text-[10px] font-bold text-red-700 bg-red-50 px-2 py-0.5 rounded border border-red-200">
+                                <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span> Yeni Sipariş
                               </span>
                             </div>
                           )}
@@ -953,16 +970,19 @@ export default function AdminOrdersPage() {
                                     }}
                                     className="w-full py-2 px-2.5 rounded-xl font-black text-xs bg-emerald-600 text-white shadow-xs hover:bg-emerald-700 transition flex items-center justify-center gap-1"
                                   >
-                                    <span>🟢 Kuryeye Teslim Edin</span>
+                                    <CheckCircle2 className="w-4 h-4" />
+                                    <span>Kuryeye Teslim Edin</span>
                                   </button>
                                   {/* DISTINCT APPROVAL SOURCE BADGES */}
                                   {String(o.customerApprovalStatus || "").includes("Sistem") ? (
                                     <div className="text-[10px] font-black text-purple-900 bg-purple-50 px-2 py-0.5 rounded-full border border-purple-300 flex items-center justify-center gap-1">
-                                      <span>🤖 Sistem Otomatik Onayladı (15 Dk Doldu)</span>
+                                      <Bot className="w-3 h-3 text-purple-700" />
+                                      <span>Sistem Otomatik Onayladı (15 Dk Doldu)</span>
                                     </div>
                                   ) : String(o.customerApprovalStatus || "").includes("Onaylandı") ? (
                                     <div className="text-[10px] font-black text-emerald-900 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-300 flex items-center justify-center gap-1">
-                                      <span>🧑 Müşteri Tarafından Onaylandı</span>
+                                      <UserCheck className="w-3 h-3 text-emerald-700" />
+                                      <span>Müşteri Tarafından Onaylandı</span>
                                     </div>
                                   ) : null}
                                 </div>
@@ -971,7 +991,8 @@ export default function AdminOrdersPage() {
                                 <div className="space-y-1">
                                   <div className="space-y-1.5">
                                     <label className="w-full py-2 px-2 rounded-xl font-black text-xs bg-red-600 text-white shadow-xs hover:bg-red-700 transition flex items-center justify-center gap-1 cursor-pointer">
-                                      <span>🔴 Müşteri Düzeltme İstedi (Yeni Görsel Yükle)</span>
+                                      <AlertTriangle className="w-4 h-4" />
+                                      <span>Müşteri Düzeltme İstedi (Yeni Görsel Yükle)</span>
                                       <input
                                         type="file"
                                         accept="image/*"
@@ -983,7 +1004,7 @@ export default function AdminOrdersPage() {
                                     {o.rejectionReason ? (
                                       <div className="p-2 bg-red-50 rounded-xl border border-red-200 text-left space-y-0.5">
                                         <div className="text-[10px] font-black text-red-800 uppercase flex items-center gap-1">
-                                          <span>💬</span> Müşteri İsteği:
+                                          <MessageSquare className="w-3 h-3 text-red-700" /> Müşteri İsteği:
                                         </div>
                                         <div className="text-xs font-bold text-red-950 italic">
                                           "{o.rejectionReason}"
@@ -999,9 +1020,10 @@ export default function AdminOrdersPage() {
                               ) : o.preparedPhoto ? (
                                 /* Subcase C: Görsel Yüklendi -> Onay Bekleniyor & WhatsApp */
                                 <div className="space-y-1">
-                                  <div className="p-1.5 bg-purple-50 rounded-xl border border-purple-200 text-center">
+                                  <div className="p-1.5 bg-purple-50 rounded-xl border border-purple-200 text-center flex items-center justify-center gap-1">
+                                    <Camera className="w-3.5 h-3.5 text-purple-700" />
                                     <span className="text-[11px] font-black text-purple-900">
-                                      📸 Müşteri Onayı Bekleniyor
+                                      Müşteri Onayı Bekleniyor
                                     </span>
                                   </div>
                                   <a
@@ -1011,13 +1033,15 @@ export default function AdminOrdersPage() {
                                     style={{ backgroundColor: "#25D366", color: "#ffffff" }}
                                     className="w-full py-1 px-2 rounded-lg font-bold text-[10px] flex items-center justify-center gap-1 shadow-2xs"
                                   >
-                                    <span>💬 Onay Linki Gönder</span>
+                                    <MessageSquare className="w-3 h-3" />
+                                    <span>Onay Linki Gönder</span>
                                   </a>
                                 </div>
                               ) : (
                                 /* Subcase D: Fotoğraf Onayı Gönder */
                                 <label className="w-full py-2 px-2 rounded-xl font-black text-xs bg-[#2b2623] text-white shadow-xs hover:opacity-95 transition flex items-center justify-center gap-1 cursor-pointer">
-                                  <span>📸 {uploadingOrderId === o.id ? "Yükleniyor..." : "Fotoğraf Onayı Gönder"}</span>
+                                  <Camera className="w-4 h-4" />
+                                  <span>{uploadingOrderId === o.id ? "Yükleniyor..." : "Fotoğraf Onayı Gönder"}</span>
                                   <input
                                     type="file"
                                     accept="image/*"
@@ -1033,7 +1057,7 @@ export default function AdminOrdersPage() {
                           {/* CASE 3: KURYEDE / DAĞITIMDA */}
                           {canonicalStatus === "Kuryede / Dağıtımda" && (
                             <div className="p-2 rounded-xl bg-blue-50 border border-blue-200 text-blue-900 text-xs font-black flex items-center justify-center gap-1.5">
-                              <span>🛵</span>
+                              <Bike className="w-4 h-4 text-blue-700" />
                               <span>{o.courierName ? o.courierName : "Kuryede"}</span>
                             </div>
                           )}
@@ -1048,7 +1072,7 @@ export default function AdminOrdersPage() {
                             return (
                               <div className="space-y-1">
                                 <div className="p-2 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-black flex items-center justify-center gap-1.5">
-                                  <span>✅</span>
+                                  <CheckCircle2 className="w-4 h-4 text-emerald-700" />
                                   <span>Teslim Edildi</span>
                                 </div>
                                 <div

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { Gift, Copy, Check, X, ShoppingBag } from "lucide-react";
 
 export default function WelcomeDiscountModal() {
   const [isOpen, setIsOpen] = useState(false);
@@ -8,12 +9,12 @@ export default function WelcomeDiscountModal() {
 
   const [popup, setPopup] = useState<any>({
     enabled: true,
-    title: "İlk Siparişinize Özel 150 ₺ İndirim! 🎉",
+    title: "İlk Siparişinize Özel 150 ₺ İndirim!",
     description: "İlk siparişinize özel 150 ₺ indirim kodu sizleri bekliyor. Hediye10 koduyla siparişinizi hemen oluşturabilirsiniz.",
     couponCode: "Hediye10",
     badgeText: "BİLGİLENDİRME",
-    buttonText: "Kodu Kopyala & Alışverişe Başla 🛍️",
-    icon: "🎁"
+    buttonText: "Kodu Kopyala & Alışverişe Başla",
+    icon: "Gift"
   });
 
   useEffect(() => {
@@ -67,12 +68,12 @@ export default function WelcomeDiscountModal() {
           className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center font-bold text-sm z-10"
           title="Kapat"
         >
-          ✕
+          <X className="w-4 h-4 text-slate-600" />
         </button>
 
         {/* Gift Icon Badge */}
-        <div className="w-16 h-16 rounded-full bg-emerald-100 text-[#2b2623] flex items-center justify-center mx-auto mb-4 text-3xl shadow-xs">
-          {popup.icon || "🎁"}
+        <div className="w-16 h-16 rounded-full bg-[#F5EFE6] text-[#2b2623] flex items-center justify-center mx-auto mb-4 text-2xl shadow-xs">
+          <Gift className="w-8 h-8 text-[#2b2623]" />
         </div>
 
         {/* Header Label */}
@@ -100,9 +101,17 @@ export default function WelcomeDiscountModal() {
             <button
               onClick={handleCopyCode}
               style={{ backgroundColor: "#2b2623", color: "#ffffff" }}
-              className="px-4 py-2 rounded-xl text-xs font-extrabold shadow-xs hover:opacity-95 transition"
+              className="px-4 py-2 rounded-xl text-xs font-extrabold shadow-xs hover:opacity-95 transition flex items-center gap-1.5"
             >
-              {copied ? "✓ Kopyalandı!" : "📋 Kopyala"}
+              {copied ? (
+                <>
+                  <Check className="w-3.5 h-3.5" /> Kopyalandı!
+                </>
+              ) : (
+                <>
+                  <Copy className="w-3.5 h-3.5" /> Kopyala
+                </>
+              )}
             </button>
           </div>
         )}
@@ -112,9 +121,17 @@ export default function WelcomeDiscountModal() {
           <button
             onClick={handleCopyCode}
             style={{ backgroundColor: "#2b2623", color: "#ffffff" }}
-            className="w-full font-extrabold py-3.5 rounded-2xl shadow-md hover:opacity-95 transition text-xs sm:text-sm"
+            className="w-full font-extrabold py-3.5 rounded-2xl shadow-md hover:opacity-95 transition text-xs sm:text-sm flex items-center justify-center gap-2"
           >
-            {copied ? "✓ Kod Kopyalandı, Keyifli Alışverişler!" : (popup.buttonText || "Kodu Kopyala & Alışverişe Başla 🛍️")}
+            {copied ? (
+              <>
+                <Check className="w-4 h-4" /> Kod Kopyalandı, Keyifli Alışverişler!
+              </>
+            ) : (
+              <>
+                <ShoppingBag className="w-4 h-4" /> Kodu Kopyala & Alışverişe Başla
+              </>
+            )}
           </button>
 
           <button

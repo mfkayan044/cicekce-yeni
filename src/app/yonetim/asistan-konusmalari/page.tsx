@@ -69,10 +69,17 @@ export default function AsistanKonusmalariPage() {
     }
   };
 
-  const filtered = logs.filter(
-    (l) =>
-      l.visitor.toLowerCase().includes(search.toLowerCase()) ||
-      l.lastMsg.toLowerCase().includes(search.toLowerCase())
+  const filtered = (logs || []).map((l: any) => ({
+    ...l,
+    visitor: l.visitor || l.customerName || "Misafir Ziyaretçi",
+    msgCount: l.msgCount || (l.messages ? l.messages.length : 0),
+    lastMsg: l.lastMsg || (l.messages && l.messages.length > 0 ? l.messages[l.messages.length - 1].text : "Konuşma Detayı"),
+    status: l.status || "Tamamlandı",
+    date: l.date || "Bugün"
+  })).filter(
+    (l: any) =>
+      String(l.visitor || "").toLowerCase().includes(search.toLowerCase()) ||
+      String(l.lastMsg || "").toLowerCase().includes(search.toLowerCase())
   );
 
   return (

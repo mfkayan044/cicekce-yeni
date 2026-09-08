@@ -4,19 +4,8 @@ import AdminLayout from "@/components/layout/AdminLayout";
 import Link from "next/link";
 import { useState, useEffect } from "react";
 
-interface AbandonedCart {
-  id: string;
-  cartNo: string;
-  customer: string;
-  phone: string;
-  product: string;
-  step: string;
-  total: string;
-  date: string;
-}
-
 export default function YarimSiparislerPage() {
-  const [carts, setCarts] = useState<AbandonedCart[]>([]);
+  const [carts, setCarts] = useState<any[]>([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
 
@@ -25,7 +14,7 @@ export default function YarimSiparislerPage() {
       const res = await fetch("/api/abandoned-carts");
       if (res.ok) {
         const data = await res.json();
-        setCarts(data);
+        if (Array.isArray(data)) setCarts(data);
       }
     } catch (e) {
     } finally {
@@ -39,11 +28,22 @@ export default function YarimSiparislerPage() {
     return () => clearInterval(interval);
   }, []);
 
-  const filtered = carts.filter(
-    (c) =>
-      c.cartNo.toLowerCase().includes(search.toLowerCase()) ||
-      c.customer.toLowerCase().includes(search.toLowerCase()) ||
-      c.phone.includes(search)
+  const normalizedCarts = (carts || []).map((c: any) => ({
+    id: String(c.id || Date.now()),
+    cartNo: c.cartNo || c.id || "SEPET",
+    customer: c.customer || c.customerName || "Misafir Ziyaretçi",
+    phone: c.phone || c.customerPhone || "-",
+    product: c.product || (c.items?.[0]?.product?.title) || "Çiçek Buketi",
+    step: c.step || c.lastStep || "Ödeme Adımı",
+    total: c.total || c.cartTotal || "0 ₺",
+    date: c.date || "Bugün"
+  }));
+
+  const filtered = normalizedCarts.filter(
+    (c: any) =>
+      String(c.cartNo || "").toLowerCase().includes(search.toLowerCase()) ||
+      String(c.customer || "").toLowerCase().includes(search.toLowerCase()) ||
+      String(c.phone || "").includes(search)
   );
 
   return (
@@ -62,7 +62,7 @@ export default function YarimSiparislerPage() {
           <button
             onClick={fetchCarts}
             style={{ backgroundColor: "#2b2623", color: "#ffffff" }}
-            className="font-bold rounded-xl text-xs px-4 py-2 flex items-center gap-1 shadow-sm"
+            className="font-bold rounded-xl text-xs px-4 py-2 flex items-center gap-1 shadow-sm cursor-pointer"
           >
             <span>🔄 Canlı Listeyi Yenile</span>
           </button>
@@ -108,7 +108,7 @@ export default function YarimSiparislerPage() {
                     </td>
                   </tr>
                 ) : (
-                  filtered.map((c) => (
+                  filtered.map((c: any) => (
                     <tr key={c.id} className="hover:bg-slate-50 transition">
                       <td className="px-4 py-3 font-bold text-[#2b2623]">
                         <Link href={`/yonetim/yarim-siparisler/${c.id}`} className="hover:underline">

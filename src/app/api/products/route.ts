@@ -61,7 +61,7 @@ export async function GET() {
     // Fetch from Neon Postgres
     try {
       const data = await sql`SELECT * FROM products ORDER BY created_at DESC`;
-      if (data && data.length > 0) {
+      if (Array.isArray(data)) {
         const merged = data.map((sbP: any) => ({
           id: String(sbP.id),
           slug: sbP.slug || String(sbP.id),
@@ -77,11 +77,9 @@ export async function GET() {
           featured: sbP.featured === true,
           description: sbP.description
         }));
-        if (merged.length > 0) {
-          cachedProducts = merged;
-          cachedProductsTime = Date.now();
-          return NextResponse.json(merged, { headers: cacheHeaders });
-        }
+        cachedProducts = merged;
+        cachedProductsTime = Date.now();
+        return NextResponse.json(merged, { headers: cacheHeaders });
       }
     } catch (neonErr) {}
 

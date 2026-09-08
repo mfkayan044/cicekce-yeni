@@ -378,23 +378,34 @@ export async function PUT(request: Request) {
       console.error("Supabase orders table update error:", dbError);
     }
 
-    // Trigger NetGSM Automatic SMS Notification if status changed
-    if (status && status !== existingOrder?.status) {
-      const targetPhone = existingOrder?.customer_phone || existingOrder?.customerPhone || existingOrder?.recipient_phone;
-      const custName = existingOrder?.customer_name || existingOrder?.customerName || "Müşterimiz";
-      if (targetPhone) {
-        let msg = "";
-        if (status === "Hazırlanıyor" || status === "Hazırlanıyor / Onaylandı") {
+    // Trigger NetGSM Automatic SMS Notification if status changed OR prepared photo uploaded
+    const targetPhone = existingOrder?.customer_phone || existingOrder?.customerPhone || existingOrder?.recipient_phone;
+    const custName = existingOrder?.customer_name || existingOrder?.customerName || "Müşterimiz";
+
+    if (targetPhone) {
+      const cleanPhone = String(targetPhone).replace(/[^0-9]/g, "");
+      let msg = "";
+
+      if (preparedPhoto && preparedPhoto !== existingOrder?.prepared_photo) {
+        const trackingLink = `https://cicekce-yeni-two.vercel.app/siparis-takip?orderId=${id}&phone=${encodeURIComponent(cleanPhone.slice(-7))}`;
+        msg = `Sayin ${custName}, ${id} nolu siparisinizin hazirlanan cicek fotografi yuklenmistir. Fotografinizi incelemek ve onaylamak icin tiklayin: ${trackingLink} Cicekce`;
+      } else if (status && status !== existingOrder?.status) {
+        if (status === "Fotoğraflı Onay Bekliyor") {
+          const trackingLink = `https://cicekce-yeni-two.vercel.app/siparis-takip?orderId=${id}&phone=${encodeURIComponent(cleanPhone.slice(-7))}`;
+          msg = `Sayin ${custName}, ${id} nolu siparisinizin cicek fotografi yuklenmistir. Onaylamak icin tiklayin: ${trackingLink} Cicekce`;
+        } else if (status === "Hazırlanıyor" || status === "Hazırlanıyor / Onaylandı") {
           msg = `Sayin ${custName}, ${id} nolu cicek siparisiniz ozenle hazirlanmaya baslanmistir. Cicekce`;
         } else if (status === "Kuryede / Dağıtımda") {
           msg = `Sayin ${custName}, ${id} nolu siparisiniz kuryemiz tarafindan teslimat adresine yola cikarilmistir. Cicekce`;
         } else if (status === "Teslim Edildi") {
           msg = `Sayin ${custName}, ${id} nolu cicek siparisiniz alicisina basariyla teslim edilmistir. Bizi tercih ettiginiz icin tesekkur ederiz. Cicekce`;
         }
-        if (msg) {
-          const { sendNetgsmSms } = await import("@/lib/netgsm-sms");
+      }
+
+      if (msg) {
+        import("@/lib/netgsm-sms").then(({ sendNetgsmSms }) => {
           sendNetgsmSms({ phone: targetPhone, message: msg }).catch(() => {});
-        }
+        });
       }
     }
 

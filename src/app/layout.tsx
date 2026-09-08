@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import AnalyticsTracker from "@/components/analytics/AnalyticsTracker";
 import PwaRegister from "@/components/pwa/PwaRegister";
+import StoreMobileBottomNav from "@/components/store/StoreMobileBottomNav";
 
 export const viewport: Viewport = {
   themeColor: "#2b2623",
@@ -40,10 +41,11 @@ export default function RootLayout({
         <link rel="stylesheet" href="/demo-procicek.css" />
         <link rel="stylesheet" href="/sneat/assets/vendor/fonts/boxicons.css" />
       </head>
-      <body className="bg-[#FAF6F0] text-slate-800 min-h-screen font-sans">
+      <body className="bg-[#FAF6F0] text-slate-800 min-h-screen font-sans pb-16 lg:pb-0">
         <PwaRegister />
         <AnalyticsTracker />
         {children}
+        <StoreMobileBottomNav />
       </body>
     </html>
   );

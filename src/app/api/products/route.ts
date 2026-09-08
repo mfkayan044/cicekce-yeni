@@ -38,12 +38,21 @@ function writeDbAndTs(dbObj: any) {
   } catch (e) {}
 }
 
+let cachedProducts: any[] | null = null;
+let cachedProductsTime = 0;
+const CACHE_TTL_MS = 60 * 1000; // 60 seconds
+
 const cacheHeaders = {
   "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300",
 };
 
 export async function GET() {
   try {
+    const now = Date.now();
+    if (cachedProducts && now - cachedProductsTime < CACHE_TTL_MS) {
+      return NextResponse.json(cachedProducts, { headers: cacheHeaders });
+    }
+
     // Read directly from db.json to guarantee 100% SSR & Client hydration parity
     const db = readDb();
     let productsList = (db.products || []).filter(
@@ -81,10 +90,16 @@ export async function GET() {
             description: sbP.description || localP.description
           };
         });
-        if (merged.length > 0) return NextResponse.json(merged, { headers: cacheHeaders });
+        if (merged.length > 0) {
+          cachedProducts = merged;
+          cachedProductsTime = Date.now();
+          return NextResponse.json(merged, { headers: cacheHeaders });
+        }
       }
     } catch (sbErr) {}
 
+    cachedProducts = productsList;
+    cachedProductsTime = Date.now();
     return NextResponse.json(productsList, { headers: cacheHeaders });
   } catch (error) {
     const db = readDb();
@@ -153,6 +168,7 @@ export async function POST(request: Request) {
       // Synchronously write to db.json and initial-db.ts (Prevents client hydration reversion!)
       dbObj.products = updatedProducts;
       writeDbAndTs(dbObj);
+      cachedProducts = null;
 
       // Also upsert to Supabase
       try {
@@ -202,6 +218,7 @@ export async function POST(request: Request) {
 
     dbObj.products = productsList;
     writeDbAndTs(dbObj);
+    cachedProducts = null;
 
     try {
       await supabase.from("products").upsert({
@@ -240,6 +257,7 @@ export async function DELETE(request: Request) {
     const dbObj = readDb();
     dbObj.products = (dbObj.products || []).filter((p: any) => String(p.id) !== String(id));
     writeDbAndTs(dbObj);
+    cachedProducts = null;
 
     try {
       await supabase.from("products").delete().eq("id", id);

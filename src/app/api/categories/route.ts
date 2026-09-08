@@ -2,12 +2,21 @@ import { NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
 import { isRequestAuthorized } from "@/lib/auth";
 
+let cachedCategories: any[] | null = null;
+let cachedCategoriesTime = 0;
+const CACHE_TTL_MS = 60 * 1000;
+
 const cacheHeaders = {
   "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300",
 };
 
 export async function GET() {
   try {
+    const now = Date.now();
+    if (cachedCategories && now - cachedCategoriesTime < CACHE_TTL_MS) {
+      return NextResponse.json(cachedCategories, { headers: cacheHeaders });
+    }
+
     const { data, error } = await supabase.from("categories").select("*").order("display_order", { ascending: true });
     if (error) throw error;
 
@@ -19,6 +28,8 @@ export async function GET() {
       order: c.display_order || c.order || 0
     }));
 
+    cachedCategories = formatted;
+    cachedCategoriesTime = Date.now();
     return NextResponse.json(formatted, { headers: cacheHeaders });
   } catch (error) {
     return NextResponse.json({ error: "Failed to fetch categories from Supabase" }, { status: 500 });
@@ -44,6 +55,7 @@ export async function POST(request: Request) {
     const { data, error } = await supabase.from("categories").upsert(newCategory, { onConflict: "id" }).select().single();
     if (error) throw error;
 
+    cachedCategories = null;
     return NextResponse.json(data, { status: 201 });
   } catch (error) {
     return NextResponse.json({ error: "Failed to save category to Supabase" }, { status: 500 });
@@ -68,6 +80,7 @@ export async function PUT(request: Request) {
       updatePayload.display_order = updateFields.order !== undefined ? updateFields.order : updateFields.display_order;
     }
 
+    cachedCategories = null;
     const { data, error } = await supabase.from("categories").update(updatePayload).eq("id", id).select().single();
     if (error) {
       const { data: upsertData, error: upsertErr } = await supabase
@@ -96,6 +109,8 @@ export async function DELETE(request: Request) {
     const id = searchParams.get("id");
     const { error } = await supabase.from("categories").delete().eq("id", id);
     if (error) throw error;
+
+    cachedCategories = null;
     return NextResponse.json({ success: true });
   } catch (error) {
     return NextResponse.json({ error: "Failed to delete category from Supabase" }, { status: 500 });

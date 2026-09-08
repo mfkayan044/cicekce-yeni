@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { MapPin, AlertTriangle } from "lucide-react";
 
 interface AddressModalProps {
   isOpen: boolean;
@@ -68,7 +69,7 @@ export default function AddressSelectionModal({ isOpen, onClose, onSelectAddress
       <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in duration-200">
         <div className="flex justify-between items-center border-b pb-3">
           <div className="flex items-center gap-2">
-            <span className="text-xl">📍</span>
+            <MapPin className="w-5 h-5 text-[#2b2623]" />
             <h5 className="font-extrabold text-base text-slate-800 m-0">Teslimat Bölgesi Seçiniz</h5>
           </div>
           <button
@@ -81,7 +82,7 @@ export default function AddressSelectionModal({ isOpen, onClose, onSelectAddress
 
         {warningBanner && (
           <div className="p-3 bg-red-50 border border-red-200 rounded-2xl text-xs text-red-800 font-extrabold flex items-center gap-2 animate-pulse">
-            <span className="text-base">⚠️</span>
+            <AlertTriangle className="w-5 h-5 text-red-600 shrink-0" />
             <span>Lütfen sipariş işlemine devam edebilmek için önce teslimat şehrinizi, ilçenizi ve mahallenizi seçiniz!</span>
           </div>
         )}

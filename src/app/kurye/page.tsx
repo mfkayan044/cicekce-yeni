@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import { Bike, KeyRound, Smartphone, Sparkles, Package, CheckCircle2, PartyPopper, AlertTriangle, Clock, Phone, MessageCircle, MapPin, Navigation, FileText, Camera, LogOut, RotateCw } from "lucide-react";
 
 interface Courier {
   id: string;
@@ -488,7 +489,7 @@ export default function CourierPortalPage() {
       <div className="bg-[#FAF6F0] min-h-screen flex items-center justify-center p-4 font-sans">
         <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-sm w-full shadow-xl border border-slate-200 text-center space-y-5">
           <div className="w-16 h-16 rounded-3xl bg-[#2b2623] text-white flex items-center justify-center text-3xl font-bold mx-auto shadow-md">
-            🛵
+            <Bike className="w-8 h-8 text-white" />
           </div>
 
           <div>
@@ -515,22 +516,25 @@ export default function CourierPortalPage() {
             </div>
 
             {pinError && (
-              <div className="p-3 bg-red-50 border border-red-200 text-red-700 text-xs rounded-xl font-bold">
-                {pinError}
+              <div className="p-3 bg-red-50 border border-red-200 text-red-700 text-xs rounded-xl font-bold flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 text-red-600 shrink-0" />
+                <span>{pinError}</span>
               </div>
             )}
 
             <button
               type="submit"
               style={{ backgroundColor: "#2b2623", color: "#ffffff" }}
-              className="w-full py-3.5 rounded-xl font-extrabold text-sm shadow-md hover:opacity-95 transition"
+              className="w-full py-3.5 rounded-xl font-extrabold text-sm shadow-md hover:opacity-95 transition flex items-center justify-center gap-2"
             >
-              🔑 Dağıtım Portalına Giriş Yap
+              <KeyRound className="w-4 h-4" />
+              <span>Dağıtım Portalına Giriş Yap</span>
             </button>
           </form>
 
-          <div className="text-[11px] text-slate-400 font-semibold border-t pt-3">
-            🌸 Çiçekçe Kurye & Dağıtım Sistemi
+          <div className="text-[11px] text-slate-400 font-semibold border-t pt-3 flex items-center justify-center gap-1.5">
+            <Sparkles className="w-3.5 h-3.5 text-amber-900/60" />
+            <span>Çiçekçe Kurye & Dağıtım Sistemi</span>
           </div>
         </div>
       </div>
@@ -544,7 +548,7 @@ export default function CourierPortalPage() {
         <div className="max-w-md mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="w-9 h-9 rounded-2xl bg-[#2b2623] text-white flex items-center justify-center font-bold text-lg shadow-xs">
-              🛵
+              <Bike className="w-5 h-5 text-white" />
             </div>
             <div>
               <h1 className="text-sm font-black text-slate-900 m-0">Kurye Dağıtım Portalı</h1>
@@ -559,16 +563,18 @@ export default function CourierPortalPage() {
             <button
               type="button"
               onClick={fetchData}
-              className="text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 px-2.5 py-1 rounded-xl transition"
+              className="text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 px-2.5 py-1 rounded-xl transition inline-flex items-center gap-1"
             >
-              🔄 Yenile
+              <RotateCw className="w-3.5 h-3.5" />
+              <span>Yenile</span>
             </button>
             <button
               type="button"
               onClick={handleCourierLogout}
-              className="text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 px-2.5 py-1 rounded-xl transition"
+              className="text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 px-2.5 py-1 rounded-xl transition inline-flex items-center gap-1"
             >
-              🚪 Çıkış
+              <LogOut className="w-3.5 h-3.5" />
+              <span>Çıkış</span>
             </button>
           </div>
         </div>
@@ -578,7 +584,7 @@ export default function CourierPortalPage() {
           <div className="max-w-md mx-auto px-4 pb-3 pt-1">
             <div className="bg-[#2b2623] text-white p-3 rounded-2xl flex items-center justify-between shadow-md">
               <div className="flex items-center gap-2.5">
-                <span className="text-xl">📲</span>
+                <Smartphone className="w-5 h-5 text-emerald-400" />
                 <div>
                   <div className="font-extrabold text-xs">Uygulama Olarak Yükle</div>
                   <div className="text-[10px] text-slate-300">Ana ekrandan doğrudan kurye paneline eriş!</div>
@@ -611,10 +617,10 @@ export default function CourierPortalPage() {
               }}
               className="bg-white border border-slate-300 font-extrabold text-xs text-slate-900 px-3 py-1.5 rounded-xl shadow-2xs outline-none w-full"
             >
-              <option value="all">🌟 Tüm Kuryeler & Aktif Dağıtımlar</option>
+              <option value="all">Tüm Kuryeler & Aktif Dağıtımlar</option>
               {couriers.map((c) => (
                 <option key={c.id} value={String(c.id)}>
-                  🛵 {c.name} ({c.region || "Genel Bölge"})
+                  {c.name} ({c.region || "Genel Bölge"})
                 </option>
               ))}
             </select>
@@ -635,7 +641,8 @@ export default function CourierPortalPage() {
                 : "text-slate-600 hover:text-slate-900"
             }`}
           >
-            <span>📦 Teslim Edilecekler</span>
+            <Package className="w-4 h-4 text-slate-700" />
+            <span>Teslim Edilecekler</span>
             <span
               style={{ backgroundColor: "#2b2623", color: "#ffffff" }}
               className="px-2 py-0.5 rounded-full text-[10px] font-black"
@@ -653,7 +660,8 @@ export default function CourierPortalPage() {
                 : "text-slate-600 hover:text-slate-900"
             }`}
           >
-            <span>✅ Teslim Edilenler</span>
+            <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+            <span>Teslim Edilenler</span>
             <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-800">
               {completedDeliveries.length}
             </span>
@@ -667,7 +675,7 @@ export default function CourierPortalPage() {
           </div>
         ) : (activeTab === "active" ? activeDeliveries : completedDeliveries).length === 0 ? (
           <div className="bg-white rounded-3xl p-8 text-center space-y-2 border border-slate-200/80 shadow-xs">
-            <div className="text-4xl">🎉</div>
+            <PartyPopper className="w-10 h-10 text-emerald-600 mx-auto" />
             <h3 className="font-extrabold text-slate-800 text-base">
               {activeTab === "active" ? "Aktif Teslimatınız Yok" : "Henüz Teslim Edilen Sipariş Yok"}
             </h3>
@@ -697,7 +705,7 @@ export default function CourierPortalPage() {
                   {isOrderOverdue(order.deliveryDate, order.deliveryTime, order.status) && (
                     <div className="p-2.5 bg-red-600 text-white rounded-2xl font-black text-xs shadow-md animate-pulse flex items-center justify-between border border-red-700">
                       <span className="flex items-center gap-1.5">
-                        <span className="text-sm">🚨</span>
+                        <AlertTriangle className="w-4 h-4 text-white" />
                         <span>ACİL TESLİMAT YAPIN!</span>
                       </span>
                       <span className="bg-white/20 px-2 py-0.5 rounded-full text-[10px]">TESLİMAT ZAMANI GEÇTİ</span>
@@ -719,12 +727,23 @@ export default function CourierPortalPage() {
                           color:
                             order.status === "Teslim Edildi" ? "#166534" : "#92400e",
                         }}
-                        className="px-2.5 py-1 rounded-full text-xs font-black border"
+                        className="px-2.5 py-1 rounded-full text-xs font-black border inline-flex items-center gap-1"
                       >
-                        {order.status === "Teslim Edildi" ? "✅ Teslim Edildi" : "🛵 Dağıtımda"}
+                        {order.status === "Teslim Edildi" ? (
+                          <>
+                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-700" />
+                            <span>Teslim Edildi</span>
+                          </>
+                        ) : (
+                          <>
+                            <Bike className="w-3.5 h-3.5 text-amber-800" />
+                            <span>Dağıtımda</span>
+                          </>
+                        )}
                       </div>
-                      <div className="text-[11px] font-bold text-slate-500 mt-0.5">
-                        ⏰ {order.deliveryTime || "Tüm Gün"}
+                      <div className="text-[11px] font-bold text-slate-500 mt-0.5 flex items-center justify-end gap-1">
+                        <Clock className="w-3.5 h-3.5 text-slate-400" />
+                        <span>{order.deliveryTime || "Tüm Gün"}</span>
                       </div>
                     </div>
                   </div>
@@ -741,26 +760,29 @@ export default function CourierPortalPage() {
                     <div className="grid grid-cols-2 gap-2 pt-1">
                       <a
                         href={`tel:${order.recipientPhone}`}
-                        className="py-2 px-3 rounded-xl bg-slate-100 text-slate-800 font-bold text-xs flex items-center justify-center gap-1 hover:bg-slate-200 transition"
+                        className="py-2 px-3 rounded-xl bg-slate-100 text-slate-800 font-bold text-xs flex items-center justify-center gap-1.5 hover:bg-slate-200 transition"
                       >
-                        <span>📞 Alıcıyı Ara</span>
+                        <Phone className="w-3.5 h-3.5 text-slate-700" />
+                        <span>Alıcıyı Ara</span>
                       </a>
                       <a
                         href={waUrl}
                         target="_blank"
                         rel="noreferrer"
                         style={{ backgroundColor: "#25D366", color: "#ffffff" }}
-                        className="py-2 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-1 shadow-2xs hover:opacity-95 transition"
+                        className="py-2 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 shadow-2xs hover:opacity-95 transition"
                       >
-                        <span>💬 WhatsApp</span>
+                        <MessageCircle className="w-3.5 h-3.5 fill-white" />
+                        <span>WhatsApp</span>
                       </a>
                     </div>
                   </div>
 
                   {/* Address & Navigation Buttons */}
                   <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200 space-y-2">
-                    <div className="text-[11px] font-bold text-slate-400 uppercase flex items-center gap-1">
-                      <span>📍</span> <span>Teslimat Adresi</span>
+                    <div className="text-[11px] font-bold text-slate-400 uppercase flex items-center gap-1.5">
+                      <MapPin className="w-3.5 h-3.5 text-slate-500" />
+                      <span>Teslimat Adresi</span>
                     </div>
                     <div className="text-xs font-bold text-slate-800 leading-snug">{order.address}</div>
 
@@ -773,7 +795,8 @@ export default function CourierPortalPage() {
                         style={{ backgroundColor: "#4285F4", color: "#ffffff" }}
                         className="w-full py-2.5 px-3 rounded-xl text-xs font-black flex items-center justify-center gap-1.5 shadow-2xs"
                       >
-                        <span>🗺️ Google Haritalar'da Rotayı Aç</span>
+                        <Navigation className="w-4 h-4 text-white" />
+                        <span>Google Haritalar'da Rotayı Aç</span>
                       </a>
                     </div>
                   </div>
@@ -781,8 +804,9 @@ export default function CourierPortalPage() {
                   {/* Card Note Preview */}
                   {order.cardNote && order.cardNote !== "Kart notu belirtilmedi." && (
                     <div className="p-3 bg-amber-50/70 border border-amber-200 rounded-2xl text-xs space-y-1">
-                      <div className="font-bold text-amber-900 text-[10px] uppercase flex items-center gap-1">
-                        <span>💌</span> <span>Çiçek Kart Notu</span>
+                      <div className="font-bold text-amber-900 text-[10px] uppercase flex items-center gap-1.5">
+                        <FileText className="w-3.5 h-3.5 text-amber-800" />
+                        <span>Çiçek Kart Notu</span>
                       </div>
                       <div className="text-slate-800 italic font-medium">"{order.cardNote}"</div>
                     </div>

@@ -6,6 +6,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { setStoredMember } from "@/lib/member-auth";
 import Link from "next/link";
+import { Flower2, AlertCircle, Search, LogIn, UserPlus } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -64,7 +65,7 @@ export default function LoginPage() {
           <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-md space-y-6">
             <div className="text-center space-y-1">
               <span className="w-12 h-12 rounded-2xl bg-[#F5EFE6] text-[#2b2623] inline-flex items-center justify-center text-2xl mb-2">
-                🌸
+                <Flower2 className="w-6 h-6 text-[#2b2623]" />
               </span>
               <h1 className="text-2xl font-black text-slate-900">
                 {mode === "login" ? "Üye Girişi Yap" : "Yeni Hesap Oluştur"}
@@ -106,8 +107,9 @@ export default function LoginPage() {
 
             {/* ERROR NOTIFICATION */}
             {errorMsg && (
-              <div className="p-3 bg-red-50 border border-red-200 text-red-700 text-xs font-bold rounded-xl text-center">
-                ⚠️ {errorMsg}
+              <div className="p-3 bg-red-50 border border-red-200 text-red-700 text-xs font-bold rounded-xl text-center flex items-center justify-center gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                <span>{errorMsg}</span>
               </div>
             )}
 
@@ -170,13 +172,14 @@ export default function LoginPage() {
                 style={{ backgroundColor: "#2b2623", color: "#ffffff" }}
                 className="w-full py-3.5 rounded-2xl font-black text-sm shadow-md hover:opacity-95 transition flex items-center justify-center gap-2"
               >
+                {mode === "login" ? <LogIn className="w-4 h-4" /> : <UserPlus className="w-4 h-4" />}
                 <span>{loading ? "İşleniyor..." : mode === "login" ? "Giriş Yap" : "Hesap Oluştur"}</span>
               </button>
             </form>
 
             <div className="pt-2 text-center text-xs text-slate-500">
-              <Link href="/siparis-takip" className="font-bold text-[#2b2623] hover:underline">
-                🔍 Üye Olmadan Siparişimi Takip Et
+              <Link href="/siparis-takip" className="font-bold text-[#2b2623] hover:underline inline-flex items-center gap-1">
+                <Search className="w-3.5 h-3.5" /> Üye Olmadan Siparişimi Takip Et
               </Link>
             </div>
           </div>

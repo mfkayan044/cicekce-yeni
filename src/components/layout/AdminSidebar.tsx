@@ -226,7 +226,8 @@ export default function AdminSidebar() {
             rel="noreferrer"
             className="flex items-center justify-center gap-1 py-1.5 px-2 rounded-xl bg-white border text-slate-700 text-xs font-bold hover:bg-slate-100 transition shadow-2xs text-center"
           >
-            <span>🏪 Mağaza</span>
+            <i className="bx bx-store text-base me-1"></i>
+            <span>Mağaza</span>
           </a>
           <button
             type="button"
@@ -240,7 +241,8 @@ export default function AdminSidebar() {
             }}
             className="flex items-center justify-center gap-1 py-1.5 px-2 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs font-bold hover:bg-red-100 transition shadow-2xs text-center"
           >
-            <span>🚪 Çıkış</span>
+            <i className="bx bx-log-out text-base me-1"></i>
+            <span>Çıkış</span>
           </button>
         </div>
       </div>

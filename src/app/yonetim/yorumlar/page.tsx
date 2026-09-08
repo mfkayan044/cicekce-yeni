@@ -134,7 +134,8 @@ export default function YorumlarPage() {
               style={{ backgroundColor: "#2b2623", color: "#ffffff" }}
               className="font-bold rounded-xl text-xs px-4 py-2.5 flex items-center gap-2 shadow-sm hover:opacity-95 transition"
             >
-              <span>➕ Manuel Yorum Ekle</span>
+              <i className="bx bx-plus text-base"></i>
+              <span>Manuel Yorum Ekle</span>
             </button>
             <Link
               href="/yonetim/yorumlar/google"
@@ -148,7 +149,8 @@ export default function YorumlarPage() {
 
         {toastMsg && (
           <div className="p-3 bg-[#F5EFE6] text-[#1a1918] border border-amber-900/15 text-sm rounded-xl font-bold flex items-center gap-2">
-            <span>✓</span> <span>{toastMsg}</span>
+            <i className="bx bx-check-circle text-emerald-600 text-lg"></i>
+            <span>{toastMsg}</span>
           </div>
         )}
 
@@ -192,13 +194,23 @@ export default function YorumlarPage() {
                         <button
                           type="button"
                           onClick={() => handleToggleStatus(r)}
-                          className={`badge border px-3 py-1 rounded-full text-xs font-bold transition cursor-pointer ${
+                          className={`badge border px-3 py-1 rounded-full text-xs font-bold transition cursor-pointer inline-flex items-center gap-1 ${
                             r.status === "Onaylandı"
                               ? "bg-emerald-100 text-[#1a1918] border-emerald-300"
                               : "bg-amber-100 text-amber-800 border-amber-300"
                           }`}
                         >
-                          {r.status === "Onaylandı" ? "✓ Onaylandı" : "⏳ Onay Bekliyor"}
+                          {r.status === "Onaylandı" ? (
+                            <>
+                              <i className="bx bx-check text-sm text-emerald-700"></i>
+                              <span>Onaylandı</span>
+                            </>
+                          ) : (
+                            <>
+                              <i className="bx bx-time-five text-sm text-amber-700"></i>
+                              <span>Onay Bekliyor</span>
+                            </>
+                          )}
                         </button>
                       </td>
                       <td className="px-4 py-3 text-end">
@@ -213,9 +225,10 @@ export default function YorumlarPage() {
                           <button
                             type="button"
                             onClick={() => handleDelete(r.id)}
-                            className="btn btn-sm btn-outline-danger rounded-lg text-xs px-2 py-1"
+                            className="btn btn-sm btn-outline-danger rounded-lg text-xs px-2 py-1 inline-flex items-center gap-1"
                           >
-                            <span>🗑️ Sil</span>
+                            <i className="bx bx-trash text-sm"></i>
+                            <span>Sil</span>
                           </button>
                         </div>
                       </td>

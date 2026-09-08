@@ -221,9 +221,13 @@ export default function AdminNavbar() {
         {/* Floating New Order Sound Banner Alert */}
         {newOrderAlert && (
           <div className="fixed top-5 right-5 z-50 p-4 bg-[#2b2623] text-white rounded-3xl shadow-2xl border border-amber-500/50 flex items-center gap-3 animate-bounce">
-            <div className="text-2xl animate-spin">🔔</div>
+            <div className="text-2xl animate-spin text-amber-400">
+              <i className="bx bx-bell-ring"></i>
+            </div>
             <div>
-              <div className="text-xs font-black text-amber-400 uppercase">🚨 YENİ SİPARİŞ GELİR GELMEZ UYARI!</div>
+              <div className="text-xs font-black text-amber-400 uppercase flex items-center gap-1">
+                <i className="bx bx-error-circle"></i> YENİ SİPARİŞ GELİR GELMEZ UYARI!
+              </div>
               <div className="text-sm font-extrabold">Sipariş #{newOrderAlert.id || "YENİ"} - {newOrderAlert.totalAmount || newOrderAlert.totalPrice || ""} ₺</div>
               <div className="text-[11px] text-slate-300">Alıcı: {newOrderAlert.recipientName || "Müşteri"}</div>
             </div>
@@ -252,7 +256,8 @@ export default function AdminNavbar() {
               className="px-3.5 py-2 rounded-xl text-xs font-black shadow-xs hover:opacity-90 transition flex items-center gap-2"
               title="Arka planda/başka sekmedeyken Windows masaüstü bildirimi ve Zırrr sesini aktifleştir/test et"
             >
-              <span>🔔 Arka Plan Zırrr & Bildirim Aç</span>
+              <i className="bx bx-bell text-base text-amber-400"></i>
+              <span>Arka Plan Zırrr & Bildirim Aç</span>
               {desktopNotifPermission === "granted" && (
                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
               )}

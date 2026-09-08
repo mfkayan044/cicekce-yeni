@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { AlertTriangle, Send, X, Flower2 } from "lucide-react";
 
 interface OrderUpdateRequestModalProps {
   order: any;
@@ -65,7 +66,7 @@ export default function OrderUpdateRequestModal({
 
       const data = await res.json();
       if (res.ok) {
-        alert("✅ Bilgi güncelleme talebiniz yönetici onayına sunulmuştur.");
+        alert("Bilgi güncelleme talebiniz yönetici onayına sunulmuştur.");
         onSuccess({ ...order, updateRequest: updateRequestObj });
         onClose();
       } else {
@@ -84,8 +85,8 @@ export default function OrderUpdateRequestModal({
         {/* Header */}
         <div className="flex justify-between items-start border-b pb-4">
           <div>
-            <div className="text-xs font-black uppercase text-amber-900 tracking-wider mb-1">
-              🌸 ÇİÇEKÇE SİPARİŞ DEĞİŞİKLİK TALEBİ
+            <div className="text-xs font-black uppercase text-amber-900 tracking-wider mb-1 flex items-center gap-1.5">
+              <Flower2 className="w-4 h-4 text-[#2b2623]" /> ÇİÇEKÇE SİPARİŞ DEĞİŞİKLİK TALEBİ
             </div>
             <h3 className="text-lg font-black text-slate-900">
               Sipariş Bilgilerini Güncelleme Talebi (#{order.id})
@@ -99,13 +100,13 @@ export default function OrderUpdateRequestModal({
             onClick={onClose}
             className="w-8 h-8 rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 font-extrabold text-sm flex items-center justify-center transition"
           >
-            ✕
+            <X className="w-4 h-4" />
           </button>
         </div>
 
         {errorMsg && (
           <div className="p-3 bg-red-50 border border-red-200 text-red-700 text-xs font-bold rounded-2xl flex items-center gap-2">
-            <span>⚠️</span>
+            <AlertTriangle className="w-4 h-4 shrink-0" />
             <span>{errorMsg}</span>
           </div>
         )}
@@ -200,9 +201,10 @@ export default function OrderUpdateRequestModal({
               type="submit"
               disabled={submitting}
               style={{ backgroundColor: "#2b2623", color: "#ffffff" }}
-              className="w-1/2 py-3 rounded-2xl font-bold shadow-md hover:opacity-95 transition disabled:opacity-50"
+              className="w-1/2 py-3 rounded-2xl font-bold shadow-md hover:opacity-95 transition disabled:opacity-50 flex items-center justify-center gap-2"
             >
-              {submitting ? "Gönderiliyor..." : "Talebi Gönder 🚀"}
+              <Send className="w-4 h-4" />
+              <span>{submitting ? "Gönderiliyor..." : "Talebi Gönder"}</span>
             </button>
           </div>
         </form>

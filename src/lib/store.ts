@@ -142,18 +142,14 @@ export function useStore<T>(selector?: (state: any) => T): any {
     },
 
     updateProduct: async (id: string, updatedFields: Partial<Product>) => {
-      globalProducts = globalProducts.map((p: any) =>
-        String(p.id) === String(id) ? { ...p, ...updatedFields } : p
-      );
-      notify();
       try {
         const res = await fetch("/api/products", {
-          method: "POST",
+          method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ id, ...updatedFields }),
         });
         if (res.ok) {
-          await fetchFromApi(true);
+          await fetchFromApi();
         }
       } catch (e) {
         console.error(e);

@@ -40,9 +40,7 @@ function writeDbAndTs(dbObj: any) {
 
 let cachedProducts: any[] | null = null;
 let cachedProductsTime = 0;
-const CACHE_TTL_MS = 60 * 1000;
-
-let deletedProductIds = new Set<string>();
+const CACHE_TTL_MS = 60 * 1000; // 60 seconds
 
 const cacheHeaders = {
   "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300",
@@ -52,14 +50,13 @@ export async function GET() {
   try {
     const now = Date.now();
     if (cachedProducts && now - cachedProductsTime < CACHE_TTL_MS) {
-      const activeCached = cachedProducts.filter((p: any) => !deletedProductIds.has(String(p.id)));
-      return NextResponse.json(activeCached, { headers: cacheHeaders });
+      return NextResponse.json(cachedProducts, { headers: cacheHeaders });
     }
 
     // Read directly from db.json to guarantee 100% SSR & Client hydration parity
     const db = readDb();
     let productsList = (db.products || []).filter(
-      (p: any) => p.category !== "SETTINGS" && !String(p.id).startsWith("__SETTING_") && !deletedProductIds.has(String(p.id))
+      (p: any) => p.category !== "SETTINGS" && !String(p.id).startsWith("__SETTING_")
     );
 
     // Try syncing Supabase if available
@@ -74,63 +71,25 @@ export async function GET() {
         const cleanData = data.filter(
           (sbP: any) => sbP.category !== "SETTINGS" && !String(sbP.id).startsWith("__SETTING_")
         );
-        const sbMap = new Map((cleanData || []).map((sbP: any) => [String(sbP.id), sbP]));
-        const mergedMap = new Map();
-
-        // 1. First add all local products from db.json (Local admin edits take priority)
-        for (const localP of productsList) {
-          const sbP: any = sbMap.get(String(localP.id)) || {};
-          const categorySlug = localP.categorySlug || sbP.category_slug || "cicekler";
-          mergedMap.set(String(localP.id), {
-            id: String(localP.id),
-            slug: localP.slug || sbP.slug || String(localP.id),
-            title: localP.title || sbP.title,
-            category: localP.category || sbP.category || "Genel",
-            categorySlug: categorySlug,
+        const dbMap = new Map(productsList.map((p: any) => [String(p.id), p]));
+        const merged = cleanData.map((sbP: any) => {
+          const localP: any = dbMap.get(String(sbP.id)) || {};
+          return {
+            id: String(sbP.id),
+            slug: sbP.slug || localP.slug || String(sbP.id),
+            title: sbP.title || localP.title,
+            category: sbP.category || localP.category || "Genel",
+            categorySlug: sbP.category_slug || localP.categorySlug || "cicekler",
             price: localP.price || sbP.price,
             oldPrice: localP.oldPrice || sbP.old_price,
             discount: localP.discount || sbP.discount,
-            image: localP.image || sbP.image,
-            code: localP.code || sbP.code || `DM${localP.id}`,
-            stock: localP.stock !== false && sbP.stock !== false,
-            featured: localP.featured === true || sbP.featured === true,
-            description: localP.description || sbP.description,
-            selectedCategorySlugs: localP.selectedCategorySlugs || [categorySlug],
-            designType: localP.designType || "Buket",
-            recipient: localP.recipient || "Sevgiliye",
-            purpose: localP.purpose || "Doğum Günü",
-            color: localP.color || "Kırmızı"
-          });
-        }
-
-        // 2. Add any extra products from Supabase not present in local db.json
-        for (const sbP of cleanData) {
-          if (!mergedMap.has(String(sbP.id))) {
-            const catSlug = sbP.category_slug || "cicekler";
-            mergedMap.set(String(sbP.id), {
-              id: String(sbP.id),
-              slug: sbP.slug || String(sbP.id),
-              title: sbP.title || "Çiçek",
-              category: sbP.category || "Genel",
-              categorySlug: catSlug,
-              price: sbP.price || "0 ₺",
-              oldPrice: sbP.old_price,
-              discount: sbP.discount,
-              image: sbP.image,
-              code: sbP.code || `DM${sbP.id}`,
-              stock: sbP.stock !== false,
-              featured: sbP.featured === true,
-              description: sbP.description,
-              selectedCategorySlugs: [catSlug],
-              designType: "Buket",
-              recipient: "Sevgiliye",
-              purpose: "Doğum Günü",
-              color: "Kırmızı"
-            });
-          }
-        }
-
-        const merged = Array.from(mergedMap.values());
+            image: sbP.image || localP.image,
+            code: sbP.code || localP.code || `DM${sbP.id}`,
+            stock: sbP.stock !== false && localP.stock !== false,
+            featured: sbP.featured === true || localP.featured === true,
+            description: sbP.description || localP.description
+          };
+        });
         if (merged.length > 0) {
           cachedProducts = merged;
           cachedProductsTime = Date.now();
@@ -247,12 +206,7 @@ export async function POST(request: Request) {
       code: body.code || "DM" + Math.floor(10 + Math.random() * 89),
       stock: body.stock !== false,
       featured: body.featured === true,
-      description: body.description,
-      selectedCategorySlugs: body.selectedCategorySlugs || [body.categorySlug || "buketler"],
-      designType: body.designType || "Buket",
-      recipient: body.recipient || "Sevgiliye",
-      purpose: body.purpose || "Doğum Günü",
-      color: body.color || "Kırmızı"
+      description: body.description
     };
 
     const existingIdx = productsList.findIndex((p: any) => String(p.id) === String(newProduct.id));
@@ -262,7 +216,6 @@ export async function POST(request: Request) {
       productsList.unshift(newProduct);
     }
 
-    deletedProductIds.delete(String(newProduct.id));
     dbObj.products = productsList;
     writeDbAndTs(dbObj);
     cachedProducts = null;
@@ -301,18 +254,6 @@ export async function DELETE(request: Request) {
     }
 
     const dbObj = readDb();
-    if (id === "all") {
-      (dbObj.products || []).forEach((p: any) => deletedProductIds.add(String(p.id)));
-      dbObj.products = [];
-      writeDbAndTs(dbObj);
-      cachedProducts = [];
-      try {
-        await supabase.from("products").delete().neq("category", "SETTINGS");
-      } catch (sbErr) {}
-      return NextResponse.json({ success: true, message: "Tüm ürünler silindi." });
-    }
-
-    deletedProductIds.add(String(id));
     dbObj.products = (dbObj.products || []).filter((p: any) => String(p.id) !== String(id));
     writeDbAndTs(dbObj);
     cachedProducts = null;
@@ -325,8 +266,4 @@ export async function DELETE(request: Request) {
   } catch (error) {
     return NextResponse.json({ error: "Failed to delete product" }, { status: 500 });
   }
-}
-
-export async function PUT(request: Request) {
-  return POST(request);
 }

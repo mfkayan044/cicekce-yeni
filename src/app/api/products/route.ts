@@ -71,30 +71,63 @@ export async function GET() {
         const cleanData = data.filter(
           (sbP: any) => sbP.category !== "SETTINGS" && !String(sbP.id).startsWith("__SETTING_")
         );
-        const dbMap = new Map(productsList.map((p: any) => [String(p.id), p]));
-        const merged = cleanData.map((sbP: any) => {
-          const localP: any = dbMap.get(String(sbP.id)) || {};
-          return {
-            id: String(sbP.id),
-            slug: sbP.slug || localP.slug || String(sbP.id),
-            title: sbP.title || localP.title,
-            category: sbP.category || localP.category || "Genel",
-            categorySlug: sbP.category_slug || localP.categorySlug || "cicekler",
+        const sbMap = new Map((cleanData || []).map((sbP: any) => [String(sbP.id), sbP]));
+        const mergedMap = new Map();
+
+        // 1. First add all local products from db.json (Local admin edits take priority)
+        for (const localP of productsList) {
+          const sbP: any = sbMap.get(String(localP.id)) || {};
+          const categorySlug = localP.categorySlug || sbP.category_slug || "cicekler";
+          mergedMap.set(String(localP.id), {
+            id: String(localP.id),
+            slug: localP.slug || sbP.slug || String(localP.id),
+            title: localP.title || sbP.title,
+            category: localP.category || sbP.category || "Genel",
+            categorySlug: categorySlug,
             price: localP.price || sbP.price,
             oldPrice: localP.oldPrice || sbP.old_price,
             discount: localP.discount || sbP.discount,
-            image: sbP.image || localP.image,
-            code: sbP.code || localP.code || `DM${sbP.id}`,
-            stock: sbP.stock !== false && localP.stock !== false,
-            featured: sbP.featured === true || localP.featured === true,
-            description: sbP.description || localP.description,
-            selectedCategorySlugs: localP.selectedCategorySlugs || [sbP.category_slug || localP.categorySlug || "cicekler"],
+            image: localP.image || sbP.image,
+            code: localP.code || sbP.code || `DM${localP.id}`,
+            stock: localP.stock !== false && sbP.stock !== false,
+            featured: localP.featured === true || sbP.featured === true,
+            description: localP.description || sbP.description,
+            selectedCategorySlugs: localP.selectedCategorySlugs || [categorySlug],
             designType: localP.designType || "Buket",
             recipient: localP.recipient || "Sevgiliye",
             purpose: localP.purpose || "Doğum Günü",
             color: localP.color || "Kırmızı"
-          };
-        });
+          });
+        }
+
+        // 2. Add any extra products from Supabase not present in local db.json
+        for (const sbP of cleanData) {
+          if (!mergedMap.has(String(sbP.id))) {
+            const catSlug = sbP.category_slug || "cicekler";
+            mergedMap.set(String(sbP.id), {
+              id: String(sbP.id),
+              slug: sbP.slug || String(sbP.id),
+              title: sbP.title || "Çiçek",
+              category: sbP.category || "Genel",
+              categorySlug: catSlug,
+              price: sbP.price || "0 ₺",
+              oldPrice: sbP.old_price,
+              discount: sbP.discount,
+              image: sbP.image,
+              code: sbP.code || `DM${sbP.id}`,
+              stock: sbP.stock !== false,
+              featured: sbP.featured === true,
+              description: sbP.description,
+              selectedCategorySlugs: [catSlug],
+              designType: "Buket",
+              recipient: "Sevgiliye",
+              purpose: "Doğum Günü",
+              color: "Kırmızı"
+            });
+          }
+        }
+
+        const merged = Array.from(mergedMap.values());
         if (merged.length > 0) {
           cachedProducts = merged;
           cachedProductsTime = Date.now();

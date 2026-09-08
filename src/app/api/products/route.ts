@@ -206,7 +206,12 @@ export async function POST(request: Request) {
       code: body.code || "DM" + Math.floor(10 + Math.random() * 89),
       stock: body.stock !== false,
       featured: body.featured === true,
-      description: body.description
+      description: body.description,
+      selectedCategorySlugs: body.selectedCategorySlugs || [body.categorySlug || "buketler"],
+      designType: body.designType || "Buket",
+      recipient: body.recipient || "Sevgiliye",
+      purpose: body.purpose || "Doğum Günü",
+      color: body.color || "Kırmızı"
     };
 
     const existingIdx = productsList.findIndex((p: any) => String(p.id) === String(newProduct.id));
@@ -266,4 +271,8 @@ export async function DELETE(request: Request) {
   } catch (error) {
     return NextResponse.json({ error: "Failed to delete product" }, { status: 500 });
   }
+}
+
+export async function PUT(request: Request) {
+  return POST(request);
 }

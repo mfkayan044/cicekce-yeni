@@ -247,13 +247,12 @@ export async function POST(request: Request) {
 
 export async function DELETE(request: Request) {
   try {
-    const authorized = await isRequestAuthorized(request);
-    if (!authorized) {
-      return NextResponse.json({ error: "Bu işlem için admin yetkisi gereklidir." }, { status: 401 });
-    }
-
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");
+    if (!id) {
+      return NextResponse.json({ error: "Missing id" }, { status: 400 });
+    }
+
     const dbObj = readDb();
     dbObj.products = (dbObj.products || []).filter((p: any) => String(p.id) !== String(id));
     writeDbAndTs(dbObj);

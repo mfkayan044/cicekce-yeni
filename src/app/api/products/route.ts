@@ -40,7 +40,9 @@ function writeDbAndTs(dbObj: any) {
 
 let cachedProducts: any[] | null = null;
 let cachedProductsTime = 0;
-const CACHE_TTL_MS = 60 * 1000; // 60 seconds
+const CACHE_TTL_MS = 60 * 1000;
+
+let deletedProductIds = new Set<string>();
 
 const cacheHeaders = {
   "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300",
@@ -50,13 +52,14 @@ export async function GET() {
   try {
     const now = Date.now();
     if (cachedProducts && now - cachedProductsTime < CACHE_TTL_MS) {
-      return NextResponse.json(cachedProducts, { headers: cacheHeaders });
+      const activeCached = cachedProducts.filter((p: any) => !deletedProductIds.has(String(p.id)));
+      return NextResponse.json(activeCached, { headers: cacheHeaders });
     }
 
     // Read directly from db.json to guarantee 100% SSR & Client hydration parity
     const db = readDb();
     let productsList = (db.products || []).filter(
-      (p: any) => p.category !== "SETTINGS" && !String(p.id).startsWith("__SETTING_")
+      (p: any) => p.category !== "SETTINGS" && !String(p.id).startsWith("__SETTING_") && !deletedProductIds.has(String(p.id))
     );
 
     // Try syncing Supabase if available
@@ -259,6 +262,7 @@ export async function POST(request: Request) {
       productsList.unshift(newProduct);
     }
 
+    deletedProductIds.delete(String(newProduct.id));
     dbObj.products = productsList;
     writeDbAndTs(dbObj);
     cachedProducts = null;
@@ -297,6 +301,18 @@ export async function DELETE(request: Request) {
     }
 
     const dbObj = readDb();
+    if (id === "all") {
+      (dbObj.products || []).forEach((p: any) => deletedProductIds.add(String(p.id)));
+      dbObj.products = [];
+      writeDbAndTs(dbObj);
+      cachedProducts = [];
+      try {
+        await supabase.from("products").delete().neq("category", "SETTINGS");
+      } catch (sbErr) {}
+      return NextResponse.json({ success: true, message: "Tüm ürünler silindi." });
+    }
+
+    deletedProductIds.add(String(id));
     dbObj.products = (dbObj.products || []).filter((p: any) => String(p.id) !== String(id));
     writeDbAndTs(dbObj);
     cachedProducts = null;

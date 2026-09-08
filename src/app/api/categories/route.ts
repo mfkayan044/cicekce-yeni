@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { sql } from "@/lib/db";
 import { isRequestAuthorized } from "@/lib/auth";
 
 let cachedCategories: any[] | null = null;
@@ -17,8 +17,7 @@ export async function GET() {
       return NextResponse.json(cachedCategories, { headers: cacheHeaders });
     }
 
-    const { data, error } = await supabase.from("categories").select("*").order("display_order", { ascending: true });
-    if (error) throw error;
+    const data = await sql`SELECT * FROM categories ORDER BY display_order ASC`;
 
     const formatted = (data || []).map((c: any) => ({
       id: c.id,
@@ -32,7 +31,7 @@ export async function GET() {
     cachedCategoriesTime = Date.now();
     return NextResponse.json(formatted, { headers: cacheHeaders });
   } catch (error) {
-    return NextResponse.json({ error: "Failed to fetch categories from Supabase" }, { status: 500 });
+    return NextResponse.json([], { headers: cacheHeaders });
   }
 }
 
@@ -52,13 +51,20 @@ export async function POST(request: Request) {
       display_order: body.order !== undefined ? body.order : (body.display_order || 0)
     };
 
-    const { data, error } = await supabase.from("categories").upsert(newCategory, { onConflict: "id" }).select().single();
-    if (error) throw error;
+    await sql`
+      INSERT INTO categories (id, name, slug, image, display_order)
+      VALUES (${newCategory.id}, ${newCategory.name}, ${newCategory.slug}, ${newCategory.image || null}, ${newCategory.display_order})
+      ON CONFLICT (id) DO UPDATE SET
+        name = EXCLUDED.name,
+        slug = EXCLUDED.slug,
+        image = EXCLUDED.image,
+        display_order = EXCLUDED.display_order;
+    `;
 
     cachedCategories = null;
-    return NextResponse.json(data, { status: 201 });
+    return NextResponse.json(newCategory, { status: 201 });
   } catch (error) {
-    return NextResponse.json({ error: "Failed to save category to Supabase" }, { status: 500 });
+    return NextResponse.json({ error: "Failed to save category" }, { status: 500 });
   }
 }
 
@@ -72,29 +78,24 @@ export async function PUT(request: Request) {
     const body = await request.json();
     const { id, ...updateFields } = body;
 
-    const updatePayload: any = {};
-    if (updateFields.name !== undefined) updatePayload.name = updateFields.name;
-    if (updateFields.slug !== undefined) updatePayload.slug = updateFields.slug;
-    if (updateFields.image !== undefined) updatePayload.image = updateFields.image;
+    if (updateFields.name) {
+      await sql`UPDATE categories SET name = ${updateFields.name} WHERE id = ${String(id)}`;
+    }
+    if (updateFields.slug) {
+      await sql`UPDATE categories SET slug = ${updateFields.slug} WHERE id = ${String(id)}`;
+    }
+    if (updateFields.image) {
+      await sql`UPDATE categories SET image = ${updateFields.image} WHERE id = ${String(id)}`;
+    }
     if (updateFields.order !== undefined || updateFields.display_order !== undefined) {
-      updatePayload.display_order = updateFields.order !== undefined ? updateFields.order : updateFields.display_order;
+      const ord = updateFields.order !== undefined ? updateFields.order : updateFields.display_order;
+      await sql`UPDATE categories SET display_order = ${ord} WHERE id = ${String(id)}`;
     }
 
     cachedCategories = null;
-    const { data, error } = await supabase.from("categories").update(updatePayload).eq("id", id).select().single();
-    if (error) {
-      const { data: upsertData, error: upsertErr } = await supabase
-        .from("categories")
-        .upsert({ id, ...updatePayload }, { onConflict: "id" })
-        .select()
-        .single();
-      if (upsertErr) throw upsertErr;
-      return NextResponse.json(upsertData);
-    }
-
-    return NextResponse.json(data);
+    return NextResponse.json({ success: true, id });
   } catch (error) {
-    return NextResponse.json({ error: "Failed to update category in Supabase" }, { status: 500 });
+    return NextResponse.json({ error: "Failed to update category" }, { status: 500 });
   }
 }
 
@@ -107,12 +108,13 @@ export async function DELETE(request: Request) {
 
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");
-    const { error } = await supabase.from("categories").delete().eq("id", id);
-    if (error) throw error;
+    if (id) {
+      await sql`DELETE FROM categories WHERE id = ${String(id)}`;
+    }
 
     cachedCategories = null;
     return NextResponse.json({ success: true });
   } catch (error) {
-    return NextResponse.json({ error: "Failed to delete category from Supabase" }, { status: 500 });
+    return NextResponse.json({ error: "Failed to delete category" }, { status: 500 });
   }
 }

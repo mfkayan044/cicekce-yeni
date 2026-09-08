@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { sql } from "@/lib/db";
 import { isRequestAuthorized } from "@/lib/auth";
 import fs from "fs";
 import path from "path";
@@ -53,50 +53,37 @@ export async function GET() {
       return NextResponse.json(cachedProducts, { headers: cacheHeaders });
     }
 
-    // Read directly from db.json to guarantee 100% SSR & Client hydration parity
     const db = readDb();
     let productsList = (db.products || []).filter(
       (p: any) => p.category !== "SETTINGS" && !String(p.id).startsWith("__SETTING_")
     );
 
-    // Try syncing Supabase if available
+    // Fetch from Neon Postgres
     try {
-      const { data } = await supabase
-        .from("products")
-        .select("*")
-        .neq("category", "SETTINGS")
-        .order("created_at", { ascending: false });
-
+      const data = await sql`SELECT * FROM products ORDER BY created_at DESC`;
       if (data && data.length > 0) {
-        const cleanData = data.filter(
-          (sbP: any) => sbP.category !== "SETTINGS" && !String(sbP.id).startsWith("__SETTING_")
-        );
-        const dbMap = new Map(productsList.map((p: any) => [String(p.id), p]));
-        const merged = cleanData.map((sbP: any) => {
-          const localP: any = dbMap.get(String(sbP.id)) || {};
-          return {
-            id: String(sbP.id),
-            slug: sbP.slug || localP.slug || String(sbP.id),
-            title: sbP.title || localP.title,
-            category: sbP.category || localP.category || "Genel",
-            categorySlug: sbP.category_slug || localP.categorySlug || "cicekler",
-            price: localP.price || sbP.price,
-            oldPrice: localP.oldPrice || sbP.old_price,
-            discount: localP.discount || sbP.discount,
-            image: sbP.image || localP.image,
-            code: sbP.code || localP.code || `DM${sbP.id}`,
-            stock: sbP.stock !== false && localP.stock !== false,
-            featured: sbP.featured === true || localP.featured === true,
-            description: sbP.description || localP.description
-          };
-        });
+        const merged = data.map((sbP: any) => ({
+          id: String(sbP.id),
+          slug: sbP.slug || String(sbP.id),
+          title: sbP.title,
+          category: sbP.category || "Genel",
+          categorySlug: sbP.category_slug || "cicekler",
+          price: sbP.price,
+          oldPrice: sbP.old_price,
+          discount: sbP.discount,
+          image: sbP.image,
+          code: sbP.code || `DM${sbP.id}`,
+          stock: sbP.stock !== false,
+          featured: sbP.featured === true,
+          description: sbP.description
+        }));
         if (merged.length > 0) {
           cachedProducts = merged;
           cachedProductsTime = Date.now();
           return NextResponse.json(merged, { headers: cacheHeaders });
         }
       }
-    } catch (sbErr) {}
+    } catch (neonErr) {}
 
     cachedProducts = productsList;
     cachedProductsTime = Date.now();
@@ -111,7 +98,7 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
 
-    // 1. BULK PRICE UPDATE ENGINE (ZAM & İNDİRİM MOTORU)
+    // 1. BULK PRICE UPDATE ENGINE
     if (body.action === "bulk_price") {
       const { category, changeType, value } = body;
       const numValue = parseFloat(value) || 0;
@@ -134,23 +121,16 @@ export async function POST(request: Request) {
           let discountStr: string | undefined = undefined;
 
           if (changeType === "percent") {
-            // Zam (Price Increase) -> Clear oldPrice & discount!
             newPriceNum = Math.round(currentPriceNum * (1 + numValue / 100));
             newPriceStr = formatPriceTL(newPriceNum);
-            oldPriceStr = undefined;
-            discountStr = undefined;
           } else if (changeType === "percent_discount") {
-            // İndirim (Discount) -> Set oldPrice to higher original price!
             newPriceNum = Math.round(currentPriceNum * (1 - numValue / 100));
             newPriceStr = formatPriceTL(newPriceNum);
             oldPriceStr = formatPriceTL(currentPriceNum);
             discountStr = `-%${numValue}`;
           } else if (changeType === "fixed") {
-            // Sabit Artış (Fixed Increase)
             newPriceNum = Math.round(currentPriceNum + numValue);
             newPriceStr = formatPriceTL(newPriceNum);
-            oldPriceStr = undefined;
-            discountStr = undefined;
           }
 
           updatedCount++;
@@ -165,22 +145,20 @@ export async function POST(request: Request) {
         return p;
       });
 
-      // Synchronously write to db.json and initial-db.ts (Prevents client hydration reversion!)
       dbObj.products = updatedProducts;
       writeDbAndTs(dbObj);
       cachedProducts = null;
 
-      // Also upsert to Supabase
+      // Upsert to Neon Postgres
       try {
-        const supabaseUpsertPayload = updatedProducts.map((p: any) => ({
-          id: String(p.id),
-          title: p.title || "Çiçek",
-          price: p.price,
-          old_price: p.oldPrice || null,
-          category: p.category || "Genel"
-        }));
-        await supabase.from("products").upsert(supabaseUpsertPayload, { onConflict: "id" });
-      } catch (sbErr) {}
+        for (const p of updatedProducts) {
+          await sql`
+            UPDATE products
+            SET price = ${p.price}, old_price = ${p.oldPrice || null}, discount = ${p.discount || null}
+            WHERE id = ${String(p.id)};
+          `;
+        }
+      } catch (neonErr) {}
 
       return NextResponse.json({
         success: true,
@@ -221,22 +199,38 @@ export async function POST(request: Request) {
     cachedProducts = null;
 
     try {
-      await supabase.from("products").upsert({
-        id: String(newProduct.id),
-        slug: newProduct.slug,
-        title: newProduct.title,
-        category: newProduct.category,
-        category_slug: newProduct.categorySlug,
-        price: newProduct.price,
-        old_price: newProduct.oldPrice || null,
-        discount: newProduct.discount || null,
-        image: newProduct.image || null,
-        code: newProduct.code,
-        stock: newProduct.stock !== false,
-        featured: newProduct.featured === true,
-        description: newProduct.description || null
-      }, { onConflict: "id" });
-    } catch (sbErr) {}
+      await sql`
+        INSERT INTO products (id, slug, title, category, category_slug, price, old_price, discount, image, code, stock, featured, description)
+        VALUES (
+          ${String(newProduct.id)},
+          ${newProduct.slug},
+          ${newProduct.title},
+          ${newProduct.category},
+          ${newProduct.categorySlug},
+          ${newProduct.price},
+          ${newProduct.oldPrice || null},
+          ${newProduct.discount || null},
+          ${newProduct.image || null},
+          ${newProduct.code},
+          ${newProduct.stock !== false},
+          ${newProduct.featured === true},
+          ${newProduct.description || null}
+        )
+        ON CONFLICT (id) DO UPDATE SET
+          slug = EXCLUDED.slug,
+          title = EXCLUDED.title,
+          category = EXCLUDED.category,
+          category_slug = EXCLUDED.category_slug,
+          price = EXCLUDED.price,
+          old_price = EXCLUDED.old_price,
+          discount = EXCLUDED.discount,
+          image = EXCLUDED.image,
+          code = EXCLUDED.code,
+          stock = EXCLUDED.stock,
+          featured = EXCLUDED.featured,
+          description = EXCLUDED.description;
+      `;
+    } catch (neonErr) {}
 
     return NextResponse.json(newProduct, { status: 201 });
   } catch (error: any) {
@@ -259,8 +253,8 @@ export async function DELETE(request: Request) {
     cachedProducts = null;
 
     try {
-      await supabase.from("products").delete().eq("id", id);
-    } catch (sbErr) {}
+      await sql`DELETE FROM products WHERE id = ${String(id)}`;
+    } catch (neonErr) {}
 
     return NextResponse.json({ success: true });
   } catch (error) {

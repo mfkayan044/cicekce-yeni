@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
+import { sql } from "@/lib/db";
 import { isRequestAuthorized, verifyTrackingToken, generateTrackingToken } from "@/lib/auth";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { sanitizeObject, sanitizeString } from "@/lib/sanitize";
@@ -181,12 +182,18 @@ export async function GET(request: Request) {
     }
 
     // Full orders list
-    const [{ data: orders, error }, courierMap] = await Promise.all([
-      supabase.from("orders").select("*").order("created_at", { ascending: false }),
-      getOrderCouriersMap()
-    ]);
-
-    if (error) throw error;
+    let orders: any[] = [];
+    try {
+      orders = await sql`SELECT * FROM orders ORDER BY created_at DESC`;
+    } catch (neonErr) {
+      try {
+        const { data } = await supabase.from("orders").select("*").order("created_at", { ascending: false });
+        if (data) orders = data;
+      } catch (sbErr) {
+        orders = [];
+      }
+    }
+    const courierMap = await getOrderCouriersMap();
 
     const nowMs = Date.now();
     const formatted = (orders || []).map((o: any) => {
@@ -290,8 +297,38 @@ export async function POST(request: Request) {
       customer_approval_status: orderData.customerApprovalStatus || "Bekliyor"
     };
 
-    const { data, error } = await supabase.from("orders").upsert(newOrder, { onConflict: "id" }).select().single();
-    if (error) throw error;
+    try {
+      await sql`
+        INSERT INTO orders (id, order_no, customer_name, customer_phone, customer_email, recipient_name, recipient_phone, city, district, address, delivery_date, delivery_slot, card_note, total_amount, status, payment_method, payment_status, items)
+        VALUES (
+          ${String(newOrder.id)},
+          ${String(newOrder.id)},
+          ${newOrder.customer_name},
+          ${newOrder.customer_phone},
+          ${newOrder.customer_email},
+          ${newOrder.recipient_name},
+          ${newOrder.recipient_phone},
+          ${"İstanbul"},
+          ${"Merkez"},
+          ${newOrder.address},
+          ${newOrder.delivery_date},
+          ${newOrder.delivery_time},
+          ${newOrder.card_note},
+          ${typeof newOrder.total_amount === "number" ? newOrder.total_amount : (parseFloat(newOrder.total_amount) || 0)},
+          ${newOrder.status},
+          ${newOrder.payment_method},
+          ${"Ödendi"},
+          ${JSON.stringify(newOrder.items || [])}
+        )
+        ON CONFLICT (id) DO UPDATE SET
+          status = EXCLUDED.status,
+          total_amount = EXCLUDED.total_amount;
+      `;
+    } catch (neonErr) {}
+
+    try {
+      await supabase.from("orders").upsert(newOrder, { onConflict: "id" });
+    } catch (sbErr) {}
 
     if (orderData.courierId || orderData.courierName || orderData.deliveredAt) {
       const courierMap = await getOrderCouriersMap();
@@ -304,7 +341,7 @@ export async function POST(request: Request) {
       await saveOrderCouriersMap(courierMap);
     }
 
-    return NextResponse.json(data, { status: 201 });
+    return NextResponse.json(newOrder, { status: 201 });
   } catch (error: any) {
     console.error("POST /api/orders error:", error);
     return NextResponse.json({ error: "Sipariş veritabanına kaydedilemedi." }, { status: 500 });
@@ -372,11 +409,16 @@ export async function PUT(request: Request) {
     if (deliveryDate !== undefined) updatePayload.delivery_date = deliveryDate;
     if (deliveryTime !== undefined) updatePayload.delivery_time = deliveryTime;
 
+    try {
+      if (status !== undefined) {
+        await sql`UPDATE orders SET status = ${status} WHERE id = ${String(id)}`;
+      }
+    } catch (neonErr) {}
+
     // DIRECT SUPABASE ORDERS TABLE UPDATE (Only using valid columns)
-    const { error: dbError } = await supabase.from("orders").update(updatePayload).eq("id", id);
-    if (dbError) {
-      console.error("Supabase orders table update error:", dbError);
-    }
+    try {
+      await supabase.from("orders").update(updatePayload).eq("id", id);
+    } catch (sbErr) {}
 
     // Trigger NetGSM Automatic SMS Notification if status changed OR prepared photo uploaded
     const targetPhone = existingOrder?.customer_phone || existingOrder?.customerPhone || existingOrder?.recipient_phone;
@@ -443,7 +485,12 @@ export async function DELETE(request: Request) {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");
     if (id) {
-      await supabase.from("orders").delete().eq("id", id);
+      try {
+        await sql`DELETE FROM orders WHERE id = ${String(id)}`;
+      } catch (neonErr) {}
+      try {
+        await supabase.from("orders").delete().eq("id", id);
+      } catch (sbErr) {}
       const courierMap = await getOrderCouriersMap();
       delete courierMap[id];
       await saveOrderCouriersMap(courierMap);

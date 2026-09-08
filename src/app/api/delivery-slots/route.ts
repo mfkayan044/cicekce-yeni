@@ -1,44 +1,43 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { sql } from "@/lib/db";
 
 export async function GET() {
   try {
-    const { data, error } = await supabase.from("delivery_slots").select("*").order("created_at", { ascending: true });
-    if (error) throw error;
+    const data = await sql`SELECT * FROM delivery_slots ORDER BY display_order ASC`;
 
     const formatted = (data || []).map((s: any) => ({
-      id: s.id,
-      slot: s.slot,
-      range: s.range,
-      extraFee: Number(s.extra_fee || 0),
-      sameDayCutoff: s.same_day_cutoff || s.cutoff,
-      active: s.active !== false
+      id: String(s.id),
+      slot: s.title || s.slot || "09:00 - 12:00",
+      range: s.title || s.range || "09:00 - 12:00",
+      extraFee: 0,
+      sameDayCutoff: "20:00",
+      active: s.status !== "Pasif"
     }));
 
     return NextResponse.json(formatted);
   } catch (error) {
-    return NextResponse.json({ error: "Failed to fetch delivery slots from Supabase" }, { status: 500 });
+    return NextResponse.json([]);
   }
 }
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const newSlot = {
-      id: body.id || String(Date.now()),
-      slot: body.slot || body.range,
-      range: body.range || body.slot,
-      extra_fee: Number(body.extraFee || 0),
-      same_day_cutoff: body.sameDayCutoff || body.cutoff || "20:00",
-      active: body.active !== false
-    };
+    const slotId = String(body.id || Date.now());
+    const title = body.slot || body.range || body.title || "09:00 - 12:00";
+    const status = body.active !== false ? "Aktif" : "Pasif";
 
-    const { data, error } = await supabase.from("delivery_slots").upsert(newSlot, { onConflict: "id" }).select().single();
-    if (error) throw error;
+    await sql`
+      INSERT INTO delivery_slots (id, title, status)
+      VALUES (${slotId}, ${title}, ${status})
+      ON CONFLICT (id) DO UPDATE SET
+        title = EXCLUDED.title,
+        status = EXCLUDED.status;
+    `;
 
-    return NextResponse.json(data, { status: 201 });
+    return NextResponse.json({ id: slotId, slot: title, range: title, active: status === "Aktif" }, { status: 201 });
   } catch (error) {
-    return NextResponse.json({ error: "Failed to save delivery slot to Supabase" }, { status: 500 });
+    return NextResponse.json({ error: "Failed to save delivery slot" }, { status: 500 });
   }
 }
 
@@ -46,10 +45,11 @@ export async function DELETE(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");
-    const { error } = await supabase.from("delivery_slots").delete().eq("id", id);
-    if (error) throw error;
+    if (id) {
+      await sql`DELETE FROM delivery_slots WHERE id = ${String(id)}`;
+    }
     return NextResponse.json({ success: true });
   } catch (error) {
-    return NextResponse.json({ error: "Failed to delete delivery slot from Supabase" }, { status: 500 });
+    return NextResponse.json({ error: "Failed to delete delivery slot" }, { status: 500 });
   }
 }

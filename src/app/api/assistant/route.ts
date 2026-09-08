@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { sql } from "@/lib/db";
 
 interface AssistantRequest {
   message: string;
@@ -14,20 +14,17 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Mesaj boş olamaz." }, { status: 400 });
     }
 
-    // 1. Fetch available products from Supabase
+    // 1. Fetch available products from Neon PostgreSQL
     let products: any[] = [];
     try {
-      const { data } = await supabase
-        .from("products")
-        .select("id, slug, title, price, category, image, description")
-        .limit(20);
+      const data = await sql`SELECT id, slug, title, price, category, image, description FROM products LIMIT 20`;
       if (data && data.length > 0) products = data;
     } catch (e) {}
 
-    // 2. Fetch card notes from Supabase
+    // 2. Fetch card notes from Neon PostgreSQL
     let cardNotes: any[] = [];
     try {
-      const { data } = await supabase.from("card_notes").select("category, text");
+      const data = await sql`SELECT category, text FROM card_notes LIMIT 50`;
       if (data && data.length > 0) cardNotes = data;
     } catch (e) {}
 

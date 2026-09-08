@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { getSetting, setSetting } from "@/lib/settings-helper";
 import fs from "fs";
 import path from "path";
 
@@ -72,26 +72,15 @@ const cacheHeaders = {
 };
 
 export async function GET() {
-  try {
-    const { data, error } = await supabase.from("site_settings").select("*").eq("id", "hero").single();
-    if (!error && data && data.value) {
-      return NextResponse.json(data.value, { headers: cacheHeaders });
-    }
-  } catch (error) {}
-
-  const localData = getLocalHero();
-  return NextResponse.json(localData, { headers: cacheHeaders });
+  const heroData = await getSetting("hero", getLocalHero());
+  return NextResponse.json(heroData, { headers: cacheHeaders });
 }
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
     saveLocalHero(body);
-
-    try {
-      await supabase.from("site_settings").upsert({ id: "hero", value: body }, { onConflict: "id" });
-    } catch (e) {}
-
+    await setSetting("hero", body);
     return NextResponse.json(body, { status: 201 });
   } catch (error) {
     return NextResponse.json({ error: "Failed to save hero settings" }, { status: 500 });
@@ -102,11 +91,7 @@ export async function PUT(request: Request) {
   try {
     const body = await request.json();
     saveLocalHero(body);
-
-    try {
-      await supabase.from("site_settings").upsert({ id: "hero", value: body }, { onConflict: "id" });
-    } catch (e) {}
-
+    await setSetting("hero", body);
     return NextResponse.json(body);
   } catch (error) {
     return NextResponse.json({ error: "Failed to update hero settings" }, { status: 500 });

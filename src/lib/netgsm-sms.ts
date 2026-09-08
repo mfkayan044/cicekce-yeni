@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabase";
+import { getSetting } from "@/lib/settings-helper";
 
 export interface SendSmsParams {
   phone: string;
@@ -7,13 +7,7 @@ export interface SendSmsParams {
 
 export async function sendNetgsmSms({ phone, message }: SendSmsParams): Promise<boolean> {
   try {
-    const { data } = await supabase
-      .from("site_settings")
-      .select("value")
-      .eq("id", "api_settings")
-      .single();
-
-    const apis = data?.value || {};
+    const apis = await getSetting("api_settings", {});
     const usercode = apis.smsUser || process.env.NETGSM_USER;
     const password = apis.smsPassword || process.env.NETGSM_PASSWORD;
     const msgheader = apis.smsHeader || process.env.NETGSM_HEADER || "CICEKCE";

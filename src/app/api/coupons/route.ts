@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { getSetting, setSetting } from "@/lib/settings-helper";
 import fs from "fs";
 import path from "path";
 
@@ -24,33 +24,16 @@ function saveLocalCoupons(coupons: any[]) {
     }
     db.coupons = coupons;
     fs.writeFileSync(dbPath, JSON.stringify(db, null, 2), "utf-8");
-  } catch (e) {
-    // Swallow EROFS errors on Vercel
-  }
+  } catch (e) {}
 }
 
 async function getCouponsList(): Promise<any[]> {
-  try {
-    const { data, error } = await supabase
-      .from("site_settings")
-      .select("value")
-      .eq("id", "coupons")
-      .single();
-    if (!error && data && Array.isArray(data.value)) {
-      return data.value;
-    }
-  } catch (e) {}
-  return getLocalCoupons();
+  return await getSetting("coupons", getLocalCoupons());
 }
 
 async function saveCouponsList(coupons: any[]) {
   saveLocalCoupons(coupons);
-  try {
-    await supabase.from("site_settings").upsert(
-      { id: "coupons", value: coupons, updated_at: new Date().toISOString() },
-      { onConflict: "id" }
-    );
-  } catch (e) {}
+  await setSetting("coupons", coupons);
 }
 
 export async function GET(req: Request) {

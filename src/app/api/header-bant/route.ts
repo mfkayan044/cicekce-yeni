@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { getSetting, setSetting } from "@/lib/settings-helper";
 import fs from "fs";
 import path from "path";
 
@@ -30,24 +30,15 @@ function saveLocalBant(data: any) {
 }
 
 export async function GET() {
-  try {
-    const { data, error } = await supabase.from("site_settings").select("*").eq("id", "header_bant").single();
-    if (!error && data && data.value) {
-      return NextResponse.json(data.value);
-    }
-  } catch (error) {}
-
-  const localData = getLocalBant();
-  return NextResponse.json(localData);
+  const bantData = await getSetting("header_bant", getLocalBant());
+  return NextResponse.json(bantData);
 }
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
     saveLocalBant(body);
-    try {
-      await supabase.from("site_settings").upsert({ id: "header_bant", value: body }, { onConflict: "id" });
-    } catch (e) {}
+    await setSetting("header_bant", body);
     return NextResponse.json(body, { status: 201 });
   } catch (error) {
     return NextResponse.json({ error: "Failed to save header bant settings" }, { status: 500 });
@@ -58,9 +49,7 @@ export async function PUT(request: Request) {
   try {
     const body = await request.json();
     saveLocalBant(body);
-    try {
-      await supabase.from("site_settings").upsert({ id: "header_bant", value: body }, { onConflict: "id" });
-    } catch (e) {}
+    await setSetting("header_bant", body);
     return NextResponse.json(body);
   } catch (error) {
     return NextResponse.json({ error: "Failed to update header bant settings" }, { status: 500 });

@@ -1,76 +1,77 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { getSetting, setSetting } from "@/lib/settings-helper";
+import fs from "fs";
+import path from "path";
 
-let inMemoryAbandonedCarts: any[] = [];
+const dbPath = path.join(process.cwd(), "src", "data", "db.json");
 
-async function getAbandonedCartsFromDb(): Promise<any[]> {
+let memoryAbandonedCarts: any[] = [];
+
+function getLocalCarts(): any[] {
   try {
-    const { data, error } = await supabase
-      .from("site_settings")
-      .select("value")
-      .eq("id", "abandoned_carts")
-      .single();
-
-    if (!error && data && Array.isArray(data.value)) {
-      inMemoryAbandonedCarts = data.value;
-      return data.value;
+    if (fs.existsSync(dbPath)) {
+      const data = fs.readFileSync(dbPath, "utf-8");
+      const db = JSON.parse(data);
+      if (Array.isArray(db.abandonedCarts)) return db.abandonedCarts;
     }
   } catch (e) {}
-  return inMemoryAbandonedCarts;
+  return memoryAbandonedCarts;
 }
 
-async function saveAbandonedCartsToDb(carts: any[]): Promise<boolean> {
+function saveLocalCarts(carts: any[]) {
+  memoryAbandonedCarts = carts;
   try {
-    inMemoryAbandonedCarts = carts;
-    await supabase
-      .from("site_settings")
-      .upsert({
-        id: "abandoned_carts",
-        value: carts,
-        updated_at: new Date().toISOString()
-      });
-    return true;
-  } catch (e) {
-    return false;
+    let db: any = {};
+    if (fs.existsSync(dbPath)) {
+      db = JSON.parse(fs.readFileSync(dbPath, "utf-8"));
+    }
+    db.abandonedCarts = carts;
+    fs.writeFileSync(dbPath, JSON.stringify(db, null, 2), "utf-8");
+  } catch (e) {}
+}
+
+async function getAbandonedCartsFromDb(): Promise<any[]> {
+  const carts = await getSetting("abandoned_carts", getLocalCarts());
+  if (Array.isArray(carts)) {
+    memoryAbandonedCarts = carts;
+    return carts;
   }
+  return memoryAbandonedCarts;
+}
+
+async function saveAbandonedCartsToDb(carts: any[]) {
+  saveLocalCarts(carts);
+  await setSetting("abandoned_carts", carts);
 }
 
 export async function GET() {
   const carts = await getAbandonedCartsFromDb();
-  return NextResponse.json(carts);
+  return NextResponse.json(carts || []);
 }
 
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const carts = await getAbandonedCartsFromDb();
+    let carts = await getAbandonedCartsFromDb();
 
-    const cartNo = body.cartNo || `TSL-2026-${Math.floor(100000 + Math.random() * 900000)}`;
-    const phone = body.phone || body.recipientPhone || "Belirtilmedi";
-    const customer = body.customerName || body.recipientName || "Ziyaretçi";
-
+    const recordId = body.id || String(Date.now());
     const now = new Date();
-    const formattedDate = `${now.getDate().toString().padStart(2, '0')}.${(now.getMonth() + 1).toString().padStart(2, '0')}.${now.getFullYear()} ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+    const formattedDate = `${now.getDate().toString().padStart(2, "0")}.${(now.getMonth() + 1).toString().padStart(2, "0")}.${now.getFullYear()} ${now.getHours().toString().padStart(2, "0")}:${now.getMinutes().toString().padStart(2, "0")}`;
 
-    const existingIndex = carts.findIndex(
-      (c: any) => c.cartNo === cartNo
-    );
+    const existingIndex = carts.findIndex((c: any) => String(c.id) === String(recordId));
 
     const updatedRecord = {
-      id: body.id || (existingIndex >= 0 ? carts[existingIndex].id : String(Date.now())),
-      cartNo,
-      customer,
-      phone,
-      email: body.email || "Belirtilmedi",
-      address: body.address || "Adres Belirtilmedi",
-      product: body.product || "Çiçek Aranjmanı",
-      step: body.step || "Adım 1: Alıcı & Teslimat",
-      total: body.total || "0 ₺",
+      id: recordId,
+      customerName: body.customerName || (existingIndex >= 0 ? carts[existingIndex].customerName : "Misafir Ziyaretçi"),
+      customerPhone: body.customerPhone || (existingIndex >= 0 ? carts[existingIndex].customerPhone : "-"),
+      customerEmail: body.customerEmail || (existingIndex >= 0 ? carts[existingIndex].customerEmail : "-"),
+      lastStep: body.lastStep || (existingIndex >= 0 ? carts[existingIndex].lastStep : "Ödeme Adımı"),
+      cartTotal: body.cartTotal || (existingIndex >= 0 ? carts[existingIndex].cartTotal : "0 ₺"),
+      itemsCount: body.itemsCount || (existingIndex >= 0 ? carts[existingIndex].itemsCount : 1),
       date: formattedDate,
-      items: body.items || [],
-      recipientName: body.recipientName || "",
-      recipientPhone: body.recipientPhone || "",
-      addons: body.addons || [],
+      items: body.items || (existingIndex >= 0 ? carts[existingIndex].items : []),
+      recipientName: body.recipientName || (existingIndex >= 0 ? carts[existingIndex].recipientName : undefined),
+      address: body.address || (existingIndex >= 0 ? carts[existingIndex].address : undefined),
     };
 
     if (existingIndex >= 0) {
@@ -79,13 +80,10 @@ export async function POST(req: Request) {
       carts.unshift(updatedRecord);
     }
 
-    // Keep max 100 recent abandoned carts
-    const trimmedCarts = carts.slice(0, 100);
-    await saveAbandonedCartsToDb(trimmedCarts);
-
+    await saveAbandonedCartsToDb(carts);
     return NextResponse.json({ success: true, cart: updatedRecord }, { status: 201 });
-  } catch (e: any) {
-    return NextResponse.json({ success: true, message: "Abandoned cart processed in-memory" }, { status: 200 });
+  } catch (e) {
+    return NextResponse.json({ success: true }, { status: 200 });
   }
 }
 
@@ -93,12 +91,14 @@ export async function DELETE(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("id");
-    const cartNo = searchParams.get("cartNo");
+    const clearAll = searchParams.get("all") === "true";
 
     let carts = await getAbandonedCartsFromDb();
 
-    if (id || cartNo) {
-      carts = carts.filter((c: any) => c.id !== id && c.cartNo !== cartNo);
+    if (clearAll) {
+      carts = [];
+    } else if (id) {
+      carts = carts.filter((c: any) => String(c.id) !== String(id));
     }
 
     await saveAbandonedCartsToDb(carts);

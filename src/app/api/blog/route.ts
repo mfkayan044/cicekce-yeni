@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { getSetting, setSetting } from "@/lib/settings-helper";
 import fs from "fs";
 import path from "path";
 
@@ -32,14 +32,7 @@ export async function GET(request: Request) {
     const slug = searchParams.get("slug");
     const id = searchParams.get("id");
 
-    // 1. Fetch from Supabase site_settings 'blogs'
-    const { data: dbData } = await supabase
-      .from("site_settings")
-      .select("value")
-      .eq("id", "blogs")
-      .single();
-
-    const blogs: any[] = (dbData && Array.isArray(dbData.value)) ? dbData.value : (readDb().blogs || []);
+    const blogs: any[] = await getSetting("blogs", readDb().blogs || []);
 
     if (slug) {
       const found = blogs.find((b: any) => b.slug === slug || b.id === slug);
@@ -61,8 +54,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const db = readDb();
-    const blogs: any[] = db.blogs || [];
+    const blogs: any[] = await getSetting("blogs", readDb().blogs || []);
 
     const newBlog = {
       id: "b_" + Date.now(),
@@ -79,10 +71,7 @@ export async function POST(request: Request) {
 
     blogs.unshift(newBlog);
 
-    await supabase
-      .from("site_settings")
-      .upsert({ id: "blogs", value: blogs, updated_at: new Date().toISOString() });
-
+    await setSetting("blogs", blogs);
     writeDbAndTs(blogs);
 
     return NextResponse.json({ success: true, blog: newBlog });
@@ -94,8 +83,7 @@ export async function POST(request: Request) {
 export async function PUT(request: Request) {
   try {
     const body = await request.json();
-    const db = readDb();
-    let blogs: any[] = db.blogs || [];
+    let blogs: any[] = await getSetting("blogs", readDb().blogs || []);
 
     blogs = blogs.map((b: any) => {
       if (b.id === body.id || b.slug === body.slug) {
@@ -104,10 +92,7 @@ export async function PUT(request: Request) {
       return b;
     });
 
-    await supabase
-      .from("site_settings")
-      .upsert({ id: "blogs", value: blogs, updated_at: new Date().toISOString() });
-
+    await setSetting("blogs", blogs);
     writeDbAndTs(blogs);
 
     return NextResponse.json({ success: true });
@@ -120,15 +105,11 @@ export async function DELETE(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");
-    const db = readDb();
-    let blogs: any[] = db.blogs || [];
+    let blogs: any[] = await getSetting("blogs", readDb().blogs || []);
 
     blogs = blogs.filter((b: any) => b.id !== id);
 
-    await supabase
-      .from("site_settings")
-      .upsert({ id: "blogs", value: blogs, updated_at: new Date().toISOString() });
-
+    await setSetting("blogs", blogs);
     writeDbAndTs(blogs);
 
     return NextResponse.json({ success: true });

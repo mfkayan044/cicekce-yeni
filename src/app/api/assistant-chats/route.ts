@@ -1,58 +1,25 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { getSetting, setSetting } from "@/lib/settings-helper";
 import fs from "fs";
 import path from "path";
 
 const dbPath = path.join(process.cwd(), "src", "data", "db.json");
 const TWENTY_MINUTES_MS = 20 * 60 * 1000;
 
-// Global in-memory array to ensure instant response on Vercel Serverless
 let inMemoryAssistantChats: any[] = [];
 
 async function getChatsFromDb(): Promise<any[]> {
-  try {
-    const { data, error } = await supabase
-      .from("site_settings")
-      .select("value")
-      .eq("id", "assistant_chats")
-      .single();
-
-    if (!error && data && Array.isArray(data.value)) {
-      inMemoryAssistantChats = data.value;
-      return data.value;
-    }
-  } catch (e) {}
-
-  // Fallback to local db.json if readable
-  try {
-    if (fs.existsSync(dbPath)) {
-      const fileData = fs.readFileSync(dbPath, "utf-8");
-      const parsed = JSON.parse(fileData);
-      if (Array.isArray(parsed.assistantChats)) {
-        inMemoryAssistantChats = parsed.assistantChats;
-        return parsed.assistantChats;
-      }
-    }
-  } catch (e) {}
-
+  const chats = await getSetting("assistant_chats", inMemoryAssistantChats);
+  if (Array.isArray(chats)) {
+    inMemoryAssistantChats = chats;
+    return chats;
+  }
   return inMemoryAssistantChats;
 }
 
 async function saveChatsToDb(chats: any[]): Promise<boolean> {
   inMemoryAssistantChats = chats;
-
-  // Try saving to Supabase site_settings safely
-  try {
-    await supabase
-      .from("site_settings")
-      .upsert({
-        id: "assistant_chats",
-        value: chats,
-        updated_at: new Date().toISOString(),
-      });
-  } catch (e) {}
-
-  // Try saving to local db.json safely if writeable
+  await setSetting("assistant_chats", chats);
   try {
     let dbObj: any = {};
     if (fs.existsSync(dbPath)) {
@@ -61,16 +28,14 @@ async function saveChatsToDb(chats: any[]): Promise<boolean> {
     dbObj.assistantChats = chats;
     fs.writeFileSync(dbPath, JSON.stringify(dbObj, null, 2), "utf-8");
   } catch (e) {}
-
   return true;
 }
 
-// Cleans chats older than 20 minutes automatically
 function cleanupExpiredChats(chats: any[]): any[] {
   const now = Date.now();
   return (chats || []).filter((chat: any) => {
     const chatTime = chat.createdAtMs || (chat.id && !isNaN(Number(chat.id)) ? Number(chat.id) : null);
-    if (!chatTime) return true; // Keep if no valid timestamp
+    if (!chatTime) return true;
     return now - chatTime < TWENTY_MINUTES_MS;
   });
 }
@@ -101,10 +66,10 @@ export async function POST(req: Request) {
 
     const newRecord = {
       id: recordId,
-      createdAtMs: body.createdAtMs || nowMs,
-      visitor: body.visitor || `Ziyaretçi (#${recordId.slice(-4)})`,
-      msgCount: body.messages ? body.messages.length : 1,
-      lastMsg: body.lastMsg || "Asistan sohbeti başlatıldı.",
+      createdAtMs: nowMs,
+      customerName: body.customerName || "Misafir Ziyaretçi",
+      phone: body.phone || "-",
+      topic: body.topic || "Ürün Tavsiyesi",
       status: body.status || "Tamamlandı",
       orderNo: body.orderNo || undefined,
       date: formattedDate,

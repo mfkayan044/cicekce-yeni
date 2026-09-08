@@ -1,42 +1,50 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { sql } from "@/lib/db";
 
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const category = searchParams.get("category");
 
-    let query = supabase.from("card_notes").select("*").order("created_at", { ascending: false });
+    let data: any[] = [];
     if (category) {
-      query = query.eq("category", category);
+      data = await sql`SELECT * FROM card_notes WHERE category = ${category} ORDER BY created_at DESC`;
+    } else {
+      data = await sql`SELECT * FROM card_notes ORDER BY created_at DESC`;
     }
 
-    const { data, error } = await query;
-    if (error) throw error;
+    const formatted = (data || []).map((n: any) => ({
+      id: String(n.id),
+      category: n.category || "Genel",
+      tr: n.text || n.tr || "",
+      en: n.en || n.text || n.tr || "",
+      status: n.status || "Aktif"
+    }));
 
-    return NextResponse.json(data || []);
+    return NextResponse.json(formatted);
   } catch (error) {
-    return NextResponse.json({ error: "Failed to fetch card notes from Supabase" }, { status: 500 });
+    return NextResponse.json([]);
   }
 }
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const newNote = {
-      id: body.id || String(Date.now()),
-      category: body.category || "Genel",
-      tr: body.tr,
-      en: body.en || body.tr,
-      status: body.status || "Aktif"
-    };
+    const noteId = String(body.id || Date.now());
+    const category = body.category || "Genel";
+    const text = body.tr || body.text || "";
 
-    const { data, error } = await supabase.from("card_notes").upsert(newNote, { onConflict: "id" }).select().single();
-    if (error) throw error;
+    await sql`
+      INSERT INTO card_notes (id, category, text)
+      VALUES (${noteId}, ${category}, ${text})
+      ON CONFLICT (id) DO UPDATE SET
+        category = EXCLUDED.category,
+        text = EXCLUDED.text;
+    `;
 
-    return NextResponse.json(data, { status: 201 });
+    return NextResponse.json({ id: noteId, category, tr: text, en: text, status: "Aktif" }, { status: 201 });
   } catch (error) {
-    return NextResponse.json({ error: "Failed to save card note to Supabase" }, { status: 500 });
+    return NextResponse.json({ error: "Failed to save card note" }, { status: 500 });
   }
 }
 
@@ -44,11 +52,11 @@ export async function DELETE(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");
-    const { error } = await supabase.from("card_notes").delete().eq("id", id);
-    if (error) throw error;
-
+    if (id) {
+      await sql`DELETE FROM card_notes WHERE id = ${String(id)}`;
+    }
     return NextResponse.json({ success: true });
   } catch (error) {
-    return NextResponse.json({ error: "Failed to delete card note from Supabase" }, { status: 500 });
+    return NextResponse.json({ error: "Failed to delete card note" }, { status: 500 });
   }
 }

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { getSetting, setSetting } from "@/lib/settings-helper";
 import fs from "fs";
 import path from "path";
 
@@ -30,24 +30,15 @@ function saveLocalFaqs(data: any) {
 }
 
 export async function GET() {
-  try {
-    const { data, error } = await supabase.from("site_settings").select("*").eq("id", "faqs").single();
-    if (!error && data && data.value) {
-      return NextResponse.json(data.value);
-    }
-  } catch (error) {}
-
-  const localData = getLocalFaqs();
-  return NextResponse.json(localData);
+  const faqs = await getSetting("faqs", getLocalFaqs());
+  return NextResponse.json(faqs);
 }
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
     saveLocalFaqs(body);
-    try {
-      await supabase.from("site_settings").upsert({ id: "faqs", value: body }, { onConflict: "id" });
-    } catch (e) {}
+    await setSetting("faqs", body);
     return NextResponse.json(body, { status: 201 });
   } catch (error) {
     return NextResponse.json({ error: "Failed to save FAQs" }, { status: 500 });
@@ -58,9 +49,7 @@ export async function PUT(request: Request) {
   try {
     const body = await request.json();
     saveLocalFaqs(body);
-    try {
-      await supabase.from("site_settings").upsert({ id: "faqs", value: body }, { onConflict: "id" });
-    } catch (e) {}
+    await setSetting("faqs", body);
     return NextResponse.json(body);
   } catch (error) {
     return NextResponse.json({ error: "Failed to update FAQs" }, { status: 500 });

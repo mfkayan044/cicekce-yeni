@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { getSetting, setSetting } from "@/lib/settings-helper";
 import fs from "fs";
 import path from "path";
 
@@ -44,19 +44,11 @@ function saveLocalMembers(members: any[]) {
 }
 
 async function getMembersFromDb(): Promise<any[]> {
-  try {
-    const { data, error } = await supabase
-      .from("site_settings")
-      .select("data")
-      .eq("id", "members_store")
-      .single();
-
-    if (!error && data?.data && Array.isArray(data.data) && data.data.length > 0) {
-      memoryMembers = data.data;
-      saveLocalMembers(memoryMembers);
-      return memoryMembers;
-    }
-  } catch (e) {
+  const members = await getSetting("members_store", getLocalMembers());
+  if (Array.isArray(members) && members.length > 0) {
+    memoryMembers = members;
+    saveLocalMembers(members);
+    return members;
   }
   return getLocalMembers();
 }
@@ -64,15 +56,7 @@ async function getMembersFromDb(): Promise<any[]> {
 async function saveMembersToDb(members: any[]) {
   memoryMembers = members;
   saveLocalMembers(members);
-  try {
-    await supabase.from("site_settings").upsert({
-      id: "members_store",
-      data: members,
-      updated_at: new Date().toISOString()
-    });
-  } catch (e) {
-    console.error("Failed to save members to supabase:", e);
-  }
+  await setSetting("members_store", members);
 }
 
 export async function GET(req: Request) {
@@ -97,7 +81,6 @@ export async function GET(req: Request) {
       return NextResponse.json(safeData);
     }
 
-    // Return all for admin
     const safeMembers = members.map(({ password, ...rest }) => rest);
     return NextResponse.json(safeMembers);
   } catch (e) {
@@ -111,7 +94,6 @@ export async function POST(req: Request) {
     const { action, name, email, phone, password, address } = body;
     const members = await getMembersFromDb();
 
-    // 1. REGISTER ACTION
     if (action === "register" || !action) {
       if (!email || !name) {
         return NextResponse.json({ error: "Lütfen ad soyad ve e-posta giriniz." }, { status: 400 });
@@ -141,7 +123,6 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: true, member: safeUser }, { status: 201 });
     }
 
-    // 2. LOGIN ACTION
     if (action === "login") {
       if (!email || !password) {
         return NextResponse.json({ error: "E-posta ve şifre gereklidir." }, { status: 400 });
@@ -164,7 +145,6 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: true, member: safeUser });
     }
 
-    // 3. UPDATE PROFILE / ADDRESSES
     if (action === "update") {
       const { id, updatedData } = body;
       const index = members.findIndex((m) => String(m.id) === String(id));

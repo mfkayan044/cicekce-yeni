@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { getSetting, setSetting } from "@/lib/settings-helper";
 import fs from "fs";
 import path from "path";
 
@@ -30,24 +30,15 @@ function saveLocalSeo(data: any) {
 }
 
 export async function GET() {
-  try {
-    const { data, error } = await supabase.from("site_settings").select("*").eq("id", "home_seo").single();
-    if (!error && data && data.value) {
-      return NextResponse.json(data.value);
-    }
-  } catch (error) {}
-
-  const localData = getLocalSeo();
-  return NextResponse.json(localData);
+  const seoData = await getSetting("home_seo", getLocalSeo());
+  return NextResponse.json(seoData);
 }
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
     saveLocalSeo(body);
-    try {
-      await supabase.from("site_settings").upsert({ id: "home_seo", value: body }, { onConflict: "id" });
-    } catch (e) {}
+    await setSetting("home_seo", body);
     return NextResponse.json(body, { status: 201 });
   } catch (error) {
     return NextResponse.json({ error: "Failed to save SEO settings" }, { status: 500 });
@@ -58,9 +49,7 @@ export async function PUT(request: Request) {
   try {
     const body = await request.json();
     saveLocalSeo(body);
-    try {
-      await supabase.from("site_settings").upsert({ id: "home_seo", value: body }, { onConflict: "id" });
-    } catch (e) {}
+    await setSetting("home_seo", body);
     return NextResponse.json(body);
   } catch (error) {
     return NextResponse.json({ error: "Failed to update SEO settings" }, { status: 500 });

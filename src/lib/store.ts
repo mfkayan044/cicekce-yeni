@@ -366,3 +366,28 @@ export function useStore<T>(selector?: (state: any) => T): any {
   }
   return state;
 }
+
+export function generateSeoDetails(data: {
+  title: string;
+  category?: string;
+  designTypes?: string[];
+  recipients?: string[];
+  purposes?: string[];
+  colors?: string[];
+  price?: string;
+}) {
+  const title = data.title.trim() || "Özel Çiçek Aranjmanı";
+  const category = data.category || "Çiçekler";
+  const recipients = data.recipients && data.recipients.length > 0 ? data.recipients.join(", ") : "sevdikleriniz";
+  const designTypes = data.designTypes && data.designTypes.length > 0 ? data.designTypes.join(", ") : "özel tasarım";
+  const purposes = data.purposes && data.purposes.length > 0 ? data.purposes.join(", ") : "özel gün ve kutlamalar";
+  const colors = data.colors && data.colors.length > 0 ? data.colors.join(", ") : "canlı renkli";
+
+  const description = `${title}, ${recipients} için özel olarak hazırlanmış taze ve göz alıcı bir ${category.toLowerCase()} tasarımıdır. ${colors} renkli taze çiçeklerin en zarif kombinasyonuyla oluşturulan bu ${designTypes} aranjmanı; ${purposes} gibi anlarda unutulmaz bir jest yapmanız için floristlerimiz tarafından özenle hazırlanmıştır.\n\nAynı gün adrese teslimat garantisi ve tazelik güvencesiyle ${title} siparişinizi hemen verin, sevdiklerinize anlamlı ve büyüleyici bir sürpriz yapın.\n\n• %100 Taze Canlı Çiçek Garantisi\n• Özel Tasarım Sunum ve Hediye Kart Notu\n• Hızlı Kurye İle Aynı Gün Teslimat`;
+
+  const seoTitle = `${title} Siparişi - Aynı Gün Teslimat | Çiçekçiniz`;
+  const seoDesc = `${title} taze çiçek aranjmanı. ${recipients} için en güzel ${category.toLowerCase()} çeşitlerini aynı gün hızlı kurye teslimatıyla sipariş edin.`;
+  const seoKeywords = `${title.toLowerCase()}, ${category.toLowerCase()}, çiçek siparişi, taze çiçek, buket, online çiçek gönder`;
+
+  return { description, seoTitle, seoDesc, seoKeywords };
+}

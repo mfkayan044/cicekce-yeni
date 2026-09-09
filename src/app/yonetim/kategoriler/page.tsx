@@ -32,9 +32,36 @@ export default function AdminCategoriesPage() {
   const handleSaveEdit = async (id: string) => {
     await updateCategory(id, editForm);
     setEditingId(null);
-    setToastMsg("Kategori ismi ve görseli başarıyla güncellendi ve Neon veritabanına kaydedildi!");
+    setToastMsg("Kategori ismi ve görseli başarıyla güncellendi!");
     setTimeout(() => setToastMsg(""), 3000);
   };
+
+  const handleOrderChange = async (cat: CategoryItem, newOrder: number) => {
+    await updateCategory(cat.id, { order: newOrder });
+    setToastMsg(`"${cat.name}" sıralaması ${newOrder} olarak güncellendi!`);
+    setTimeout(() => setToastMsg(""), 3000);
+  };
+
+  const moveCategory = async (index: number, direction: "up" | "down") => {
+    const sorted = [...categories].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+    const targetIndex = direction === "up" ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= sorted.length) return;
+
+    const currentCat = sorted[index];
+    const targetCat = sorted[targetIndex];
+
+    const currentOrder = currentCat.order ?? index;
+    const targetOrder = targetCat.order ?? targetIndex;
+
+    // Swap orders
+    await updateCategory(currentCat.id, { order: targetOrder });
+    await updateCategory(targetCat.id, { order: currentOrder });
+
+    setToastMsg(`"${currentCat.name}" kategorisinin sırası değiştirildi!`);
+    setTimeout(() => setToastMsg(""), 3000);
+  };
+
+  const sortedCategories = [...categories].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 
   return (
     <AdminLayout>
@@ -46,7 +73,7 @@ export default function AdminCategoriesPage() {
               <span className="text-slate-400 fw-light">Çiçek Kataloğu /</span> Kategoriler & Story Bar
             </h4>
             <p className="text-slate-500 text-sm">
-              Mağaza ana sayfasındaki üst yuvarlak hikaye (story) halkalarını ve kategori görsellerini yönetin.
+              Mağaza ana sayfasındaki üst yuvarlak hikaye (story) halkalarını ve kategori sıralamalarını buradan yönetin.
             </p>
           </div>
           <Link
@@ -70,15 +97,47 @@ export default function AdminCategoriesPage() {
             <table className="table table-hover align-middle mb-0 w-full text-sm">
               <thead className="bg-slate-50 text-xs text-slate-500 uppercase">
                 <tr>
-                  <th style={{ width: "120px" }} className="px-4 py-3">Story Görseli</th>
+                  <th style={{ width: "110px" }} className="px-4 py-3 text-center">Sıralama</th>
+                  <th style={{ width: "100px" }} className="px-4 py-3">Story Görseli</th>
                   <th className="px-4 py-3">Kategori Adı</th>
                   <th className="px-4 py-3">URL Bağlantısı</th>
-                  <th style={{ width: "160px" }} className="px-4 py-3 text-end">İşlemler</th>
+                  <th style={{ width: "200px" }} className="px-4 py-3 text-end">İşlemler</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {categories.map((cat: CategoryItem) => (
+                {sortedCategories.map((cat: CategoryItem, idx: number) => (
                   <tr key={cat.id} className="hover:bg-slate-50/80 transition">
+                    {/* Sıralama Sütunu (Move Up / Down + Number Input) */}
+                    <td className="px-3 py-3 text-center">
+                      <div className="flex items-center justify-center gap-1">
+                        <button
+                          type="button"
+                          disabled={idx === 0}
+                          onClick={() => moveCategory(idx, "up")}
+                          className="btn btn-xs btn-outline-secondary px-1.5 py-0.5 rounded text-xs font-bold disabled:opacity-30"
+                          title="Yukarı Taşı"
+                        >
+                          ▲
+                        </button>
+                        <input
+                          type="number"
+                          className="form-control form-control-sm text-center px-1 font-bold"
+                          style={{ width: "48px" }}
+                          value={cat.order ?? idx}
+                          onChange={(e) => handleOrderChange(cat, parseInt(e.target.value) || 0)}
+                        />
+                        <button
+                          type="button"
+                          disabled={idx === sortedCategories.length - 1}
+                          onClick={() => moveCategory(idx, "down")}
+                          className="btn btn-xs btn-outline-secondary px-1.5 py-0.5 rounded text-xs font-bold disabled:opacity-30"
+                          title="Aşağı Taşı"
+                        >
+                          ▼
+                        </button>
+                      </div>
+                    </td>
+
                     <td className="px-4 py-3">
                       {editingId === cat.id ? (
                         <div className="space-y-2">
@@ -88,7 +147,7 @@ export default function AdminCategoriesPage() {
                             className="w-12 h-12 rounded-full border border-emerald-500 object-cover p-0.5"
                           />
                           <label style={{ backgroundColor: "#2b2623", color: "#ffffff" }} className="cursor-pointer text-[10px] font-extrabold px-2 py-1 rounded-lg block text-center shadow-xs">
-                            <span>📁 Cihazdan Görsel Yükle</span>
+                            <span>📁 Görsel Yükle</span>
                             <input type="file" accept="image/*" className="hidden" onChange={handleFileUpload} />
                           </label>
                         </div>
@@ -114,13 +173,15 @@ export default function AdminCategoriesPage() {
                       ) : (
                         <div>
                           <div className="font-extrabold text-slate-900 text-sm">{cat.name}</div>
-                          <div className="text-[10px] text-slate-400 font-semibold">Story Bar'da Aktif</div>
+                          <div className="text-[10px] text-slate-400 font-semibold">Sıra: #{cat.order ?? idx}</div>
                         </div>
                       )}
                     </td>
 
                     <td className="px-4 py-3 text-xs text-slate-500 font-mono">
-                      /kategori/{cat.slug}
+                      <a href={`/kategori/${cat.slug}`} target="_blank" className="text-decoration-none text-emerald-700 font-bold hover:underline">
+                        /kategori/{cat.slug} ↗
+                      </a>
                     </td>
 
                     <td className="px-4 py-3 text-end">
@@ -149,7 +210,7 @@ export default function AdminCategoriesPage() {
                             className="btn btn-sm btn-outline-primary rounded-lg text-xs px-2.5 py-1 flex items-center gap-1 font-bold"
                             onClick={() => handleEditClick(cat)}
                           >
-                            <span>📷 Düzenle / Görsel Değiştir</span>
+                            <span>📷 Düzenle</span>
                           </button>
                           <button
                             type="button"

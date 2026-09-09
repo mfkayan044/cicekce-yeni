@@ -4,13 +4,37 @@ import AdminLayout from "@/components/layout/AdminLayout";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useEffect, use } from "react";
-import { useStore, Product } from "@/lib/store";
+import { useStore, Product, generateSeoDetails } from "@/lib/store";
 
 export default function AdminEditProductPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);
   const id = resolvedParams.id;
   const router = useRouter();
   const { products, updateProduct, categories } = useStore();
+
+  const handleAutoSeo = () => {
+    if (!form.title) {
+      alert("Lütfen önce ürün adını giriniz.");
+      return;
+    }
+    const res = generateSeoDetails({
+      title: form.title,
+      category: form.category,
+      designTypes: form.designTypes,
+      recipients: form.recipients,
+      purposes: form.purposes,
+      colors: form.colors,
+      price: form.price,
+    });
+    setForm((prev) => ({
+      ...prev,
+      description: res.description,
+      seoTitle: res.seoTitle,
+      seoDesc: res.seoDesc,
+      seoKeywords: res.seoKeywords,
+    }));
+    alert("✨ Ürün açıklaması ve SEO meta bilgileri (Title, Description, Keywords) ürün detaylarına uygun olarak başarıyla oluşturuldu!");
+  };
 
   const currentProduct = products.find((p: Product) => String(p.id) === String(id));
 
@@ -235,8 +259,16 @@ export default function AdminEditProductPage({ params }: { params: Promise<{ id:
               {/* Left Column: SEO (Türkçe) */}
               <div className="col-12 col-lg-6">
                 <div className="card shadow-sm border-0 h-100">
-                  <div className="card-header bg-white fw-bold border-bottom">
-                    SEO ({activeTab === "TR" ? "Türkçe" : activeTab})
+                  <div className="card-header bg-white fw-bold border-bottom d-flex align-items-center justify-content-between">
+                    <span>SEO ({activeTab === "TR" ? "Türkçe" : activeTab})</span>
+                    <button
+                      type="button"
+                      onClick={handleAutoSeo}
+                      className="btn btn-xs fw-bold px-2.5 py-1 rounded-lg border text-xs"
+                      style={{ backgroundColor: "#f0fdf4", color: "#15803d", borderColor: "#86efac" }}
+                    >
+                      ✨ Otomatik SEO Oluştur
+                    </button>
                   </div>
                   <div className="card-body">
                     <div className="mb-3">
@@ -392,6 +424,27 @@ export default function AdminEditProductPage({ params }: { params: Promise<{ id:
                           required
                         />
                       </div>
+                    </div>
+
+                    <div className="mb-3">
+                      <div className="d-flex align-items-center justify-content-between mb-2">
+                        <label className="form-label fw-bold small mb-0">Ürün Açıklaması</label>
+                        <button
+                          type="button"
+                          onClick={handleAutoSeo}
+                          className="btn btn-xs btn-outline-primary fw-bold text-xs flex items-center gap-1 rounded-lg"
+                          style={{ backgroundColor: "#f0fdf4", color: "#15803d", borderColor: "#86efac" }}
+                        >
+                          ✨ Otomatik SEO Açıklaması Oluştur
+                        </button>
+                      </div>
+                      <textarea
+                        className="form-control text-sm"
+                        rows={5}
+                        placeholder="Ürün hakkında detaylı bilgi... (Veya yukarıdaki butona tıklayarak otomatik oluşturabilirsiniz)"
+                        value={form.description}
+                        onChange={(e) => setForm({ ...form, description: e.target.value })}
+                      />
                     </div>
 
                     <button type="submit" className="btn btn-primary px-5 fw-bold shadow-sm mt-3">

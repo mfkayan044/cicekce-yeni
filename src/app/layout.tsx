@@ -15,8 +15,11 @@ export const metadata: Metadata = {
   description: "Türkiye'nin lider taze çiçek sipariş portalı.",
   manifest: "/manifest.json",
   icons: {
-    icon: "/logo-cicekce.jpg",
-    apple: "/logo-cicekce.jpg",
+    icon: [
+      { url: "/icon.png", type: "image/png" },
+      { url: "/favicon.ico" }
+    ],
+    apple: "/apple-icon.png",
   },
   appleWebApp: {
     capable: true,
@@ -33,6 +36,9 @@ export default function RootLayout({
   return (
     <html lang="tr" className="antialiased">
       <head>
+        <link rel="icon" href="/favicon.ico" sizes="any" />
+        <link rel="icon" href="/icon.png" type="image/png" />
+        <link rel="apple-touch-icon" href="/apple-icon.png" />
         <link rel="manifest" href="/manifest.json" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />

@@ -4,11 +4,24 @@ import AdminLayout from "@/components/layout/AdminLayout";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { useStore } from "@/lib/store";
+import { useStore, generateSeoDetails } from "@/lib/store";
 
 export default function AdminNewProductPage() {
   const router = useRouter();
   const { addProduct, categories } = useStore();
+
+  const handleAutoSeo = () => {
+    if (!form.title) {
+      alert("Lütfen önce ürün adını giriniz.");
+      return;
+    }
+    const res = generateSeoDetails({
+      title: form.title,
+      category: form.category,
+      price: form.price,
+    });
+    setForm((prev) => ({ ...prev, description: res.description }));
+  };
 
   const [form, setForm] = useState({
     title: "",
@@ -198,11 +211,21 @@ export default function AdminNewProductPage() {
                 </div>
 
                 <div className="mb-4">
-                  <label className="form-label fw-bold">Ürün Açıklaması</label>
+                  <div className="d-flex align-items-center justify-content-between mb-2">
+                    <label className="form-label fw-bold mb-0">Ürün Açıklaması</label>
+                    <button
+                      type="button"
+                      onClick={handleAutoSeo}
+                      className="btn btn-sm btn-outline-primary fw-bold text-xs flex items-center gap-1 rounded-lg"
+                      style={{ backgroundColor: "#f0fdf4", color: "#15803d", borderColor: "#86efac" }}
+                    >
+                      ✨ Otomatik SEO Açıklaması Oluştur
+                    </button>
+                  </div>
                   <textarea
                     className="form-control"
-                    rows={3}
-                    placeholder="Ürün hakkında detaylı bilgi..."
+                    rows={5}
+                    placeholder="Ürün hakkında detaylı bilgi... (Veya yukarıdaki butona tıklayarak otomatik oluşturabilirsiniz)"
                     value={form.description}
                     onChange={(e) => setForm({ ...form, description: e.target.value })}
                   />

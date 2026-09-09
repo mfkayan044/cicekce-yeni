@@ -193,7 +193,7 @@ export default function CustomerHomePage() {
                   </span>
                 )}
 
-                {/* Slide Image - FIX: Only render img if src is non-empty string */}
+                {/* Slide Image & Full Clickable Area */}
                 {currentSlide?.image ? (
                   <img
                     key={currentSlide.image}
@@ -202,27 +202,25 @@ export default function CustomerHomePage() {
                     className="absolute inset-0 w-full h-full object-cover z-0 transition-all duration-700 animate-in fade-in"
                   />
                 ) : null}
+
+                {/* Clickable link covering the full slide */}
+                {currentSlide?.link && (
+                  <a
+                    href={formatLink(currentSlide.link)}
+                    className="absolute inset-0 z-10 block"
+                    aria-label={currentSlide.title || "Slayt Görseli"}
+                  />
+                )}
                 
-                {/* Product Info Box Overlay */}
-                {currentSlide?.title && (
-                  <div className="relative z-10 mt-2 bg-white/85 backdrop-blur-md rounded-2xl p-2.5 sm:p-4 max-w-[210px] sm:max-w-xs shadow-md border border-white/50">
+                {/* Optional Product Info Box Overlay (only if explicit showTextOverlay flag is set) */}
+                {currentSlide?.title && currentSlide?.showTextOverlay === true && (
+                  <div className="relative z-10 mt-2 bg-white/85 backdrop-blur-md rounded-2xl p-2.5 sm:p-4 max-w-[210px] sm:max-w-xs shadow-md border border-white/50 pointer-events-none">
                     <span className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider block mb-0.5">Özel Koleksiyon</span>
                     <h2 className="text-sm sm:text-xl font-extrabold text-slate-800 line-clamp-1">{currentSlide.title}</h2>
                     {currentSlide.price && (
                       <div style={{ color: "#2b2623" }} className="text-base sm:text-2xl font-black mt-0.5">{currentSlide.price}</div>
                     )}
                   </div>
-                )}
-
-                {/* Action Button */}
-                {currentSlide?.link && (
-                  <a
-                    href={formatLink(currentSlide.link)}
-                    style={{ backgroundColor: "#2b2623", color: "#ffffff" }}
-                    className="relative z-10 hover:opacity-95 text-xs font-extrabold tracking-wider uppercase px-8 py-3.5 rounded-xl shadow-lg transition transform hover:-translate-y-0.5 mb-2"
-                  >
-                    ALIŞVERİŞE BAŞLA
-                  </a>
                 )}
 
                 {/* Left/Right Slider Nav Arrows */}

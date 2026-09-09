@@ -178,19 +178,19 @@ export const initialDbData: any = {
     ],
     "horizontalBanners": [
       {
-        "title": "AÇILIŞ ÖZEL",
-        "image": "https://demo.procicek.com.tr/resimler/banner-acilis.webp",
-        "link": "kategori/acilis-cicekleri"
+        "title": "AÇILIŞ & KUTLAMA ÇİÇEKLERİ",
+        "image": "/images/banners/acilis.jpg",
+        "link": "/kategori/acilis-cicekleri"
       },
       {
-        "title": "EV HEDİYESİ ÖZEL",
-        "image": "/uploads/1788341791707-cprm120-1-8dccd02d590f232-a914e932_studyo_mermer.jpg",
-        "link": "kategori/ev-hediyesi"
+        "title": "EV HEDİYESİ ÇİÇEKLERİ",
+        "image": "/images/banners/ev_hediyesi.jpg",
+        "link": "/kategori/ev-hediyesi"
       },
       {
-        "title": "ÖZÜR ÇİÇEKLERİ ÖZEL",
-        "image": "https://demo.procicek.com.tr/resimler/banner-ozur.webp",
-        "link": "kategori/ozur-cicekleri"
+        "title": "ÖZÜR & BARIŞMA ÇİÇEKLERİ",
+        "image": "/images/banners/ozur.jpg",
+        "link": "/kategori/ozur-cicekleri"
       }
     ]
   },

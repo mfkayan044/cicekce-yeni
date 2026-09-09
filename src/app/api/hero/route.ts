@@ -9,39 +9,47 @@ const defaultHeroData = {
   sliders: [
     {
       id: 1,
-      title: "35 Kırmızı Gül Buketi",
-      price: "5.500 ₺",
-      discountBadge: "%10 İndirim",
-      image: "https://demo.procicek.com.tr/urunler/35-kirmizi-gul-buketi-13981-v2.webp",
-      link: "/urun/35-kirmizi-gul-buketi-13981"
+      title: "30 Dakikada Hızlı Teslimat",
+      price: "",
+      discountBadge: "Hızlı Teslimat",
+      image: "/images/slider/banner1_hizli_teslimat.jpg",
+      link: "/kategori/guller"
     },
     {
       id: 2,
-      title: "Beyaz Papatya & Gül Vazo Aranjmanı",
-      price: "2.850 ₺",
-      discountBadge: "Çok Satan",
-      image: "https://demo.procicek.com.tr/urunler/7-kirmizi-gul-ve-beyaz-bicme-179-v2.webp",
-      link: "/urun/7-kirmizi-gul-ve-beyaz-bicme-179"
+      title: "Sevgiliye Özel Premium Gül Buketleri",
+      price: "",
+      discountBadge: "Özel Tasarım",
+      image: "/images/slider/banner2_ask_buketleri.jpg",
+      link: "/kategori/sevgililer-icin"
     },
     {
       id: 3,
-      title: "Lüks Lilyum & Papatya Demeti",
-      price: "3.200 ₺",
-      discountBadge: "Aynı Gün Teslimat",
-      image: "https://demo.procicek.com.tr/urunler/35-beyaz-gerbera-buketi-119-v2.webp",
-      link: "/urun/35-beyaz-gerbera-buketi-119"
+      title: "Doğum Gününe Özel Unutulmaz Sürprizler",
+      price: "",
+      discountBadge: "Doğum Günü",
+      image: "/images/slider/banner3_dogum_gunu.jpg",
+      link: "/kategori/dogum-gunu"
+    },
+    {
+      id: 4,
+      title: "Evinize Doğal Zarafet Orkideler",
+      price: "",
+      discountBadge: "Saksı Çiçeği",
+      image: "/images/slider/banner4_orkide.jpg",
+      link: "/kategori/saksi-cicekleri"
     }
   ],
   promoCards: [
-    { title: "Yıl Dönümü Çiçekleri", image: "https://demo.procicek.com.tr/resimler/promo-20260824112940-CJLvi.webp?v=1787560180", link: "/kategori/yil-donumu" },
-    { title: "Geçmiş Olsun Çiçekleri", image: "https://demo.procicek.com.tr/resimler/promo-20260824113311-8oT1K.webp?v=1787560391", link: "/kategori/gecmis-olsun" },
-    { title: "Mevsim Çiçekleri", image: "https://demo.procicek.com.tr/resimler/promo-20260824113531-Q7o8C.webp?v=1787560531", link: "/kategori/mevsim-cicekleri" },
-    { title: "Saksı Çiçekleri", image: "https://demo.procicek.com.tr/resimler/promo-20260824113750-hZD2C.webp?v=1787560670", link: "/kategori/saksi-cicekleri" }
+    { title: "Geçmiş Olsun Çiçekleri", image: "/images/promo/gecmis_olsun.jpg", link: "/kategori/gecmis-olsun" },
+    { title: "Yıl Dönümü Çiçekleri", image: "/images/promo/yil_donumu.jpg", link: "/kategori/yil-donumu" },
+    { title: "Mevsim Çiçekleri", image: "/images/promo/mevsim_cicekleri.jpg", link: "/kategori/mevsim-cicekleri" },
+    { title: "Saksı Çiçekleri", image: "/images/promo/saksi_cicekleri.jpg", link: "/kategori/saksi-cicekleri" }
   ],
   horizontalBanners: [
-    { title: "AÇILIŞ ÇİÇEKLERİ", image: "https://demo.procicek.com.tr/resimler/banner-acilis.webp?v=1787402483", link: "/kategori/acilis-cicekleri" },
-    { title: "EV HEDİYESİ ÇİÇEKLERİ", image: "https://demo.procicek.com.tr/resimler/banner-ev-hediyesi.webp?v=1787402483", link: "/kategori/ev-hediyesi" },
-    { title: "ÖZÜR ÇİÇEKLERİ", image: "https://demo.procicek.com.tr/resimler/banner-ozur.webp?v=1787402484", link: "/kategori/ozur-cicekleri" }
+    { title: "AÇILIŞ & KUTLAMA ÇİÇEKLERİ", image: "/images/banners/acilis.jpg", link: "/kategori/acilis-cicekleri" },
+    { title: "EV HEDİYESİ ÇİÇEKLERİ", image: "/images/banners/ev_hediyesi.jpg", link: "/kategori/ev-hediyesi" },
+    { title: "ÖZÜR & BARIŞMA ÇİÇEKLERİ", image: "/images/banners/ozur.jpg", link: "/kategori/ozur-cicekleri" }
   ]
 };
 
@@ -67,13 +75,15 @@ function saveLocalHero(data: any) {
   } catch (e) {}
 }
 
-const cacheHeaders = {
-  "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300",
+const noCacheHeaders = {
+  "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+  "Pragma": "no-cache",
+  "Expires": "0",
 };
 
 export async function GET() {
   const heroData = await getSetting("hero", getLocalHero());
-  return NextResponse.json(heroData, { headers: cacheHeaders });
+  return NextResponse.json(heroData, { headers: noCacheHeaders });
 }
 
 export async function POST(request: Request) {
@@ -81,9 +91,9 @@ export async function POST(request: Request) {
     const body = await request.json();
     saveLocalHero(body);
     await setSetting("hero", body);
-    return NextResponse.json(body, { status: 201 });
+    return NextResponse.json(body, { status: 201, headers: noCacheHeaders });
   } catch (error) {
-    return NextResponse.json({ error: "Failed to save hero settings" }, { status: 500 });
+    return NextResponse.json({ error: "Failed to save hero settings" }, { status: 500, headers: noCacheHeaders });
   }
 }
 
@@ -92,8 +102,8 @@ export async function PUT(request: Request) {
     const body = await request.json();
     saveLocalHero(body);
     await setSetting("hero", body);
-    return NextResponse.json(body);
+    return NextResponse.json(body, { headers: noCacheHeaders });
   } catch (error) {
-    return NextResponse.json({ error: "Failed to update hero settings" }, { status: 500 });
+    return NextResponse.json({ error: "Failed to update hero settings" }, { status: 500, headers: noCacheHeaders });
   }
 }

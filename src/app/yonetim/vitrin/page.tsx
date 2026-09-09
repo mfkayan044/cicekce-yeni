@@ -16,7 +16,7 @@ export default function AdminVitrinPage() {
 
   const fetchHeroData = async () => {
     try {
-      const res = await fetch("/api/hero");
+      const res = await fetch("/api/hero", { cache: "no-store" });
       const data = await res.json();
       setHeroData(data);
     } catch (e) {
@@ -57,9 +57,11 @@ export default function AdminVitrinPage() {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(heroData),
+        cache: "no-store"
       });
       if (res.ok) {
         alert("Ana Sayfa Slider, Bannerlar ve Görseller başarıyla kaydedildi!");
+        await fetchHeroData();
       } else {
         alert("Kaydetme hatası.");
       }

@@ -100,7 +100,7 @@ export default function CustomerHomePage() {
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
 
   useEffect(() => {
-    fetch("/api/hero")
+    fetch("/api/hero", { cache: "no-store" })
       .then((res) => res.json())
       .then((data) => setHeroData(data))
       .catch(() => {});

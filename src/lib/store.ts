@@ -63,6 +63,16 @@ let globalCart: CartItem[] = [];
 let globalFavorites: Product[] = [];
 if (typeof window !== "undefined") {
   try {
+    const savedProds = localStorage.getItem("pro_flower_products");
+    if (savedProds) {
+      const parsed = JSON.parse(savedProds);
+      if (Array.isArray(parsed)) globalProducts = parsed;
+    }
+    const savedCats = localStorage.getItem("pro_flower_categories");
+    if (savedCats) {
+      const parsed = JSON.parse(savedCats);
+      if (Array.isArray(parsed)) globalCategories = parsed;
+    }
     const savedCart = localStorage.getItem("pro_flower_cart");
     if (savedCart) globalCart = JSON.parse(savedCart);
     const savedFavs = localStorage.getItem("pro_flower_favorites");
@@ -87,8 +97,18 @@ async function fetchFromApi(force = false) {
       fetch("/api/products"),
       fetch("/api/categories"),
     ]);
-    if (pRes.ok) globalProducts = await pRes.json();
-    if (cRes.ok) globalCategories = await cRes.json();
+    if (pRes.ok) {
+      globalProducts = await pRes.json();
+      if (typeof window !== "undefined") {
+        try { localStorage.setItem("pro_flower_products", JSON.stringify(globalProducts)); } catch (e) {}
+      }
+    }
+    if (cRes.ok) {
+      globalCategories = await cRes.json();
+      if (typeof window !== "undefined") {
+        try { localStorage.setItem("pro_flower_categories", JSON.stringify(globalCategories)); } catch (e) {}
+      }
+    }
     lastFetchTime = Date.now();
     listeners.forEach((l) => l());
   } catch (e) {
@@ -117,6 +137,8 @@ export function useStore<T>(selector?: (state: any) => T): any {
       try {
         localStorage.setItem("pro_flower_cart", JSON.stringify(globalCart));
         localStorage.setItem("pro_flower_favorites", JSON.stringify(globalFavorites));
+        localStorage.setItem("pro_flower_products", JSON.stringify(globalProducts));
+        localStorage.setItem("pro_flower_categories", JSON.stringify(globalCategories));
       } catch (e) {}
     }
     listeners.forEach((l) => l());

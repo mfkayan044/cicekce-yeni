@@ -1,25 +1,7 @@
 {
   "products": [
     {
-      "id": "1788939933418",
-      "slug": "beyaz-saksida-cift-dal-mor-orkide",
-      "title": "Beyaz Saksıda Çift Dal Mor Orkide",
-      "category": "Saksı Çiçeği",
-      "categorySlug": "cicekler",
-      "selectedCategorySlugs": [
-        "cicekler"
-      ],
-      "price": "2500 ₺",
-      "oldPrice": "2850 ₺",
-      "discount": "%10",
-      "image": "https://cksauvgjodsduhxtnqwm.supabase.co/storage/v1/object/public/cicekce-uploads/1788939894830-110c9e23.jpg",
-      "code": "DM36",
-      "stock": true,
-      "featured": true,
-      "description": null
-    },
-    {
-      "id": "1788887761819",
+      "id": "1788942548790",
       "slug": "11-kirmizi-gul-ve-husnuyusuf-buketi",
       "title": "11 Kırmızı Gül ve Hüsnüyusuf Buketi",
       "category": "Güller",
@@ -32,13 +14,13 @@
       ],
       "designType": "Buket",
       "recipient": "Sevgiliye",
-      "purpose": "Doğum Günü",
+      "purpose": "Sevgililer Günü",
       "color": "Kırmızı",
       "price": "1500 ₺",
-      "oldPrice": "1650 ₺",
+      "oldPrice": null,
       "discount": "%10",
-      "image": "https://cksauvgjodsduhxtnqwm.supabase.co/storage/v1/object/public/cicekce-uploads/1788887716628-03d3996c.jpg",
-      "code": "DM90",
+      "image": "https://cksauvgjodsduhxtnqwm.supabase.co/storage/v1/object/public/cicekce-uploads/1788942512545-18e5edd5.jpg",
+      "code": "DM68",
       "stock": true,
       "featured": true,
       "description": null

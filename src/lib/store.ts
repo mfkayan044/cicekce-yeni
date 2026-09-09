@@ -10,9 +10,13 @@ export interface Product {
   categorySlug: string;
   selectedCategorySlugs?: string[];
   designType?: string;
+  designTypes?: string[];
   recipient?: string;
+  recipients?: string[];
   purpose?: string;
+  purposes?: string[];
   color?: string;
+  colors?: string[];
   price: string;
   oldPrice?: string;
   discount?: string;

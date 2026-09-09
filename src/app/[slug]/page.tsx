@@ -66,6 +66,57 @@ export default function DynamicCmsPage({ params }: { params: Promise<{ slug: str
   const title = pageData?.title || defaultTitle;
   const content = pageData?.content || "";
 
+  function normalizeSlug(str: string) {
+    if (!str) return "";
+    return str
+      .toString()
+      .toLowerCase()
+      .replace(/ğ/g, "g")
+      .replace(/ü/g, "u")
+      .replace(/ş/g, "s")
+      .replace(/ı/g, "i")
+      .replace(/ö/g, "o")
+      .replace(/ç/g, "c")
+      .replace(/[^a-z0-9]/g, "-")
+      .replace(/-+/g, "-")
+      .replace(/^-|-$/g, "");
+  }
+
+  const targetSlug = normalizeSlug(slug);
+
+  // Filter products by category or filter attributes matching targetSlug
+  const matchedProducts = products.filter((p: Product) => {
+    if (p.stock === false) return false;
+    if (targetSlug === "tum-cicekler" || targetSlug === "cicekler") return true;
+
+    // 1. Check main category slug & category name
+    if (normalizeSlug(p.categorySlug || "") === targetSlug || normalizeSlug(p.category || "") === targetSlug) return true;
+
+    // 2. Check selectedCategorySlugs array
+    const selSlugs = (p as any).selectedCategorySlugs;
+    if (Array.isArray(selSlugs) && selSlugs.some((s: string) => normalizeSlug(s) === targetSlug)) return true;
+
+    // 3. Check designTypes array or designType
+    const dTypes = (p as any).designTypes || [(p as any).designType];
+    if (Array.isArray(dTypes) && dTypes.filter(Boolean).some((dt: string) => normalizeSlug(dt) === targetSlug)) return true;
+
+    // 4. Check recipients array or recipient
+    const recs = (p as any).recipients || [(p as any).recipient];
+    if (Array.isArray(recs) && recs.filter(Boolean).some((r: string) => normalizeSlug(r) === targetSlug)) return true;
+
+    // 5. Check purposes array or purpose
+    const purps = (p as any).purposes || [(p as any).purpose];
+    if (Array.isArray(purps) && purps.filter(Boolean).some((pr: string) => normalizeSlug(pr) === targetSlug)) return true;
+
+    // 6. Check colors array or color
+    const cols = (p as any).colors || [(p as any).color];
+    if (Array.isArray(cols) && cols.filter(Boolean).some((c: string) => normalizeSlug(c) === targetSlug)) return true;
+
+    return false;
+  });
+
+  const displayProducts = matchedProducts.length > 0 ? matchedProducts : products;
+
   return (
     <div className="min-h-screen bg-[#FAF6F0] flex flex-col justify-between font-sans">
       <div>
@@ -98,19 +149,19 @@ export default function DynamicCmsPage({ params }: { params: Promise<{ slug: str
 
         <main className="max-w-[1400px] mx-auto px-4 lg:px-6 py-8 space-y-10">
           {/* Product Grid Section */}
-          {products.length > 0 && (
+          {displayProducts.length > 0 && (
             <section className="space-y-4">
               <div className="flex items-center justify-between">
                 <h2 className="text-xl font-extrabold text-slate-900">
                   {title} - Öne Çıkan Taze Çiçekler
                 </h2>
                 <span className="text-xs font-bold text-slate-500">
-                  {products.length} Çeşit Çiçek Bulundu
+                  {displayProducts.length} Çeşit Çiçek Bulundu
                 </span>
               </div>
 
               <div className={gridColsClass}>
-                {products.map((product: Product) => (
+                {displayProducts.map((product: Product) => (
                   <ProductCard
                     key={product.id}
                     id={product.id}

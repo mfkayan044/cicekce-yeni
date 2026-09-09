@@ -39,14 +39,21 @@ export default function AdminEditProductPage({ params }: { params: Promise<{ id:
     stock: true,
     featured: true,
     selectedCategorySlugs: ["buketler"],
-    designType: "Buket",
-    recipient: "Sevgiliye",
-    purpose: "Doğum Günü",
-    color: "Kırmızı",
+    designTypes: ["Buket"],
+    recipients: ["Sevgiliye"],
+    purposes: ["Doğum Günü"],
+    colors: ["Kırmızı"],
   });
 
   useEffect(() => {
     if (currentProduct) {
+      const p = currentProduct as any;
+      
+      let dTypes: string[] = Array.isArray(p.designTypes) ? p.designTypes : (p.designType ? [p.designType] : ["Buket"]);
+      let recs: string[] = Array.isArray(p.recipients) ? p.recipients : (p.recipient ? [p.recipient] : ["Sevgiliye"]);
+      let purps: string[] = Array.isArray(p.purposes) ? p.purposes : (p.purpose ? [p.purpose] : ["Doğum Günü"]);
+      let cols: string[] = Array.isArray(p.colors) ? p.colors : (p.color ? [p.color] : ["Kırmızı"]);
+
       setForm({
         title: currentProduct.title || "",
         slug: currentProduct.slug || "",
@@ -62,13 +69,11 @@ export default function AdminEditProductPage({ params }: { params: Promise<{ id:
         seoKeywords: "çiçek, buket, orkide, gül",
         stock: currentProduct.stock !== undefined ? currentProduct.stock : true,
         featured: currentProduct.featured !== undefined ? currentProduct.featured : true,
-        selectedCategorySlugs: (currentProduct as any).selectedCategorySlugs || [
-          currentProduct.categorySlug || "buketler",
-        ],
-        designType: (currentProduct as any).designType || "Buket",
-        recipient: (currentProduct as any).recipient || "Sevgiliye",
-        purpose: (currentProduct as any).purpose || "Doğum Günü",
-        color: (currentProduct as any).color || "Kırmızı",
+        selectedCategorySlugs: p.selectedCategorySlugs || [currentProduct.categorySlug || "buketler"],
+        designTypes: dTypes,
+        recipients: recs,
+        purposes: purps,
+        colors: cols,
       });
     }
   }, [currentProduct]);
@@ -110,6 +115,16 @@ export default function AdminEditProductPage({ params }: { params: Promise<{ id:
     setForm({ ...form, selectedCategorySlugs: updated });
   };
 
+  const toggleMultiFilter = (field: "designTypes" | "recipients" | "purposes" | "colors", val: string) => {
+    let currentList = Array.isArray(form[field]) ? [...form[field]] : [];
+    if (currentList.includes(val)) {
+      currentList = currentList.filter(item => item !== val);
+    } else {
+      currentList.push(val);
+    }
+    setForm({ ...form, [field]: currentList });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.title) {
@@ -139,13 +154,17 @@ export default function AdminEditProductPage({ params }: { params: Promise<{ id:
       description: form.description,
       stock: form.stock,
       featured: form.featured,
-      designType: form.designType,
-      recipient: form.recipient,
-      purpose: form.purpose,
-      color: form.color,
+      designType: form.designTypes[0] || "Buket",
+      designTypes: form.designTypes,
+      recipient: form.recipients[0] || "Sevgiliye",
+      recipients: form.recipients,
+      purpose: form.purposes[0] || "Doğum Günü",
+      purposes: form.purposes,
+      color: form.colors[0] || "Kırmızı",
+      colors: form.colors,
     } as any);
 
-    alert("Ürün ve kategori seçimleri başarıyla kaydedildi! Ürün artık sadece seçtiğiniz kategorilerde görüntülenecektir.");
+    alert("Ürün ve kategori seçimleri başarıyla kaydedildi! Ürün seçtiğiniz tüm kategorilerde ve filtrelerde aktif olacaktır.");
     router.push("/yonetim/urunler");
   };
 
@@ -423,65 +442,87 @@ export default function AdminEditProductPage({ params }: { params: Promise<{ id:
                   </div>
                 </div>
 
-                {/* Filter Attributes Pills */}
+                {/* Filter Attributes Pills (Multi-Selectable) */}
                 <div className="card shadow-sm border-0">
-                  <div className="card-header bg-white fw-bold border-bottom">
-                    🎨 Filtre Özellikleri <a href="/yonetim/filtreler" target="_blank" className="btn btn-xs btn-outline-primary ms-3">⚙️ Filtre Ekle / Çıkar (Filtre Yönetimi)</a>
+                  <div className="card-header bg-white fw-bold border-bottom d-flex align-items-center justify-content-between">
+                    <span>🎨 Filtre Özellikleri (Çoklu Seçilebilir)</span>
+                    <a href="/yonetim/filtreler" target="_blank" className="btn btn-xs btn-outline-primary">⚙️ Filtre Yönetimi</a>
                   </div>
                   <div className="card-body">
+                    {/* Tasarım Tipi */}
                     <div className="mb-3">
-                      <label className="form-label fw-bold small text-muted">Tasarım Tipi</label>
+                      <label className="form-label fw-bold small text-muted">
+                        Tasarım Tipi <span className="text-primary font-normal">({form.designTypes.length} Seçili)</span>
+                      </label>
                       <div className="d-flex flex-wrap gap-1">
-                        {(dynamicFilters?.designTypes || ["Buket", "Kutuda", "Aranjman", "Vazoda", "Tasarım"]).map((t: string) => (
-                          <span
-                            key={t}
-                            onClick={() => setForm({ ...form, designType: t })}
-                            className={`badge border px-3 py-2 cursor-pointer ${
-                              form.designType === t ? "bg-primary text-white" : "bg-light text-dark"
-                            }`}
-                          >
-                            {t}
-                          </span>
-                        ))}
+                        {(dynamicFilters?.designTypes || ["Buket", "Kutuda", "Aranjman", "Vazoda", "Tasarım", "Ayaklı Sepet", "Saksı"]).map((t: string) => {
+                          const isSelected = form.designTypes.includes(t);
+                          return (
+                            <span
+                              key={t}
+                              onClick={() => toggleMultiFilter("designTypes", t)}
+                              className={`badge border px-3 py-2 cursor-pointer transition ${
+                                isSelected ? "bg-primary text-white shadow-sm" : "bg-light text-dark hover:bg-slate-200"
+                              }`}
+                            >
+                              {t} {isSelected && "✓"}
+                            </span>
+                          );
+                        })}
                       </div>
                     </div>
 
+                    {/* Kime */}
                     <div className="mb-3">
-                      <label className="form-label fw-bold small text-muted">Kime</label>
+                      <label className="form-label fw-bold small text-muted">
+                        Kime <span className="text-primary font-normal">({form.recipients.length} Seçili)</span>
+                      </label>
                       <div className="d-flex flex-wrap gap-1">
-                        {(dynamicFilters?.recipients || ["Sevgiliye", "Anneye", "Eşe", "Arkadaşa", "İş Arkadaşına", "Kendine"]).map((r: string) => (
-                          <span
-                            key={r}
-                            onClick={() => setForm({ ...form, recipient: r })}
-                            className={`badge border px-3 py-2 cursor-pointer ${
-                              form.recipient === r ? "bg-primary text-white" : "bg-light text-dark"
-                            }`}
-                          >
-                            {r}
-                          </span>
-                        ))}
+                        {(dynamicFilters?.recipients || ["Sevgiliye", "Anneye", "Eşe", "Arkadaşa", "İş Arkadaşına", "Kendine", "Öğretmene"]).map((r: string) => {
+                          const isSelected = form.recipients.includes(r);
+                          return (
+                            <span
+                              key={r}
+                              onClick={() => toggleMultiFilter("recipients", r)}
+                              className={`badge border px-3 py-2 cursor-pointer transition ${
+                                isSelected ? "bg-primary text-white shadow-sm" : "bg-light text-dark hover:bg-slate-200"
+                              }`}
+                            >
+                              {r} {isSelected && "✓"}
+                            </span>
+                          );
+                        })}
                       </div>
                     </div>
 
+                    {/* Gönderim Amacı */}
                     <div className="mb-3">
-                      <label className="form-label fw-bold small text-muted">Gönderim Amacı</label>
+                      <label className="form-label fw-bold small text-muted">
+                        Gönderim Amacı <span className="text-primary font-normal">({form.purposes.length} Seçili)</span>
+                      </label>
                       <div className="d-flex flex-wrap gap-1">
-                        {(dynamicFilters?.purposes || ["Doğum Günü", "Yıl Dönümü", "Geçmiş Olsun", "Kutlama", "Özür", "Tebrik", "Sevgililer Günü"]).map((p: string) => (
-                          <span
-                            key={p}
-                            onClick={() => setForm({ ...form, purpose: p })}
-                            className={`badge border px-3 py-2 cursor-pointer ${
-                              form.purpose === p ? "bg-primary text-white" : "bg-light text-dark"
-                            }`}
-                          >
-                            {p}
-                          </span>
-                        ))}
+                        {(dynamicFilters?.purposes || ["Doğum Günü", "Yıl Dönümü", "Geçmiş Olsun", "Kutlama", "Özür", "Tebrik", "Sevgililer Günü", "Yeni Bebek", "Düğün Nişan", "Açılış"]).map((p: string) => {
+                          const isSelected = form.purposes.includes(p);
+                          return (
+                            <span
+                              key={p}
+                              onClick={() => toggleMultiFilter("purposes", p)}
+                              className={`badge border px-3 py-2 cursor-pointer transition ${
+                                isSelected ? "bg-primary text-white shadow-sm" : "bg-light text-dark hover:bg-slate-200"
+                              }`}
+                            >
+                              {p} {isSelected && "✓"}
+                            </span>
+                          );
+                        })}
                       </div>
                     </div>
 
+                    {/* Renk */}
                     <div className="mb-4">
-                      <label className="form-label fw-bold small text-muted">Renk</label>
+                      <label className="form-label fw-bold small text-muted">
+                        Renk <span className="text-primary font-normal">({form.colors.length} Seçili)</span>
+                      </label>
                       <div className="d-flex flex-wrap gap-2">
                         {(dynamicFilters?.colors || [
                           { name: "Kırmızı", dot: "🔴" },
@@ -492,19 +533,23 @@ export default function AdminEditProductPage({ params }: { params: Promise<{ id:
                           { name: "Mor", dot: "🟣" },
                           { name: "Mavi", dot: "🔵" },
                           { name: "Karışık", dot: "🎨" },
-                        ]).map((c: any) => (
-                          <button
-                            key={c.name}
-                            type="button"
-                            onClick={() => setForm({ ...form, color: c.name })}
-                            className={`btn btn-sm border d-flex align-items-center gap-1 ${
-                              form.color === c.name ? "btn-primary" : "btn-light"
-                            }`}
-                          >
-                            <span>{c.dot}</span>
-                            <span>{c.name}</span>
-                          </button>
-                        ))}
+                        ]).map((c: any) => {
+                          const isSelected = form.colors.includes(c.name);
+                          return (
+                            <button
+                              key={c.name}
+                              type="button"
+                              onClick={() => toggleMultiFilter("colors", c.name)}
+                              className={`btn btn-sm border d-flex align-items-center gap-1 transition ${
+                                isSelected ? "btn-primary shadow-sm text-white" : "btn-light text-dark"
+                              }`}
+                            >
+                              <span>{c.dot}</span>
+                              <span>{c.name}</span>
+                              {isSelected && <span className="ms-1 fw-bold">✓</span>}
+                            </button>
+                          );
+                        })}
                       </div>
                     </div>
 
@@ -515,7 +560,7 @@ export default function AdminEditProductPage({ params }: { params: Promise<{ id:
                 </div>
               </div>
 
-              {/* Right Column: Product Image Large Preview */}
+              {/* Right Column: Seçilen Kategoriler Box with Clickable Links */}
               <div className="col-12 col-lg-4">
                 <div className="card shadow-sm border-0 sticky-top" style={{ top: "90px" }}>
                   <div className="card-header bg-white fw-bold border-bottom">
@@ -524,11 +569,18 @@ export default function AdminEditProductPage({ params }: { params: Promise<{ id:
                   <div className="card-body p-3">
                     <div className="mb-3">
                       <div className="small fw-bold text-muted mb-2">Bu Ürünün Yayınlanacağı Sayfalar:</div>
-                      <div className="d-flex flex-wrap gap-1">
+                      <div className="d-flex flex-wrap gap-1.5">
                         {form.selectedCategorySlugs.map((s) => (
-                          <span key={s} className="badge bg-label-success">
-                            /kategori/{s}
-                          </span>
+                          <a
+                            key={s}
+                            href={`/kategori/${s}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="badge bg-success text-white text-decoration-none px-2.5 py-1.5 transition hover:opacity-85 shadow-2xs"
+                            title="Canlı kategori sayfasında görüntüle"
+                          >
+                            /kategori/{s} ↗
+                          </a>
                         ))}
                       </div>
                     </div>

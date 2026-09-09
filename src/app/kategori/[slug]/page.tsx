@@ -98,26 +98,30 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
     }
 
     // 4. Check Filter Purpose (Gönderim Amacı e.g. "Yıl Dönümü", "Geçmiş Olsun", "Doğum Günü")
-    if ((p as any).purpose) {
-      const purposeSlug = normalizeSlug((p as any).purpose);
-      if (purposeSlug === targetSlug || targetSlug.includes(purposeSlug) || purposeSlug.includes(targetSlug)) {
-        return true;
-      }
+    const purps = (p as any).purposes || [(p as any).purpose];
+    if (Array.isArray(purps) && purps.filter(Boolean).some((pr: string) => {
+      const pSlug = normalizeSlug(pr);
+      return pSlug === targetSlug || targetSlug.includes(pSlug) || pSlug.includes(targetSlug);
+    })) {
+      return true;
     }
 
     // 5. Check Recipient (Kime e.g. "Sevgiliye", "Anneye")
-    if ((p as any).recipient) {
-      if (normalizeSlug((p as any).recipient) === targetSlug) return true;
+    const recs = (p as any).recipients || [(p as any).recipient];
+    if (Array.isArray(recs) && recs.filter(Boolean).some((r: string) => normalizeSlug(r) === targetSlug)) {
+      return true;
     }
 
     // 6. Check Color (Renk e.g. "Kırmızı", "Beyaz")
-    if ((p as any).color) {
-      if (normalizeSlug((p as any).color) === targetSlug) return true;
+    const cols = (p as any).colors || [(p as any).color];
+    if (Array.isArray(cols) && cols.filter(Boolean).some((c: string) => normalizeSlug(c) === targetSlug)) {
+      return true;
     }
 
     // 7. Check Design Type (Tasarım Tipi e.g. "Buket", "Aranjman")
-    if ((p as any).designType) {
-      if (normalizeSlug((p as any).designType) === targetSlug) return true;
+    const dTypes = (p as any).designTypes || [(p as any).designType];
+    if (Array.isArray(dTypes) && dTypes.filter(Boolean).some((dt: string) => normalizeSlug(dt) === targetSlug)) {
+      return true;
     }
 
     return false;

@@ -38,12 +38,28 @@ function writeDbAndTs(dbObj: any) {
   } catch (e) {}
 }
 
+function slugifyTurkish(text: string): string {
+  if (!text) return "";
+  return text
+    .toString()
+    .toLowerCase()
+    .replace(/ğ/g, "g")
+    .replace(/ü/g, "u")
+    .replace(/ş/g, "s")
+    .replace(/ı/g, "i")
+    .replace(/ö/g, "o")
+    .replace(/ç/g, "c")
+    .replace(/[^a-z0-9]/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
 let cachedProducts: any[] | null = null;
 let cachedProductsTime = 0;
-const CACHE_TTL_MS = 60 * 1000; // 60 seconds
+const CACHE_TTL_MS = 10 * 1000; // 10s short cache
 
 const cacheHeaders = {
-  "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300",
+  "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
 };
 
 export async function GET() {
@@ -72,7 +88,7 @@ export async function GET() {
           }
           return {
             id: String(sbP.id),
-            slug: sbP.slug || String(sbP.id),
+            slug: sbP.slug || slugifyTurkish(sbP.title) || String(sbP.id),
             title: sbP.title,
             category: sbP.category || "Genel",
             categorySlug: fallbackSlug,
@@ -190,7 +206,7 @@ export async function POST(request: Request) {
 
     const newProduct = {
       id: body.id || String(Date.now()),
-      slug: body.slug || (body.title ? body.title.toLowerCase().replace(/[^a-z0-9]+/g, "-") : "urun"),
+      slug: body.slug || (body.title ? slugifyTurkish(body.title) : "urun"),
       title: body.title || "Yeni Ürün",
       category: body.category || "Genel",
       categorySlug: catSlug,

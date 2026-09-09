@@ -319,7 +319,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
           {/* Left Column: Product Image with Mouse Hover Zoom */}
           <div className="w-full">
             <div
-              className="product-detail-image-box relative rounded-3xl overflow-hidden bg-white border border-slate-200 shadow-sm cursor-zoom-in aspect-[4/3] max-h-[500px]"
+              className="product-detail-image-box relative rounded-3xl overflow-hidden bg-white border border-slate-200 shadow-sm cursor-zoom-in aspect-square max-h-[520px] flex items-center justify-center p-2"
               onMouseEnter={() => setIsHovered(true)}
               onMouseLeave={() => setIsHovered(false)}
               onMouseMove={handleMouseMove}
@@ -337,7 +337,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
                   transformOrigin: `${zoomPos.x}% ${zoomPos.y}%`,
                   transform: isHovered ? "scale(2.2)" : "scale(1)",
                 }}
-                className="w-full h-full object-cover transition-transform duration-150 ease-out"
+                className="w-full h-full object-contain rounded-2xl transition-transform duration-150 ease-out"
               />
 
               {/* Hover Lens Badge */}

@@ -156,24 +156,24 @@ export const initialDbData: any = {
     ],
     "promoCards": [
       {
-        "title": "Yıl Dönümü Çiçekleri",
-        "image": "https://demo.procicek.com.tr/resimler/promo-20260824112940-CJLvi.webp",
-        "link": "kategori/gecmis-olsun"
+        "title": "Geçmiş Olsun Çiçekleri",
+        "image": "/images/promo/gecmis_olsun.jpg",
+        "link": "/kategori/gecmis-olsun"
       },
       {
-        "title": "Geçmiş Olsun Çiçekleri",
-        "image": "https://demo.procicek.com.tr/resimler/promo-20260824113311-8oT1K.webp",
-        "link": "kategori/yil-donumu"
+        "title": "Yıl Dönümü Çiçekleri",
+        "image": "/images/promo/yil_donumu.jpg",
+        "link": "/kategori/yil-donumu"
       },
       {
         "title": "Mevsim Çiçekleri",
-        "image": "https://demo.procicek.com.tr/resimler/promo-20260824113531-Q7o8C.webp",
-        "link": "kategori/mevsim-cicekleri"
+        "image": "/images/promo/mevsim_cicekleri.jpg",
+        "link": "/kategori/mevsim-cicekleri"
       },
       {
         "title": "Saksı Çiçekleri",
-        "image": "https://demo.procicek.com.tr/resimler/promo-20260824113750-hZD2C.webp",
-        "link": "kategori/saksi-cicekleri"
+        "image": "/images/promo/saksi_cicekleri.jpg",
+        "link": "/kategori/saksi-cicekleri"
       }
     ],
     "horizontalBanners": [

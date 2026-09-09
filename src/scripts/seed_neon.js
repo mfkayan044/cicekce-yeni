@@ -28,6 +28,11 @@ async function main() {
       title TEXT NOT NULL,
       category TEXT,
       category_slug TEXT,
+      selected_category_slugs JSONB,
+      design_type TEXT,
+      recipient TEXT,
+      purpose TEXT,
+      color TEXT,
       price TEXT NOT NULL,
       old_price TEXT,
       discount TEXT,
@@ -39,6 +44,12 @@ async function main() {
       created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
     );
   `;
+
+  await sql`ALTER TABLE products ADD COLUMN IF NOT EXISTS selected_category_slugs JSONB;`;
+  await sql`ALTER TABLE products ADD COLUMN IF NOT EXISTS design_type TEXT;`;
+  await sql`ALTER TABLE products ADD COLUMN IF NOT EXISTS recipient TEXT;`;
+  await sql`ALTER TABLE products ADD COLUMN IF NOT EXISTS purpose TEXT;`;
+  await sql`ALTER TABLE products ADD COLUMN IF NOT EXISTS color TEXT;`;
 
   await sql`
     CREATE TABLE IF NOT EXISTS orders (
@@ -148,14 +159,24 @@ async function main() {
   if (Array.isArray(db.products) && db.products.length > 0) {
     console.log(`🌸 Seeding ${db.products.length} Products...`);
     for (const p of db.products) {
+      const selectedSlugs = JSON.stringify(p.selectedCategorySlugs || [p.categorySlug || p.category_slug || "cicekler"]);
       await sql`
-        INSERT INTO products (id, slug, title, category, category_slug, price, old_price, discount, image, code, stock, featured, description)
+        INSERT INTO products (
+          id, slug, title, category, category_slug, selected_category_slugs,
+          design_type, recipient, purpose, color,
+          price, old_price, discount, image, code, stock, featured, description
+        )
         VALUES (
           ${String(p.id)},
           ${p.slug || String(p.id)},
           ${p.title || "Çiçek"},
           ${p.category || "Genel"},
           ${p.categorySlug || p.category_slug || "cicekler"},
+          ${selectedSlugs},
+          ${p.designType || null},
+          ${p.recipient || null},
+          ${p.purpose || null},
+          ${p.color || null},
           ${String(p.price || "0 ₺")},
           ${p.oldPrice || p.old_price || null},
           ${p.discount || null},
@@ -166,12 +187,23 @@ async function main() {
           ${p.description || null}
         )
         ON CONFLICT (id) DO UPDATE SET
+          slug = EXCLUDED.slug,
           title = EXCLUDED.title,
           category = EXCLUDED.category,
+          category_slug = EXCLUDED.category_slug,
+          selected_category_slugs = EXCLUDED.selected_category_slugs,
+          design_type = EXCLUDED.design_type,
+          recipient = EXCLUDED.recipient,
+          purpose = EXCLUDED.purpose,
+          color = EXCLUDED.color,
           price = EXCLUDED.price,
+          old_price = EXCLUDED.old_price,
+          discount = EXCLUDED.discount,
           image = EXCLUDED.image,
+          code = EXCLUDED.code,
           stock = EXCLUDED.stock,
-          featured = EXCLUDED.featured;
+          featured = EXCLUDED.featured,
+          description = EXCLUDED.description;
       `;
     }
   }

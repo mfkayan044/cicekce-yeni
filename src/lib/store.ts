@@ -8,6 +8,11 @@ export interface Product {
   title: string;
   category: string;
   categorySlug: string;
+  selectedCategorySlugs?: string[];
+  designType?: string;
+  recipient?: string;
+  purpose?: string;
+  color?: string;
   price: string;
   oldPrice?: string;
   discount?: string;
@@ -142,6 +147,10 @@ export function useStore<T>(selector?: (state: any) => T): any {
     },
 
     updateProduct: async (id: string, updatedFields: Partial<Product>) => {
+      globalProducts = globalProducts.map((p: any) =>
+        String(p.id) === String(id) ? { ...p, ...updatedFields } : p
+      );
+      notify();
       try {
         const res = await fetch("/api/products", {
           method: "PUT",
@@ -149,7 +158,7 @@ export function useStore<T>(selector?: (state: any) => T): any {
           body: JSON.stringify({ id, ...updatedFields }),
         });
         if (res.ok) {
-          await fetchFromApi();
+          await fetchFromApi(true);
         }
       } catch (e) {
         console.error(e);

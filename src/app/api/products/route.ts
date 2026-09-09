@@ -62,21 +62,35 @@ export async function GET() {
     try {
       const data = await sql`SELECT * FROM products ORDER BY created_at DESC`;
       if (Array.isArray(data)) {
-        const merged = data.map((sbP: any) => ({
-          id: String(sbP.id),
-          slug: sbP.slug || String(sbP.id),
-          title: sbP.title,
-          category: sbP.category || "Genel",
-          categorySlug: sbP.category_slug || "cicekler",
-          price: sbP.price,
-          oldPrice: sbP.old_price,
-          discount: sbP.discount,
-          image: sbP.image,
-          code: sbP.code || `DM${sbP.id}`,
-          stock: sbP.stock !== false,
-          featured: sbP.featured === true,
-          description: sbP.description
-        }));
+        const merged = data.map((sbP: any) => {
+          const fallbackSlug = sbP.category_slug || "cicekler";
+          let parsedSlugs = [fallbackSlug];
+          if (Array.isArray(sbP.selected_category_slugs)) {
+            parsedSlugs = sbP.selected_category_slugs;
+          } else if (typeof sbP.selected_category_slugs === "string") {
+            try { parsedSlugs = JSON.parse(sbP.selected_category_slugs); } catch (e) {}
+          }
+          return {
+            id: String(sbP.id),
+            slug: sbP.slug || String(sbP.id),
+            title: sbP.title,
+            category: sbP.category || "Genel",
+            categorySlug: fallbackSlug,
+            selectedCategorySlugs: parsedSlugs,
+            designType: sbP.design_type || undefined,
+            recipient: sbP.recipient || undefined,
+            purpose: sbP.purpose || undefined,
+            color: sbP.color || undefined,
+            price: sbP.price,
+            oldPrice: sbP.old_price,
+            discount: sbP.discount,
+            image: sbP.image,
+            code: sbP.code || `DM${sbP.id}`,
+            stock: sbP.stock !== false,
+            featured: sbP.featured === true,
+            description: sbP.description
+          };
+        });
         cachedProducts = merged;
         cachedProductsTime = Date.now();
         return NextResponse.json(merged, { headers: cacheHeaders });
@@ -169,25 +183,35 @@ export async function POST(request: Request) {
     const dbObj = readDb();
     let productsList = dbObj.products || [];
 
+    const catSlug = body.categorySlug || body.category_slug || "cicekler";
+    const selCategorySlugs = body.selectedCategorySlugs && Array.isArray(body.selectedCategorySlugs) && body.selectedCategorySlugs.length > 0
+      ? body.selectedCategorySlugs
+      : [catSlug];
+
     const newProduct = {
       id: body.id || String(Date.now()),
       slug: body.slug || (body.title ? body.title.toLowerCase().replace(/[^a-z0-9]+/g, "-") : "urun"),
       title: body.title || "Yeni Ürün",
       category: body.category || "Genel",
-      categorySlug: body.categorySlug || body.category_slug || "cicekler",
+      categorySlug: catSlug,
+      selectedCategorySlugs: selCategorySlugs,
+      designType: body.designType || null,
+      recipient: body.recipient || null,
+      purpose: body.purpose || null,
+      color: body.color || null,
       price: String(body.price || "0 ₺"),
-      oldPrice: body.oldPrice || body.old_price,
-      discount: body.discount,
-      image: body.image,
+      oldPrice: body.oldPrice || body.old_price || null,
+      discount: body.discount || null,
+      image: body.image || null,
       code: body.code || "DM" + Math.floor(10 + Math.random() * 89),
       stock: body.stock !== false,
       featured: body.featured === true,
-      description: body.description
+      description: body.description || null
     };
 
     const existingIdx = productsList.findIndex((p: any) => String(p.id) === String(newProduct.id));
     if (existingIdx >= 0) {
-      productsList[existingIdx] = { ...productsList[existingIdx], ...newProduct };
+      productsList[existingIdx] = { ...productsList[existingIdx], ...body, ...newProduct };
     } else {
       productsList.unshift(newProduct);
     }
@@ -198,27 +222,41 @@ export async function POST(request: Request) {
 
     try {
       await sql`
-        INSERT INTO products (id, slug, title, category, category_slug, price, old_price, discount, image, code, stock, featured, description)
+        INSERT INTO products (
+          id, slug, title, category, category_slug, selected_category_slugs,
+          design_type, recipient, purpose, color,
+          price, old_price, discount, image, code, stock, featured, description
+        )
         VALUES (
           ${String(newProduct.id)},
           ${newProduct.slug},
           ${newProduct.title},
           ${newProduct.category},
           ${newProduct.categorySlug},
+          ${JSON.stringify(newProduct.selectedCategorySlugs)},
+          ${newProduct.designType},
+          ${newProduct.recipient},
+          ${newProduct.purpose},
+          ${newProduct.color},
           ${newProduct.price},
-          ${newProduct.oldPrice || null},
-          ${newProduct.discount || null},
-          ${newProduct.image || null},
+          ${newProduct.oldPrice},
+          ${newProduct.discount},
+          ${newProduct.image},
           ${newProduct.code},
-          ${newProduct.stock !== false},
-          ${newProduct.featured === true},
-          ${newProduct.description || null}
+          ${newProduct.stock},
+          ${newProduct.featured},
+          ${newProduct.description}
         )
         ON CONFLICT (id) DO UPDATE SET
           slug = EXCLUDED.slug,
           title = EXCLUDED.title,
           category = EXCLUDED.category,
           category_slug = EXCLUDED.category_slug,
+          selected_category_slugs = EXCLUDED.selected_category_slugs,
+          design_type = EXCLUDED.design_type,
+          recipient = EXCLUDED.recipient,
+          purpose = EXCLUDED.purpose,
+          color = EXCLUDED.color,
           price = EXCLUDED.price,
           old_price = EXCLUDED.old_price,
           discount = EXCLUDED.discount,
@@ -228,7 +266,9 @@ export async function POST(request: Request) {
           featured = EXCLUDED.featured,
           description = EXCLUDED.description;
       `;
-    } catch (neonErr) {}
+    } catch (neonErr) {
+      console.error("Neon product upsert error:", neonErr);
+    }
 
     return NextResponse.json(newProduct, { status: 201 });
   } catch (error: any) {
@@ -258,4 +298,8 @@ export async function DELETE(request: Request) {
   } catch (error) {
     return NextResponse.json({ error: "Failed to delete product" }, { status: 500 });
   }
+}
+
+export async function PUT(request: Request) {
+  return POST(request);
 }

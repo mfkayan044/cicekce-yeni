@@ -155,8 +155,9 @@ async function main() {
     }
   }
 
-  // 4. Seed Products
-  if (Array.isArray(db.products) && db.products.length > 0) {
+  // 4. Seed Products (Only if table is completely empty)
+  const existingProductsCount = await sql`SELECT count(*)::int FROM products`;
+  if ((existingProductsCount[0]?.count || 0) === 0 && Array.isArray(db.products) && db.products.length > 0) {
     console.log(`🌸 Seeding ${db.products.length} Products...`);
     for (const p of db.products) {
       const selectedSlugs = JSON.stringify(p.selectedCategorySlugs || [p.categorySlug || p.category_slug || "cicekler"]);

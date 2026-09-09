@@ -169,7 +169,10 @@ export function useStore<T>(selector?: (state: any) => T): any {
       globalProducts = globalProducts.filter((p: any) => String(p.id) !== String(id));
       notify();
       try {
-        await fetch(`/api/products?id=${id}`, { method: "DELETE" });
+        const res = await fetch(`/api/products?id=${id}`, { method: "DELETE" });
+        if (res.ok) {
+          await fetchFromApi(true);
+        }
       } catch (e) {
         console.error(e);
       }

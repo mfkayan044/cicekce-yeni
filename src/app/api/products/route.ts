@@ -289,6 +289,7 @@ export async function DELETE(request: Request) {
     dbObj.products = (dbObj.products || []).filter((p: any) => String(p.id) !== String(id));
     writeDbAndTs(dbObj);
     cachedProducts = null;
+    cachedProductsTime = 0;
 
     try {
       await sql`DELETE FROM products WHERE id = ${String(id)}`;

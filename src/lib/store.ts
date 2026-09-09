@@ -180,6 +180,10 @@ export function useStore<T>(selector?: (state: any) => T): any {
 
     // Category CRUD Operations via API
     updateCategory: async (id: string, updatedFields: Partial<CategoryItem>) => {
+      globalCategories = globalCategories.map((c: any) =>
+        String(c.id) === String(id) ? { ...c, ...updatedFields } : c
+      );
+      notify();
       try {
         const res = await fetch("/api/categories", {
           method: "PUT",
@@ -187,7 +191,7 @@ export function useStore<T>(selector?: (state: any) => T): any {
           body: JSON.stringify({ id, ...updatedFields }),
         });
         if (res.ok) {
-          await fetchFromApi();
+          await fetchFromApi(true);
         }
       } catch (e) {
         console.error(e);
@@ -202,7 +206,7 @@ export function useStore<T>(selector?: (state: any) => T): any {
           body: JSON.stringify(newCat),
         });
         if (res.ok) {
-          await fetchFromApi();
+          await fetchFromApi(true);
         }
       } catch (e) {
         console.error(e);
@@ -210,10 +214,12 @@ export function useStore<T>(selector?: (state: any) => T): any {
     },
 
     deleteCategory: async (id: string) => {
+      globalCategories = globalCategories.filter((c: any) => String(c.id) !== String(id));
+      notify();
       try {
         const res = await fetch(`/api/categories?id=${id}`, { method: "DELETE" });
         if (res.ok) {
-          await fetchFromApi();
+          await fetchFromApi(true);
         }
       } catch (e) {
         console.error(e);

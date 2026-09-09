@@ -29,10 +29,10 @@ export default function AdminCategoriesPage() {
     reader.readAsDataURL(file);
   };
 
-  const handleSaveEdit = (id: string) => {
-    updateCategory(id, editForm);
+  const handleSaveEdit = async (id: string) => {
+    await updateCategory(id, editForm);
     setEditingId(null);
-    setToastMsg("Kategori hikaye görseli güncellendi ve mağazada yayına alındı!");
+    setToastMsg("Kategori ismi ve görseli başarıyla güncellendi ve Neon veritabanına kaydedildi!");
     setTimeout(() => setToastMsg(""), 3000);
   };
 

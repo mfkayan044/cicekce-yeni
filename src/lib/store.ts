@@ -71,8 +71,15 @@ if (typeof window !== "undefined") {
     if (savedProds) {
       const parsed = JSON.parse(savedProds);
       if (Array.isArray(parsed) && parsed.length > 0) {
-        const hasCorrupted = parsed.some((p: any) => p.title === "Yeni Ürün" || p.title === "urun" || !p.title);
-        if (!hasCorrupted) {
+        const hasCorruptedOrDemo = parsed.some((p: any) =>
+          p.title === "Yeni Ürün" ||
+          p.title === "urun" ||
+          !p.title ||
+          (p.title && p.title.includes("Gerbera")) ||
+          (p.title && p.title.includes("Biçme")) ||
+          (p.title && p.title.includes("İhtişam Buketi"))
+        );
+        if (!hasCorruptedOrDemo) {
           globalProducts = parsed;
         } else {
           try { localStorage.removeItem("pro_flower_products"); } catch (e) {}

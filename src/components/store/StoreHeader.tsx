@@ -191,10 +191,13 @@ export default function StoreHeader({ onOpenAssistant }: { onOpenAssistant?: () 
             <button id="searchOpen" type="button" onClick={() => setSearchOpen(!searchOpen)} aria-label="Ara" className="lg:hidden shrink-0 flex items-center justify-center w-8 h-8 lg:w-11 lg:h-11 border border-slate-200 hover:border-[#2b2623] text-slate-700 rounded-lg transition">
               <Search className="w-4 h-4" />
             </button>
-            <button type="button" className="aio-open aio-hdr-btn hidden lg:flex shrink-0 items-center gap-2" aria-label="Sipariş Asistanı" onClick={onOpenAssistant}>
-              <Headphones className="w-4 h-4" />
-              <span className="whitespace-nowrap">Sipariş Asistanı</span>
-            </button>
+            <Link
+              href="/abonelik"
+              className="hidden lg:flex shrink-0 items-center gap-2 border border-slate-200 hover:border-[#2b2623] hover:text-[#2b2623] text-slate-700 font-semibold text-sm rounded-lg px-4 py-2.5 transition"
+            >
+              <Sparkles className="w-4 h-4 text-amber-500" />
+              <span className="whitespace-nowrap">Çiçek Aboneliği</span>
+            </Link>
             <Link href="/siparis-takip" className="hidden lg:flex shrink-0 items-center gap-2 border border-slate-200 hover:border-[#2b2623] hover:text-[#2b2623] text-slate-700 font-semibold text-sm rounded-lg px-4 py-2.5 transition">
               <Package className="w-4 h-4" />
               <span className="whitespace-nowrap">Sipariş Takip</span>
@@ -421,17 +424,14 @@ export default function StoreHeader({ onOpenAssistant }: { onOpenAssistant?: () 
             <Package className="w-4 h-4 text-slate-600" />
             <span>Sipariş Takip</span>
           </Link>
-          <button
-            type="button"
-            onClick={() => {
-              setMobileMenuOpen(false);
-              if (onOpenAssistant) onOpenAssistant();
-            }}
-            className="w-full flex items-center gap-2.5 p-2.5 rounded-xl text-xs font-bold text-slate-800 hover:bg-slate-100 text-left"
+          <Link
+            href="/abonelik"
+            onClick={() => setMobileMenuOpen(false)}
+            className="flex items-center gap-2.5 p-2.5 rounded-xl text-xs font-bold text-slate-800 hover:bg-slate-100"
           >
-            <Headphones className="w-4 h-4 text-slate-600" />
-            <span>Sipariş Asistanı</span>
-          </button>
+            <Sparkles className="w-4 h-4 text-amber-500" />
+            <span>Çiçek Aboneliği</span>
+          </Link>
           <Link
             href="/favoriler"
             onClick={() => setMobileMenuOpen(false)}

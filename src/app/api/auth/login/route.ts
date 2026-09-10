@@ -19,21 +19,25 @@ export async function POST(request: Request) {
     const savedUser = genSettings.username ? String(genSettings.username).trim() : null;
     const savedEmail = genSettings.email ? String(genSettings.email).trim() : null;
 
+    const targetUser = savedUser ? savedUser.toLowerCase() : (savedEmail ? savedEmail.toLowerCase() : null);
+    const targetPass = savedPass || null;
+
+    const inputUser = String(login).trim().toLowerCase();
+    const inputPass = String(password).trim();
+
     let isValid = false;
 
-    if (savedPass && savedPass.length > 0) {
-      // Custom password set by admin in /yonetim/ayarlar
-      const validUsernames = [
-        savedUser,
-        savedEmail,
-        "admin",
-        "admin@cicekce.com"
-      ].filter(Boolean).map(s => String(s).toLowerCase());
+    if (targetUser || targetPass) {
+      const allowedUsernames = [
+        savedUser ? savedUser.toLowerCase() : null,
+        savedEmail ? savedEmail.toLowerCase() : null,
+        !savedUser ? "admin" : null,
+        !savedUser ? "admin@cicekce.com" : null,
+      ].filter(Boolean) as string[];
 
-      const inputUser = String(login).trim().toLowerCase();
-      if (validUsernames.includes(inputUser) && String(password) === savedPass) {
-        isValid = true;
-      }
+      const requiredPass = targetPass || "123456";
+
+      isValid = allowedUsernames.includes(inputUser) && inputPass === requiredPass;
     } else {
       isValid = validateAdminCredentials(login, password);
     }

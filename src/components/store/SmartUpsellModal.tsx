@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { X, Gift, Check, ShoppingBag, Sparkles } from "lucide-react";
 
 interface SmartUpsellModalProps {
@@ -10,12 +10,6 @@ interface SmartUpsellModalProps {
   onAddToCartWithExtras: (selectedExtras: any[]) => void;
 }
 
-const extraGiftsList = [
-  { id: "e1", name: "Premium Kalp Çikolata Kutusu", price: 350, image: "🍫", desc: "El yapımı Belçika çikolatası" },
-  { id: "e2", name: "Sevimli Peluş Ayı (30 cm)", price: 450, image: "🧸", desc: "Yumuşacık sarılmalık sevimli hediye" },
-  { id: "e3", name: "Kişiye Özel Doğum Günü Balonu", price: 150, image: "🎈", desc: "Helyum gazlı kalıcı parlak balon" },
-];
-
 export default function SmartUpsellModal({
   isOpen,
   onClose,
@@ -23,6 +17,42 @@ export default function SmartUpsellModal({
   onAddToCartWithExtras,
 }: SmartUpsellModalProps) {
   const [selectedExtras, setSelectedExtras] = useState<any[]>([]);
+  const [extraGiftsList, setExtraGiftsList] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    setLoading(true);
+    fetch("/api/extras")
+      .then((res) => res.json())
+      .then((data) => {
+        if (Array.isArray(data)) {
+          const formatted = data
+            .filter((item: any) => item.active !== false)
+            .map((item: any) => {
+              const rawPrice = item.price;
+              const numericPrice =
+                typeof rawPrice === "number"
+                  ? rawPrice
+                  : parseFloat(String(rawPrice).replace(/\./g, "").replace(",", ".").replace(/[^0-9.]/g, "")) || 0;
+              return {
+                id: String(item.id),
+                name: item.name || item.names?.tr || "Ek Hediye",
+                price: numericPrice,
+                image: item.image || "🎁",
+                desc: item.desc || item.description || "Özel hediye seçeneği",
+              };
+            });
+          setExtraGiftsList(formatted);
+        } else {
+          setExtraGiftsList([]);
+        }
+      })
+      .catch(() => {
+        setExtraGiftsList([]);
+      })
+      .finally(() => setLoading(false));
+  }, [isOpen]);
 
   if (!isOpen || !product) return null;
 
@@ -85,39 +115,55 @@ export default function SmartUpsellModal({
         {/* Extra Gifts Selection List */}
         <div className="space-y-2">
           <div className="text-xs font-extrabold text-slate-700">Seçebileceğiniz Ekstra Hediyeler:</div>
-          {extraGiftsList.map((item) => {
-            const isSelected = selectedExtras.some((e) => e.id === item.id);
-            return (
-              <div
-                key={item.id}
-                onClick={() => toggleExtra(item)}
-                className={`p-3 rounded-2xl border transition cursor-pointer flex items-center justify-between gap-3 ${
-                  isSelected
-                    ? "bg-amber-50/80 border-[#2b2623] shadow-xs"
-                    : "bg-white border-slate-200 hover:border-slate-300"
-                }`}
-              >
-                <div className="flex items-center gap-3 min-w-0">
-                  <span className="text-2xl shrink-0">{item.image}</span>
-                  <div className="min-w-0">
-                    <div className="text-xs font-extrabold text-slate-900 truncate">{item.name}</div>
-                    <div className="text-[10px] text-slate-500 font-medium">{item.desc}</div>
+          
+          {loading ? (
+            <div className="py-6 text-center text-xs text-slate-400 font-bold">
+              Ekstra hediyeler yükleniyor...
+            </div>
+          ) : extraGiftsList.length === 0 ? (
+            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 text-center text-xs text-slate-500 font-medium">
+              Şu an eklenmiş ekstra hediye seçeneği bulunmamaktadır.
+            </div>
+          ) : (
+            extraGiftsList.map((item) => {
+              const isSelected = selectedExtras.some((e) => e.id === item.id);
+              const isImageUrl = item.image && (item.image.startsWith("http://") || item.image.startsWith("https://") || item.image.startsWith("/"));
+              return (
+                <div
+                  key={item.id}
+                  onClick={() => toggleExtra(item)}
+                  className={`p-3 rounded-2xl border transition cursor-pointer flex items-center justify-between gap-3 ${
+                    isSelected
+                      ? "bg-amber-50/80 border-[#2b2623] shadow-xs"
+                      : "bg-white border-slate-200 hover:border-slate-300"
+                  }`}
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    {isImageUrl ? (
+                      <img src={item.image} alt={item.name} className="w-10 h-10 rounded-xl object-cover border border-slate-200 shrink-0" />
+                    ) : (
+                      <span className="text-2xl shrink-0">{item.image}</span>
+                    )}
+                    <div className="min-w-0">
+                      <div className="text-xs font-extrabold text-slate-900 truncate">{item.name}</div>
+                      {item.desc && <div className="text-[10px] text-slate-500 font-medium">{item.desc}</div>}
+                    </div>
                   </div>
-                </div>
 
-                <div className="flex items-center gap-2 shrink-0">
-                  <span className="text-xs font-black text-slate-900">+{item.price} ₺</span>
-                  <div
-                    className={`w-5 h-5 rounded-full flex items-center justify-center transition ${
-                      isSelected ? "bg-[#2b2623] text-white" : "border-2 border-slate-300 bg-white"
-                    }`}
-                  >
-                    {isSelected && <Check className="w-3.5 h-3.5 stroke-[3]" />}
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="text-xs font-black text-slate-900">+{item.price} ₺</span>
+                    <div
+                      className={`w-5 h-5 rounded-full flex items-center justify-center transition ${
+                        isSelected ? "bg-[#2b2623] text-white" : "border-2 border-slate-300 bg-white"
+                      }`}
+                    >
+                      {isSelected && <Check className="w-3.5 h-3.5 stroke-[3]" />}
+                    </div>
                   </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })
+          )}
         </div>
 
         {/* Actions */}

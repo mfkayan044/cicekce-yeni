@@ -110,6 +110,19 @@ export async function GET(request: Request) {
     const phone = searchParams.get("phone");
     const token = searchParams.get("token");
 
+    // Fetch Supabase orders to merge extra metadata fields (addons, points, etc.) if available
+    let sbMap: Record<string, any> = {};
+    try {
+      const { data: sbOrders } = await supabase.from("orders").select("*");
+      if (sbOrders) {
+        for (const sbo of sbOrders) {
+          sbMap[sbo.id] = sbo;
+        }
+      }
+    } catch (e) {}
+
+    const courierMap = await getOrderCouriersMap();
+
     // Public lookup for customer tracking if search query is passed
     if (orderId) {
       // Rate limit single order lookups (15 requests/min per IP)
@@ -147,7 +160,6 @@ export async function GET(request: Request) {
         );
       }
 
-      const courierMap = await getOrderCouriersMap();
       const extra = courierMap[order.id] || memoryCourierMap[order.id] || {};
       const meta = parseOrderMeta(order, extra);
 
@@ -157,17 +169,24 @@ export async function GET(request: Request) {
         status: order.status || extra.status || "Yeni Sipariş",
         customerName: order.customer_name || order.customerName,
         customerPhone: order.customer_phone || order.customerPhone,
+        customerEmail: order.customer_email || order.customerEmail,
         recipientName: order.recipient_name || order.recipientName,
         recipientPhone: order.recipient_phone || order.recipientPhone,
         address: order.address,
         deliveryDate: order.delivery_date || order.deliveryDate,
         deliveryTime: order.delivery_time || order.deliveryTime,
         items: order.items || [],
-        addons: order.addons || [],
+        addons: (order.addons && Array.isArray(order.addons) && order.addons.length > 0) ? order.addons : (extra.addons || []),
+        extras: (order.extras && Array.isArray(order.extras) && order.extras.length > 0) ? order.extras : (extra.extras || []),
+        selectedExtras: (order.selectedExtras && Array.isArray(order.selectedExtras) && order.selectedExtras.length > 0) ? order.selectedExtras : (extra.selectedExtras || []),
         cardNote: order.card_note || order.cardNote,
         isAnonymous: order.is_anonymous === true,
         paymentMethod: order.payment_method || order.paymentMethod,
         totalAmount: order.total_amount || order.totalAmount,
+        totalPrice: order.total_amount || order.totalPrice,
+        usedPoints: order.used_points || order.usedPoints || extra.usedPoints || null,
+        pointsDiscount: order.points_discount || order.pointsDiscount || extra.pointsDiscount || null,
+        discountAmount: order.discount_amount || order.discountAmount || extra.discountAmount || null,
         preparedPhoto: meta.preparedPhoto,
         preparedPhotoTime: meta.preparedPhotoTime,
         customerApprovalStatus: meta.customerApprovalStatus,
@@ -193,10 +212,10 @@ export async function GET(request: Request) {
         orders = [];
       }
     }
-    const courierMap = await getOrderCouriersMap();
 
     const nowMs = Date.now();
     const formatted = (orders || []).map((o: any) => {
+      const sbOrder = sbMap[o.id] || {};
       const extra = courierMap[o.id] || memoryCourierMap[o.id] || {};
       const meta = parseOrderMeta(o, extra);
 
@@ -226,25 +245,42 @@ export async function GET(request: Request) {
 
       const status = currentStatus;
 
+      const mergedAddons = (o.addons && Array.isArray(o.addons) && o.addons.length > 0)
+        ? o.addons
+        : (sbOrder.addons && Array.isArray(sbOrder.addons) && sbOrder.addons.length > 0)
+        ? sbOrder.addons
+        : (extra.addons && Array.isArray(extra.addons))
+        ? extra.addons
+        : [];
+
+      const mergedUsedPoints = o.used_points || o.usedPoints || sbOrder.used_points || sbOrder.usedPoints || extra.usedPoints || null;
+      const mergedPointsDiscount = o.points_discount || o.pointsDiscount || sbOrder.points_discount || sbOrder.pointsDiscount || extra.pointsDiscount || null;
+      const mergedDiscountAmount = o.discount_amount || o.discountAmount || sbOrder.discount_amount || sbOrder.discountAmount || extra.discountAmount || null;
+
       return {
         id: o.id,
         date: o.date,
         status,
-        customerName: o.customer_name || o.customerName,
-        customerPhone: o.customer_phone || o.customerPhone,
-        customerEmail: o.customer_email || o.customerEmail,
-        recipientName: o.recipient_name || o.recipientName,
-        recipientPhone: o.recipient_phone || o.recipientPhone,
-        address: o.address,
-        deliveryDate: o.delivery_date || o.deliveryDate,
-        deliveryTime: o.delivery_time || o.deliveryTime,
-        items: o.items || [],
-        addons: o.addons || [],
-        cardNote: o.card_note || o.cardNote,
-        isAnonymous: o.is_anonymous === true,
-        paymentMethod: o.payment_method || o.paymentMethod,
-        totalPrice: o.total_amount || o.totalPrice,
-        totalAmount: o.total_amount || o.totalAmount,
+        customerName: o.customer_name || o.customerName || sbOrder.customer_name,
+        customerPhone: o.customer_phone || o.customerPhone || sbOrder.customer_phone,
+        customerEmail: o.customer_email || o.customerEmail || sbOrder.customer_email,
+        recipientName: o.recipient_name || o.recipientName || sbOrder.recipient_name,
+        recipientPhone: o.recipient_phone || o.recipientPhone || sbOrder.recipient_phone,
+        address: o.address || sbOrder.address,
+        deliveryDate: o.delivery_date || o.deliveryDate || sbOrder.delivery_date,
+        deliveryTime: o.delivery_time || o.deliveryTime || sbOrder.delivery_time,
+        items: (o.items && Array.isArray(o.items) && o.items.length > 0) ? o.items : (sbOrder.items || []),
+        addons: mergedAddons,
+        extras: o.extras || sbOrder.extras || extra.extras || [],
+        selectedExtras: o.selectedExtras || sbOrder.selectedExtras || extra.selectedExtras || [],
+        cardNote: o.card_note || o.cardNote || sbOrder.card_note,
+        isAnonymous: o.is_anonymous === true || sbOrder.is_anonymous === true,
+        paymentMethod: o.payment_method || o.paymentMethod || sbOrder.payment_method,
+        totalPrice: o.total_amount || o.totalPrice || sbOrder.total_amount,
+        totalAmount: o.total_amount || o.totalAmount || sbOrder.total_amount,
+        usedPoints: mergedUsedPoints,
+        pointsDiscount: mergedPointsDiscount,
+        discountAmount: mergedDiscountAmount,
         preparedPhoto,
         preparedPhotoTime,
         customerApprovalStatus,
@@ -288,11 +324,14 @@ export async function POST(request: Request) {
       delivery_date: orderData.deliveryDate || orderData.delivery_date || "Bugün",
       delivery_time: orderData.deliveryTime || orderData.delivery_time || "15:00 - 18:00",
       items: orderData.items || [],
-      addons: orderData.addons || [],
+      addons: orderData.addons || orderData.selectedExtras || [],
       card_note: orderData.cardNote || orderData.card_note || "",
       is_anonymous: orderData.isAnonymous === true,
       payment_method: orderData.paymentMethod || orderData.payment_method || "Kredi Kartı",
       total_amount: orderData.totalAmount || orderData.totalPrice || "0 ₺",
+      used_points: orderData.usedPoints || orderData.used_points || null,
+      points_discount: orderData.pointsDiscount || orderData.points_discount || null,
+      discount_amount: orderData.discountAmount || orderData.discount_amount || null,
       prepared_photo: orderData.preparedPhoto || null,
       customer_approval_status: orderData.customerApprovalStatus || "Bekliyor"
     };
@@ -330,16 +369,19 @@ export async function POST(request: Request) {
       await supabase.from("orders").upsert(newOrder, { onConflict: "id" });
     } catch (sbErr) {}
 
-    if (orderData.courierId || orderData.courierName || orderData.deliveredAt) {
-      const courierMap = await getOrderCouriersMap();
-      courierMap[newId] = {
-        courierId: orderData.courierId,
-        courierName: orderData.courierName,
-        deliveredAt: orderData.deliveredAt,
-        status: orderData.status
-      };
-      await saveOrderCouriersMap(courierMap);
-    }
+    const courierMap = await getOrderCouriersMap();
+    courierMap[newId] = {
+      ...(courierMap[newId] || {}),
+      courierId: orderData.courierId,
+      courierName: orderData.courierName,
+      deliveredAt: orderData.deliveredAt,
+      status: orderData.status,
+      addons: orderData.addons || orderData.selectedExtras || [],
+      usedPoints: orderData.usedPoints || orderData.used_points || null,
+      pointsDiscount: orderData.pointsDiscount || orderData.points_discount || null,
+      discountAmount: orderData.discountAmount || orderData.discount_amount || null,
+    };
+    await saveOrderCouriersMap(courierMap);
 
     return NextResponse.json(newOrder, { status: 201 });
   } catch (error: any) {

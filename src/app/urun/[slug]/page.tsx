@@ -271,11 +271,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
       localStorage.setItem("pro_flower_delivery_address", selectedAddress);
     }
 
-    setShowUpsellModal(true);
-  };
-
-  const handleAddToCartWithExtras = (selectedExtras: any[]) => {
-    setSingleCartItem(product, 1, selectedExtras);
+    setSingleCartItem(product, 1, []);
     window.location.href = "/odeme";
   };
 
@@ -848,12 +844,6 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
         product={selectedQuickProduct}
         onClose={() => setSelectedQuickProduct(null)}
         onAddToCart={(prod) => setSingleCartItem(product, 1, [])}
-      />
-      <SmartUpsellModal
-        isOpen={showUpsellModal}
-        onClose={() => setShowUpsellModal(false)}
-        product={product}
-        onAddToCartWithExtras={handleAddToCartWithExtras}
       />
     </div>
   );

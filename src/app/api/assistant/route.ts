@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { sql } from "@/lib/db";
+import { initialDbData } from "@/lib/initial-db";
 
 interface AssistantRequest {
   message: string;
@@ -17,9 +18,13 @@ export async function POST(request: Request) {
     // 1. Fetch available products from Neon PostgreSQL
     let products: any[] = [];
     try {
-      const data = await sql`SELECT id, slug, title, price, category, image, description FROM products LIMIT 20`;
+      const data = await sql`SELECT id, slug, title, price, category, image, description FROM products LIMIT 30`;
       if (data && data.length > 0) products = data;
     } catch (e) {}
+
+    if (products.length === 0 && initialDbData?.products) {
+      products = initialDbData.products;
+    }
 
     // 2. Fetch card notes from Neon PostgreSQL
     let cardNotes: any[] = [];

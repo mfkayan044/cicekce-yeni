@@ -410,10 +410,29 @@ export async function PUT(request: Request) {
     if (deliveryTime !== undefined) updatePayload.delivery_time = deliveryTime;
 
     try {
-      if (status !== undefined) {
-        await sql`UPDATE orders SET status = ${status} WHERE id = ${String(id)}`;
-      }
-    } catch (neonErr) {}
+      await sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS prepared_photo TEXT;`;
+      await sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS customer_approval_status TEXT;`;
+      await sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS courier_id TEXT;`;
+      await sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS courier_name TEXT;`;
+    } catch (e) {}
+
+    try {
+      await sql`
+        UPDATE orders SET
+          status = COALESCE(${status !== undefined ? status : null}, status),
+          prepared_photo = COALESCE(${preparedPhoto !== undefined ? preparedPhoto : null}, prepared_photo),
+          customer_approval_status = COALESCE(${JSON.stringify(updatedMetaObj)}, customer_approval_status),
+          recipient_name = COALESCE(${recipientName !== undefined ? recipientName : null}, recipient_name),
+          recipient_phone = COALESCE(${recipientPhone !== undefined ? recipientPhone : null}, recipient_phone),
+          address = COALESCE(${address !== undefined ? address : null}, address),
+          delivery_date = COALESCE(${deliveryDate !== undefined ? deliveryDate : null}, delivery_date),
+          delivery_slot = COALESCE(${deliveryTime !== undefined ? deliveryTime : null}, delivery_slot),
+          courier_name = COALESCE(${courierName !== undefined ? courierName : null}, courier_name)
+        WHERE id = ${String(id)};
+      `;
+    } catch (neonErr) {
+      console.error("Neon PUT update error:", neonErr);
+    }
 
     // DIRECT SUPABASE ORDERS TABLE UPDATE (Only using valid columns)
     try {

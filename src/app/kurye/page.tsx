@@ -35,6 +35,14 @@ interface Order {
   deliveredAt?: string;
 }
 
+function getTodayIsoStr(): string {
+  const d = new Date();
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
 function normalizeDateStr(dateVal?: string): string {
   if (!dateVal) return "";
   let str = String(dateVal).trim();
@@ -42,6 +50,42 @@ function normalizeDateStr(dateVal?: string): string {
 
   if (str.includes("T")) {
     str = str.split("T")[0];
+  }
+
+  const lowerStr = str.toLowerCase();
+  const todayIso = getTodayIsoStr();
+
+  // 1. Relative Turkish words "bugün" / "bugun"
+  if (lowerStr.includes("bugün") || lowerStr.includes("bugun")) {
+    return todayIso;
+  }
+
+  // 2. Relative Turkish words "yarın" / "yarin"
+  if (lowerStr.includes("yarın") || lowerStr.includes("yarin")) {
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  }
+
+  // 3. Extract any DD.MM.YYYY or DD/MM/YYYY pattern from string (e.g. "10.09.2026" or "10/09/2026")
+  const dotMatch = str.match(/(\d{1,2})[./](\d{1,2})[./](\d{2,4})/);
+  if (dotMatch) {
+    const day = dotMatch[1].padStart(2, "0");
+    const month = dotMatch[2].padStart(2, "0");
+    const year = dotMatch[3].length === 2 ? `20${dotMatch[3]}` : dotMatch[3];
+    return `${year}-${month}-${day}`;
+  }
+
+  // 4. Extract any YYYY-MM-DD pattern
+  const isoMatch = str.match(/(\d{4})-(\d{1,2})-(\d{1,2})/);
+  if (isoMatch) {
+    const year = isoMatch[1];
+    const month = isoMatch[2].padStart(2, "0");
+    const day = isoMatch[3].padStart(2, "0");
+    return `${year}-${month}-${day}`;
   }
 
   const trMonths: Array<[string[], string]> = [
@@ -59,7 +103,6 @@ function normalizeDateStr(dateVal?: string): string {
     [["aralık", "ara", "aralik"], "12"],
   ];
 
-  const lowerStr = str.toLowerCase();
   for (const [aliases, mNum] of trMonths) {
     for (const alias of aliases) {
       if (lowerStr.includes(alias)) {
@@ -74,27 +117,6 @@ function normalizeDateStr(dateVal?: string): string {
           }
         }
       }
-    }
-  }
-
-  if (str.includes(".") || str.includes("/")) {
-    const firstPart = str.split(" ")[0];
-    const parts = firstPart.split(/[./]/);
-    if (parts.length === 3) {
-      const day = parts[0].padStart(2, "0");
-      const month = parts[1].padStart(2, "0");
-      const year = parts[2].length === 2 ? `20${parts[2]}` : parts[2];
-      return `${year}-${month}-${day}`;
-    }
-  }
-
-  if (str.includes("-")) {
-    const parts = str.split("-");
-    if (parts.length >= 3) {
-      const year = parts[0];
-      const month = parts[1].padStart(2, "0");
-      const day = parts[2].slice(0, 2).padStart(2, "0");
-      return `${year}-${month}-${day}`;
     }
   }
 

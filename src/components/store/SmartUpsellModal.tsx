@@ -127,7 +127,13 @@ export default function SmartUpsellModal({
           ) : (
             extraGiftsList.map((item) => {
               const isSelected = selectedExtras.some((e) => e.id === item.id);
-              const isImageUrl = item.image && (item.image.startsWith("http://") || item.image.startsWith("https://") || item.image.startsWith("/"));
+              const isImageUrl = item.image && (
+                item.image.startsWith("http://") ||
+                item.image.startsWith("https://") ||
+                item.image.startsWith("/") ||
+                item.image.startsWith("data:image/") ||
+                item.image.length > 30
+              );
               return (
                 <div
                   key={item.id}

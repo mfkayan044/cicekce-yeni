@@ -5,6 +5,7 @@ import StoreFooter from "@/components/store/StoreFooter";
 import ProductCard from "@/components/store/ProductCard";
 import QuickOrderModal, { QuickOrderProduct } from "@/components/store/QuickOrderModal";
 import AddressSelectionModal from "@/components/store/AddressSelectionModal";
+import SmartUpsellModal from "@/components/store/SmartUpsellModal";
 import { useStore, Product } from "@/lib/store";
 import { getStoredMember } from "@/lib/member-auth";
 import { useState, use, useEffect } from "react";
@@ -57,6 +58,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
   const [selectedQuickProduct, setSelectedQuickProduct] = useState<QuickOrderProduct | null>(null);
   const [cartItemIds, setCartItemIds] = useState<(string | number)[]>([]);
   const [isFav, setIsFav] = useState(false);
+  const [showUpsellModal, setShowUpsellModal] = useState(false);
 
   // Live Dynamic Delivery Slots State
   const [liveDeliverySlots, setLiveDeliverySlots] = useState<any[]>([]);
@@ -269,7 +271,11 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
       localStorage.setItem("pro_flower_delivery_address", selectedAddress);
     }
 
-    setSingleCartItem(product, 1, []);
+    setShowUpsellModal(true);
+  };
+
+  const handleAddToCartWithExtras = (selectedExtras: any[]) => {
+    setSingleCartItem(product, 1, selectedExtras);
     window.location.href = "/odeme";
   };
 
@@ -842,6 +848,12 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
         product={selectedQuickProduct}
         onClose={() => setSelectedQuickProduct(null)}
         onAddToCart={(prod) => setSingleCartItem(product, 1, [])}
+      />
+      <SmartUpsellModal
+        isOpen={showUpsellModal}
+        onClose={() => setShowUpsellModal(false)}
+        product={product}
+        onAddToCartWithExtras={handleAddToCartWithExtras}
       />
     </div>
   );

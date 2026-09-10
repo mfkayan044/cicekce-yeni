@@ -159,6 +159,7 @@ export async function POST(req: Request) {
         ...(updatedData.email ? { email: updatedData.email } : {}),
         ...(updatedData.password ? { password: updatedData.password } : {}),
         ...(updatedData.addresses !== undefined ? { addresses: updatedData.addresses } : {}),
+        ...(updatedData.points !== undefined ? { points: updatedData.points } : {}),
         ...(updatedData.status ? { status: updatedData.status } : {})
       };
 

@@ -26,6 +26,7 @@ export interface MemberUser {
   date?: string;
   status?: string;
   orders?: number;
+  points?: number;
   addresses?: MemberAddress[];
   specialDates?: SpecialDate[];
 }

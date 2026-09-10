@@ -7,7 +7,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { trackPurchase } from "@/components/analytics/AnalyticsTracker";
 import { initialDbData } from "@/lib/initial-db";
-import { getStoredMember } from "@/lib/member-auth";
+import { getStoredMember, setStoredMember } from "@/lib/member-auth";
 import { Tag, MapPin } from "lucide-react";
 
 // Robust Turkish Price Parser ("3.510 ₺" -> 3510)
@@ -60,6 +60,13 @@ export default function CheckoutPage() {
   const [selectedSavedAddrId, setSelectedSavedAddrId] = useState<string>("");
   const [saveNewAddressToProfile, setSaveNewAddressToProfile] = useState<boolean>(false);
   const [newAddressTitle, setNewAddressTitle] = useState<string>("");
+
+  // ÇiçekPuan Loyalty Program State
+  const [usePoints, setUsePoints] = useState<boolean>(false);
+  const [loyaltyRules, setLoyaltyRules] = useState<{ earnRate: number; maxRedeemRate: number }>({
+    earnRate: 5,
+    maxRedeemRate: 25,
+  });
 
   // Step 2: Live Ek Ürünler State (Fetched from /api/extras)
   const [adminExtras, setAdminExtras] = useState<any[]>([]);
@@ -258,12 +265,33 @@ export default function CheckoutPage() {
           setAdminExtras(extData);
         }
 
-        // Prefill sender details from logged-in member
+        // Fetch Loyalty Settings
+        fetch("/api/settings/loyalty")
+          .then((res) => res.json())
+          .then((data) => {
+            if (data && typeof data.maxRedeemRate === "number") {
+              setLoyaltyRules(data);
+            }
+          })
+          .catch(() => {});
+
+        // Prefill sender details from logged-in member & sync points
         const mem = getStoredMember();
         if (mem) {
           setLoggedMember(mem);
           if (mem.name) setSenderName(mem.name);
-          if (mem.email) setSenderEmail(mem.email);
+          if (mem.email) {
+            setSenderEmail(mem.email);
+            fetch(`/api/members?email=${encodeURIComponent(mem.email)}`)
+              .then((res) => res.json())
+              .then((data) => {
+                if (data && !data.error) {
+                  setLoggedMember(data);
+                  setStoredMember(data);
+                }
+              })
+              .catch(() => {});
+          }
           if (mem.phone) setSenderPhone(mem.phone);
         }
       } catch (e) {
@@ -339,7 +367,15 @@ export default function CheckoutPage() {
 
   const deliveryFee = Number(currentDistrictObj?.deliveryFee || currentDistrictObj?.extraFee || currentCityObj?.deliveryFee || 0);
   const addonsTotal = selectedAddons.reduce((sum: number, item: any) => sum + (item.price || 0), 0);
-  const grandTotal = Math.max(0, mainCartTotal + addonsTotal + deliveryFee - discountAmount);
+  const orderSubtotal = mainCartTotal + addonsTotal;
+
+  // ÇiçekPuan Calculations (%25 max redeem cap rule)
+  const memberPoints = Number(loggedMember?.points || 0);
+  const maxRedeemablePoints = Math.min(memberPoints, Math.floor(orderSubtotal * ((loyaltyRules.maxRedeemRate || 25) / 100)));
+  const pointsDiscount = usePoints ? maxRedeemablePoints : 0;
+
+  const grandTotal = Math.max(0, orderSubtotal + deliveryFee - discountAmount - pointsDiscount);
+  const earnedPoints = Math.round(orderSubtotal * ((loyaltyRules.earnRate || 5) / 100));
 
   const constructedDeliveryAddress = currentCityObj && currentDistrictObj && currentNeighObj
     ? `${currentCityObj.name} / ${currentDistrictObj.name} / ${currentNeighObj.name}${fullAddressDetails ? " - " + fullAddressDetails : ""}`
@@ -510,6 +546,26 @@ export default function CheckoutPage() {
         const createdData = await res.json();
         const finalId = createdData.id || `SIP-${Math.floor(10000 + Math.random() * 90000)}`;
         setCreatedOrderId(finalId);
+
+        // Update Member ÇiçekPuan points (subtracted used points + earned 5% points)
+        if (loggedMember) {
+          const updatedPoints = Math.max(0, memberPoints - pointsDiscount) + earnedPoints;
+          fetch("/api/members", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              action: "update",
+              id: loggedMember.id,
+              updatedData: { points: updatedPoints },
+            }),
+          })
+            .then((r) => r.json())
+            .then((d) => {
+              if (d?.member) setStoredMember(d.member);
+            })
+            .catch(() => {});
+        }
+
         trackPurchase({
           orderId: finalId,
           value: grandTotal,
@@ -1318,6 +1374,44 @@ export default function CheckoutPage() {
 
                   {couponError && <div className="text-[11px] text-red-600 font-bold">{couponError}</div>}
                   {couponSuccess && <div className="text-[11px] text-emerald-700 font-bold">{couponSuccess}</div>}
+                </div>
+
+                {/* ÇİÇEKPUAN LOYALTY PROGRAM SECTION */}
+                <div className="border-t pt-3 space-y-2">
+                  {loggedMember ? (
+                    <div className="p-3 bg-amber-50/80 border border-amber-200/90 rounded-2xl space-y-2">
+                      <div className="flex items-center justify-between text-xs font-black text-amber-950">
+                        <span>🌸 ÇiçekPuan Bakiyeniz:</span>
+                        <span className="text-emerald-700 font-extrabold">{memberPoints} Puan ({memberPoints} ₺)</span>
+                      </div>
+                      {memberPoints > 0 ? (
+                        <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-slate-800 pt-1">
+                          <input
+                            type="checkbox"
+                            checked={usePoints}
+                            onChange={(e) => setUsePoints(e.target.checked)}
+                            className="w-4 h-4 rounded text-[#2b2623] accent-[#2b2623]"
+                          />
+                          <span>Puan İndirimi Kullan (Maks. %{loyaltyRules.maxRedeemRate || 25})</span>
+                        </label>
+                      ) : (
+                        <div className="text-[11px] text-slate-600 font-semibold">
+                          Bu siparişten <strong className="text-emerald-700">+{earnedPoints} ÇiçekPuan</strong> kazanacaksınız!
+                        </div>
+                      )}
+                      {usePoints && pointsDiscount > 0 && (
+                        <div className="text-[11px] text-emerald-800 font-extrabold flex justify-between pt-1 border-t border-amber-200/60">
+                          <span>✓ ÇiçekPuan İndirimi (%25 Limitli):</span>
+                          <span>-{pointsDiscount.toLocaleString("tr-TR")} ₺</span>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="p-3 bg-amber-50/60 border border-amber-200/80 rounded-2xl text-[11px] text-amber-900 font-semibold flex items-center justify-between">
+                      <span>🌸 Siparişten <strong className="text-emerald-700">+{earnedPoints} ÇiçekPuan</strong> kazanmak için üye girişi yapın.</span>
+                      <Link href="/giris-yap" className="text-[10px] bg-[#2b2623] text-white px-2.5 py-1 rounded-lg font-bold shrink-0">Giriş</Link>
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex justify-between text-sm font-black text-slate-900 border-t pt-3">

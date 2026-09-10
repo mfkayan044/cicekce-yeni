@@ -3,6 +3,7 @@ import "./globals.css";
 import AnalyticsTracker from "@/components/analytics/AnalyticsTracker";
 import PwaRegister from "@/components/pwa/PwaRegister";
 import StoreMobileBottomNav from "@/components/store/StoreMobileBottomNav";
+import AiFloristWidget from "@/components/AiFloristWidget";
 
 export const viewport: Viewport = {
   themeColor: "#2b2623",
@@ -51,6 +52,7 @@ export default function RootLayout({
         <PwaRegister />
         <AnalyticsTracker />
         {children}
+        <AiFloristWidget />
         <StoreMobileBottomNav />
       </body>
     </html>

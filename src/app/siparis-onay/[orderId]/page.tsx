@@ -5,6 +5,68 @@ import StoreFooter from "@/components/store/StoreFooter";
 import { useState, useEffect, use } from "react";
 import Link from "next/link";
 
+function TimerCountdown({ preparedPhotoTime, onExpire }: { preparedPhotoTime?: string; onExpire: () => void }) {
+  const [secondsLeft, setSecondsLeft] = useState<number>(900);
+
+  useEffect(() => {
+    const calc = () => {
+      if (!preparedPhotoTime) return 900;
+      const photoMs = new Date(preparedPhotoTime).getTime();
+      if (isNaN(photoMs)) return 900;
+      const elapsedSec = Math.floor((Date.now() - photoMs) / 1000);
+      const remaining = Math.max(0, 900 - elapsedSec);
+      return remaining;
+    };
+
+    setSecondsLeft(calc());
+
+    const interval = setInterval(() => {
+      const remaining = calc();
+      setSecondsLeft(remaining);
+      if (remaining === 0) {
+        clearInterval(interval);
+        onExpire();
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [preparedPhotoTime, onExpire]);
+
+  const mins = Math.floor(secondsLeft / 60);
+  const secs = secondsLeft % 60;
+  const formattedTime = `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
+  const pct = Math.min(100, Math.max(0, ((900 - secondsLeft) / 900) * 100));
+
+  return (
+    <div className="flex items-center gap-2 bg-amber-100/80 px-3 py-1.5 rounded-xl border border-amber-300 shadow-2xs">
+      <div className="relative w-7 h-7 flex items-center justify-center font-black text-[10px] text-amber-950">
+        <svg className="w-7 h-7 transform -rotate-90" viewBox="0 0 36 36">
+          <path
+            className="text-amber-200"
+            strokeWidth="4"
+            stroke="currentColor"
+            fill="none"
+            d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+          />
+          <path
+            className="text-amber-700 transition-all duration-1000"
+            strokeDasharray={`${pct}, 100`}
+            strokeWidth="4"
+            strokeLinecap="round"
+            stroke="currentColor"
+            fill="none"
+            d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+          />
+        </svg>
+        <span className="absolute text-[8px]">⏱️</span>
+      </div>
+      <div className="font-mono text-sm font-black text-amber-950 tracking-wider">
+        {formattedTime}
+      </div>
+    </div>
+  );
+}
+
 export default function OrderPhotoApprovalPage({ params }: { params: Promise<{ orderId: string }> }) {
   const resolvedParams = use(params);
   const orderId = resolvedParams.orderId;
@@ -173,6 +235,22 @@ export default function OrderPhotoApprovalPage({ params }: { params: Promise<{ o
               <div className="p-4 rounded-2xl bg-amber-50/80 border border-amber-200 text-left text-xs text-amber-950">
                 <div className="font-bold text-amber-800 mb-1">💌 Eklenen Çiçek Kart Notunuz:</div>
                 <div className="italic font-bold text-sm">"{order.cardNote}"</div>
+              </div>
+            )}
+
+            {/* LIVE 15-MINUTE COUNTDOWN TIMER FOR UNAPPROVED ORDERS */}
+            {!isApproved && !isRejected && (
+              <div className="p-4 rounded-2xl bg-amber-50/90 border border-amber-200 text-amber-950 space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 font-black text-xs text-amber-900 uppercase">
+                    <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-ping"></span>
+                    <span>15 Dakika İçinde Onay Veriniz:</span>
+                  </div>
+                  <TimerCountdown preparedPhotoTime={order.preparedPhotoTime} onExpire={fetchOrders} />
+                </div>
+                <p className="text-[11px] text-amber-800 font-semibold text-left m-0">
+                  Fotoğrafı inceleyip "Görseli Onaylıyorum" butonuna basabilirsiniz. 15 dakika dolduğunda çiçeğiniz otomatik onaylanarak gecikmeden kuryeye verilecektir.
+                </p>
               </div>
             )}
 

@@ -185,6 +185,17 @@ export default function OrderThermalReceiptPage({ params }: { params: Promise<{ 
           </div>
         </div>
 
+        {/* QR CODE FOR COURIER SCANNING & DELIVERY */}
+        <div className="border-t border-b border-black py-2 my-2 text-center space-y-1">
+          <div className="text-[10px] font-black uppercase">📱 KURYE KAREKOD (TEK TIKLA TESLİMAT)</div>
+          <img
+            src={`https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(`https://cicekce-yeni-two.vercel.app/kurye?orderId=${o.id}`)}`}
+            alt="Kurye Teslimat QR Kodu"
+            className="w-24 h-24 mx-auto border p-1 bg-white"
+          />
+          <div className="text-[9px] font-bold text-slate-700">Kameranızla okutarak teslimatı onaylayın</div>
+        </div>
+
         {/* Receipt Footer */}
         <div className="text-center text-[9px] text-slate-500 pt-2 border-t border-dashed border-black">
           <div>Bizi Tercih Ettiğiniz İçin Teşekkür Ederiz!</div>

@@ -14,14 +14,25 @@ export default function StoreHeader({ onOpenAssistant }: { onOpenAssistant?: () 
   const { cart, favorites, products } = useStore();
   const [topbarData, setTopbarData] = useState<any>(_hdrDb.headerBant || null);
   const [dismissed, setDismissed] = useState(false);
-  const initialMenusList = _hdrDb.headerMenus || _hdrDb.header_menu || [
-    { id: "1", title: "Gül Buketleri", url: "/kategori/guller", order: 1, active: true },
-    { id: "1788356766009", title: "Geçmiş Olsun", url: "/kategori/gecmis-olsun", order: 2, active: true },
-    { id: "1789052178938", title: "Saksı/Orkide", url: "/kategori/saksi-cicekleri", order: 3, active: true }
-  ];
-  const [liveMenus, setLiveMenus] = useState<any[]>(
-    Array.isArray(initialMenusList) ? initialMenusList.filter((m: any) => m.active !== false) : []
-  );
+  const [liveMenus, setLiveMenus] = useState<any[]>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const cached = localStorage.getItem("cicekce_live_header_menus");
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            return parsed.filter((m: any) => m.active !== false);
+          }
+        }
+      } catch (e) {}
+    }
+    const initialList = _hdrDb.headerMenus || _hdrDb.header_menu || [
+      { id: "1", title: "Gül Buketleri", url: "/kategori/guller", order: 1, active: true },
+      { id: "1788356766009", title: "Geçmiş Olsun", url: "/kategori/gecmis-olsun", order: 2, active: true },
+      { id: "1789052178938", title: "Saksı/Orkide", url: "/kategori/saksi-cicekleri", order: 3, active: true }
+    ];
+    return Array.isArray(initialList) ? initialList.filter((m: any) => m.active !== false) : [];
+  });
   const [genSettings, setGenSettings] = useState<any>(_hdrDb.generalSettings || { logoMode: "text", logoUrl: "/logo.jpg" });
   const [member, setMember] = useState<MemberUser | null>(null);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -55,14 +66,29 @@ export default function StoreHeader({ onOpenAssistant }: { onOpenAssistant?: () 
   }, []);
 
   useEffect(() => {
-    fetch("/api/menus")
-      .then((res) => res.json())
-      .then((data) => {
-        if (Array.isArray(data) && data.length > 0) {
-          setLiveMenus(data.filter((m: any) => m.active !== false));
-        }
-      })
-      .catch(() => {});
+    const loadMenus = () => {
+      fetch("/api/menus")
+        .then((res) => res.json())
+        .then((data) => {
+          if (Array.isArray(data) && data.length > 0) {
+            const activeOnly = data.filter((m: any) => m.active !== false);
+            setLiveMenus(activeOnly);
+            if (typeof window !== "undefined") {
+              try {
+                localStorage.setItem("cicekce_live_header_menus", JSON.stringify(activeOnly));
+              } catch (e) {}
+            }
+          }
+        })
+        .catch(() => {});
+    };
+
+    loadMenus();
+
+    if (typeof window !== "undefined") {
+      window.addEventListener("cicekce_menu_updated", loadMenus);
+      return () => window.removeEventListener("cicekce_menu_updated", loadMenus);
+    }
   }, []);
 
   useEffect(() => {

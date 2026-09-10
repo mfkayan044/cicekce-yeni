@@ -59,6 +59,13 @@ export default function MenuPage() {
       if (res.ok) {
         setItems(sorted);
         setToastMsg(msg);
+        if (typeof window !== "undefined") {
+          try {
+            const activeOnly = sorted.filter((m) => m.active !== false);
+            localStorage.setItem("cicekce_live_header_menus", JSON.stringify(activeOnly));
+            window.dispatchEvent(new Event("cicekce_menu_updated"));
+          } catch (e) {}
+        }
         setTimeout(() => setToastMsg(""), 3500);
       } else {
         alert("Kaydetme hatası.");

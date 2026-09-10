@@ -1,6 +1,36 @@
 export const initialDbData: any = {
   "products": [
     {
+      "id": "1789052373256",
+      "slug": "pembe-buketli-10-pembe-gul",
+      "title": "Pembe Buketli 10 Pembe Gül",
+      "category": "Güller",
+      "categorySlug": "cicekler",
+      "selectedCategorySlugs": [
+        "cicekler",
+        "buketler",
+        "ozur-cicekleri",
+        "gecmis-olsun",
+        "yeni-bebek",
+        "guller"
+      ],
+      "designType": "Buket",
+      "recipient": "Sevgiliye",
+      "purpose": "Doğum Günü",
+      "color": "Pembe",
+      "price": "1299 ₺",
+      "oldPrice": null,
+      "discount": "%10",
+      "image": "https://cksauvgjodsduhxtnqwm.supabase.co/storage/v1/object/public/cicekce-uploads/1789052348018-665b80b1.jpg",
+      "code": "DM1789052373256",
+      "stock": true,
+      "featured": true,
+      "description": "Pembe Buketli 10 Pembe Gül, Sevgiliye için özel olarak hazırlanmış taze ve göz alıcı bir güller tasarımıdır. Kırmızı renkli taze çiçeklerin en zarif kombinasyonuyla oluşturulan bu Buket aranjmanı; Doğum Günü gibi anlarda unutulmaz bir jest yapmanız için floristlerimiz tarafından özenle hazırlanmıştır.\n\nAynı gün adrese teslimat garantisi ve tazelik güvencesiyle Pembe Buketli 10 Pembe Gül siparişinizi hemen verin, sevdiklerinize anlamlı ve büyüleyici bir sürpriz yapın.\n\n• %100 Taze Canlı Çiçek Garantisi\n• Özel Tasarım Sunum ve Hediye Kart Notu\n• Hızlı Kurye İle Aynı Gün Teslimat",
+      "seoTitle": "Pembe Buketli 10 Pembe Gül Siparişi - Aynı Gün Teslimat | Çiçekçiniz",
+      "seoDesc": "Pembe Buketli 10 Pembe Gül taze çiçek aranjmanı. Sevgiliye için en güzel güller çeşitlerini aynı gün hızlı kurye teslimatıyla sipariş edin.",
+      "seoKeywords": "pembe buketli 10 pembe gül, güller, çiçek siparişi, taze çiçek, buket, online çiçek gönder"
+    },
+    {
       "id": "1789051984379",
       "slug": "kraft-kagitta-41-gul-ve-papatya",
       "title": "Kraft Kağıtta 41 Gül ve Papatya",
@@ -1963,6 +1993,13 @@ export const initialDbData: any = {
       "order": 3,
       "title": "Saksı/Orkide",
       "active": true
+    },
+    {
+      "id": "1789052499452",
+      "url": "/kategori/vazoda",
+      "order": 4,
+      "title": "Vazoda",
+      "active": true
     }
   ],
   "blogs": [
@@ -2124,6 +2161,13 @@ export const initialDbData: any = {
       "url": "/kategori/saksi-cicekleri",
       "order": 3,
       "title": "Saksı/Orkide",
+      "active": true
+    },
+    {
+      "id": "1789052499452",
+      "url": "/kategori/vazoda",
+      "order": 4,
+      "title": "Vazoda",
       "active": true
     }
   ]

@@ -1956,6 +1956,13 @@
       "order": 2,
       "title": "Geçmiş Olsun",
       "active": true
+    },
+    {
+      "id": "1789052178938",
+      "url": "/kategori/saksi-cicekleri",
+      "order": 3,
+      "title": "Saksı/Orkide",
+      "active": true
     }
   ],
   "blogs": [
@@ -2096,5 +2103,28 @@
         "active": true
       }
     ]
-  }
+  },
+  "header_menu": [
+    {
+      "id": "1",
+      "url": "/kategori/guller",
+      "order": 1,
+      "title": "Gül Buketleri",
+      "active": true
+    },
+    {
+      "id": "1788356766009",
+      "url": "/kategori/gecmis-olsun",
+      "order": 2,
+      "title": "Geçmiş Olsun",
+      "active": true
+    },
+    {
+      "id": "1789052178938",
+      "url": "/kategori/saksi-cicekleri",
+      "order": 3,
+      "title": "Saksı/Orkide",
+      "active": true
+    }
+  ]
 }

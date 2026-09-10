@@ -14,7 +14,14 @@ export default function StoreHeader({ onOpenAssistant }: { onOpenAssistant?: () 
   const { cart, favorites, products } = useStore();
   const [topbarData, setTopbarData] = useState<any>(_hdrDb.headerBant || null);
   const [dismissed, setDismissed] = useState(false);
-  const [liveMenus, setLiveMenus] = useState<any[]>(_hdrDb.headerMenus ? _hdrDb.headerMenus.filter((m: any) => m.active !== false) : []);
+  const initialMenusList = _hdrDb.headerMenus || _hdrDb.header_menu || [
+    { id: "1", title: "Gül Buketleri", url: "/kategori/guller", order: 1, active: true },
+    { id: "1788356766009", title: "Geçmiş Olsun", url: "/kategori/gecmis-olsun", order: 2, active: true },
+    { id: "1789052178938", title: "Saksı/Orkide", url: "/kategori/saksi-cicekleri", order: 3, active: true }
+  ];
+  const [liveMenus, setLiveMenus] = useState<any[]>(
+    Array.isArray(initialMenusList) ? initialMenusList.filter((m: any) => m.active !== false) : []
+  );
   const [genSettings, setGenSettings] = useState<any>(_hdrDb.generalSettings || { logoMode: "text", logoUrl: "/logo.jpg" });
   const [member, setMember] = useState<MemberUser | null>(null);
   const [userMenuOpen, setUserMenuOpen] = useState(false);

@@ -15,13 +15,28 @@ export async function POST(request: Request) {
     const { getSetting } = await import("@/lib/settings-helper");
     const genSettings = await getSetting("general_settings", {});
 
-    const dynamicUser = genSettings.username || process.env.ADMIN_USER || "admin";
-    const dynamicPass = genSettings.password || process.env.ADMIN_PASSWORD || "123456";
-    const dynamicEmail = genSettings.email || "admin@cicekce.com";
+    const savedPass = genSettings.password ? String(genSettings.password).trim() : null;
+    const savedUser = genSettings.username ? String(genSettings.username).trim() : null;
+    const savedEmail = genSettings.email ? String(genSettings.email).trim() : null;
 
-    const isValid =
-      validateAdminCredentials(login, password) ||
-      ((login === dynamicUser || login === dynamicEmail) && password === dynamicPass);
+    let isValid = false;
+
+    if (savedPass && savedPass.length > 0) {
+      // Custom password set by admin in /yonetim/ayarlar
+      const validUsernames = [
+        savedUser,
+        savedEmail,
+        "admin",
+        "admin@cicekce.com"
+      ].filter(Boolean).map(s => String(s).toLowerCase());
+
+      const inputUser = String(login).trim().toLowerCase();
+      if (validUsernames.includes(inputUser) && String(password) === savedPass) {
+        isValid = true;
+      }
+    } else {
+      isValid = validateAdminCredentials(login, password);
+    }
 
     if (!isValid) {
       return NextResponse.json(

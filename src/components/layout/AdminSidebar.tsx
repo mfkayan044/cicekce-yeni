@@ -87,6 +87,7 @@ const menuGroups: MenuGroup[] = [
         ],
       },
       { title: "Sayfa Yönetimi", href: "/yonetim/sayfalar", icon: "bx bx-file" },
+      { title: "Karşılama Popup (Modal)", href: "/yonetim/popup", icon: "bx bx-gift" },
       { title: "Çiçek Bakım Rehberi", href: "/yonetim/cicek-bakimi", icon: "bx bx-spa" },
       { title: "Blog", href: "/yonetim/blog", icon: "bx bx-news" },
       { title: "Kurye Canlı Takip", href: "/yonetim/kuryeler", icon: "bx bx-map-pin" },

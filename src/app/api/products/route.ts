@@ -104,7 +104,10 @@ export async function GET() {
             code: sbP.code || `DM${sbP.id}`,
             stock: sbP.stock !== false,
             featured: sbP.featured === true,
-            description: sbP.description
+            description: sbP.description,
+            seoTitle: sbP.seo_title || sbP.seoTitle || undefined,
+            seoDesc: sbP.seo_desc || sbP.seoDesc || undefined,
+            seoKeywords: sbP.seo_keywords || sbP.seoKeywords || undefined,
           };
         });
         cachedProducts = merged;
@@ -242,7 +245,10 @@ export async function POST(request: Request) {
       code: body.code !== undefined ? body.code : (existing?.code || `DM${body.id || Date.now()}`),
       stock: body.stock !== undefined ? body.stock !== false : (existing?.stock !== false),
       featured: body.featured !== undefined ? body.featured === true : (existing?.featured === true),
-      description: body.description !== undefined ? body.description : (existing?.description || null)
+      description: body.description !== undefined ? body.description : (existing?.description || null),
+      seoTitle: body.seoTitle !== undefined ? body.seoTitle : (body.seo_title !== undefined ? body.seo_title : (existing?.seoTitle || existing?.seo_title || null)),
+      seoDesc: body.seoDesc !== undefined ? body.seoDesc : (body.seo_desc !== undefined ? body.seo_desc : (existing?.seoDesc || existing?.seo_desc || null)),
+      seoKeywords: body.seoKeywords !== undefined ? body.seoKeywords : (body.seo_keywords !== undefined ? body.seo_keywords : (existing?.seoKeywords || existing?.seo_keywords || null)),
     };
 
     const existingIdx = productsList.findIndex((p: any) => String(p.id) === String(newProduct.id));
@@ -257,11 +263,16 @@ export async function POST(request: Request) {
     cachedProducts = null;
 
     try {
+      await sql`ALTER TABLE products ADD COLUMN IF NOT EXISTS seo_title TEXT;`;
+      await sql`ALTER TABLE products ADD COLUMN IF NOT EXISTS seo_desc TEXT;`;
+      await sql`ALTER TABLE products ADD COLUMN IF NOT EXISTS seo_keywords TEXT;`;
+
       await sql`
         INSERT INTO products (
           id, slug, title, category, category_slug, selected_category_slugs,
           design_type, recipient, purpose, color,
-          price, old_price, discount, image, code, stock, featured, description
+          price, old_price, discount, image, code, stock, featured, description,
+          seo_title, seo_desc, seo_keywords
         )
         VALUES (
           ${String(newProduct.id)},
@@ -281,7 +292,10 @@ export async function POST(request: Request) {
           ${newProduct.code},
           ${newProduct.stock},
           ${newProduct.featured},
-          ${newProduct.description}
+          ${newProduct.description},
+          ${newProduct.seoTitle},
+          ${newProduct.seoDesc},
+          ${newProduct.seoKeywords}
         )
         ON CONFLICT (id) DO UPDATE SET
           slug = EXCLUDED.slug,
@@ -300,7 +314,10 @@ export async function POST(request: Request) {
           code = EXCLUDED.code,
           stock = EXCLUDED.stock,
           featured = EXCLUDED.featured,
-          description = EXCLUDED.description;
+          description = EXCLUDED.description,
+          seo_title = EXCLUDED.seo_title,
+          seo_desc = EXCLUDED.seo_desc,
+          seo_keywords = EXCLUDED.seo_keywords;
       `;
     } catch (neonErr) {
       console.error("Neon product upsert error:", neonErr);

@@ -25,6 +25,9 @@ export interface Product {
   stock: boolean;
   featured: boolean;
   description?: string;
+  seoTitle?: string;
+  seoDesc?: string;
+  seoKeywords?: string;
 }
 
 export interface CategoryItem {

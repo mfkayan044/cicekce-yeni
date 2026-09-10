@@ -7,7 +7,7 @@ import { useStore } from "@/lib/store";
 
 export default function AiFloristWidget() {
   const [isOpen, setIsOpen] = useState(false);
-  const { products, addToCart } = useStore();
+  const { products, categories, addToCart } = useStore();
   const [messages, setMessages] = useState<Array<{ sender: "bot" | "user"; text: string; prods?: any[] }>>([
     {
       sender: "bot",
@@ -16,21 +16,28 @@ export default function AiFloristWidget() {
   ]);
   const [inputVal, setInputVal] = useState("");
 
-  const handleOptionClick = (promptText: string, filterCategory: string) => {
+  const handleOptionClick = (promptText: string, filterTerm: string, filterSlug?: string) => {
     const userMsg = { sender: "user" as const, text: promptText };
     const matchingProds = products
       .filter((p: any) => {
-        if (!filterCategory) return true;
+        if (!filterTerm && !filterSlug) return true;
         const catName = (p.category || "").toLowerCase();
         const titleName = (p.title || "").toLowerCase();
-        const term = filterCategory.toLowerCase();
-        return catName.includes(term) || titleName.includes(term);
+        const catSlug = (p.categorySlug || "").toLowerCase();
+        const term = (filterTerm || "").toLowerCase();
+        const slug = (filterSlug || "").toLowerCase();
+
+        const matchCat = term && catName.includes(term);
+        const matchTitle = term && titleName.includes(term);
+        const matchSlug = slug && (catSlug === slug || (Array.isArray(p.selectedCategorySlugs) && p.selectedCategorySlugs.includes(slug)));
+
+        return matchCat || matchTitle || matchSlug;
       })
       .slice(0, 3);
 
     const botMsg = {
       sender: "bot" as const,
-      text: `Aradığınız kriterlere en uygun taze çiçek seçeneklerimiz:`,
+      text: `"${filterTerm || promptText}" kategorisinde öne çıkan taze çiçek seçeneklerimiz:`,
       prods: matchingProds.length > 0 ? matchingProds : products.slice(0, 3),
     };
 
@@ -161,28 +168,43 @@ export default function AiFloristWidget() {
           </div>
 
           {/* Quick Filter Pill Buttons */}
-          <div className="p-2 bg-white border-t border-slate-100 flex flex-wrap gap-1.5">
-            <button
-              type="button"
-              onClick={() => handleOptionClick("❤️ Sevgiliye Kırmızı Gül Buketleri", "gül")}
-              className="text-[10px] font-extrabold px-2.5 py-1 rounded-full bg-red-50 text-red-900 border border-red-200 hover:bg-red-100 transition"
-            >
-              ❤️ Sevgiliye Gül Buketleri
-            </button>
-            <button
-              type="button"
-              onClick={() => handleOptionClick("🪴 Anneye Saksı & Orkide Çiçekleri", "orkide")}
-              className="text-[10px] font-extrabold px-2.5 py-1 rounded-full bg-purple-50 text-purple-900 border border-purple-200 hover:bg-purple-100 transition"
-            >
-              🪴 Orkide & Saksı
-            </button>
-            <button
-              type="button"
-              onClick={() => handleOptionClick("🎉 Doğum Günü Aranjmanları", "buket")}
-              className="text-[10px] font-extrabold px-2.5 py-1 rounded-full bg-amber-50 text-amber-900 border border-amber-200 hover:bg-amber-100 transition"
-            >
-              🎉 Doğum Günü Buketleri
-            </button>
+          <div className="p-2 bg-white border-t border-slate-100 flex flex-wrap gap-1.5 max-h-24 overflow-y-auto custom-scrollbar">
+            {categories && categories.length > 0 ? (
+              categories.slice(0, 8).map((cat: any) => (
+                <button
+                  key={cat.id || cat.slug}
+                  type="button"
+                  onClick={() => handleOptionClick(`🌸 ${cat.name} Çiçekleri`, cat.name, cat.slug)}
+                  className="text-[10px] font-extrabold px-2.5 py-1 rounded-full bg-slate-100 text-slate-800 border border-slate-200 hover:bg-[#2b2623] hover:text-white transition shadow-2xs"
+                >
+                  🌸 {cat.name}
+                </button>
+              ))
+            ) : (
+              <>
+                <button
+                  type="button"
+                  onClick={() => handleOptionClick("❤️ Gül Buketleri", "Gül", "guller")}
+                  className="text-[10px] font-extrabold px-2.5 py-1 rounded-full bg-red-50 text-red-900 border border-red-200 hover:bg-red-100 transition"
+                >
+                  ❤️ Gül Buketleri
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleOptionClick("🪴 Orkide & Saksı", "Orkide", "orkide")}
+                  className="text-[10px] font-extrabold px-2.5 py-1 rounded-full bg-purple-50 text-purple-900 border border-purple-200 hover:bg-purple-100 transition"
+                >
+                  🪴 Orkide & Saksı
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleOptionClick("🎉 Buketler", "Buket", "buketler")}
+                  className="text-[10px] font-extrabold px-2.5 py-1 rounded-full bg-amber-50 text-amber-900 border border-amber-200 hover:bg-amber-100 transition"
+                >
+                  🎉 Buketler
+                </button>
+              </>
+            )}
           </div>
 
           {/* Input Form */}

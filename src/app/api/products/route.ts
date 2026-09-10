@@ -199,35 +199,55 @@ export async function POST(request: Request) {
     const dbObj = readDb();
     let productsList = dbObj.products || [];
 
-    const catSlug = body.categorySlug || body.category_slug || "cicekler";
-    const selCategorySlugs = body.selectedCategorySlugs && Array.isArray(body.selectedCategorySlugs) && body.selectedCategorySlugs.length > 0
-      ? body.selectedCategorySlugs
-      : [catSlug];
+    // Find existing product in Neon or memory to preserve existing fields
+    let existing: any = productsList.find((p: any) => String(p.id) === String(body.id));
+    if (body.id) {
+      try {
+        const dbProduct = await sql`SELECT * FROM products WHERE id = ${String(body.id)}`;
+        if (dbProduct && dbProduct[0]) {
+          existing = {
+            ...existing,
+            ...dbProduct[0],
+            categorySlug: dbProduct[0].category_slug || dbProduct[0].categorySlug,
+            selectedCategorySlugs: dbProduct[0].selected_category_slugs || dbProduct[0].selectedCategorySlugs,
+            designType: dbProduct[0].design_type || dbProduct[0].designType,
+            oldPrice: dbProduct[0].old_price || dbProduct[0].oldPrice,
+          };
+        }
+      } catch (e) {}
+    }
+
+    const title = body.title !== undefined ? body.title : (existing?.title || "Çiçek Buketi");
+    const catSlug = body.categorySlug || body.category_slug || existing?.categorySlug || existing?.category_slug || "cicekler";
+    let selCategorySlugs = body.selectedCategorySlugs;
+    if (!selCategorySlugs || !Array.isArray(selCategorySlugs) || selCategorySlugs.length === 0) {
+      selCategorySlugs = existing?.selectedCategorySlugs || [catSlug];
+    }
 
     const newProduct = {
       id: body.id || String(Date.now()),
-      slug: body.slug || (body.title ? slugifyTurkish(body.title) : "urun"),
-      title: body.title || "Yeni Ürün",
-      category: body.category || "Genel",
+      slug: body.slug !== undefined ? body.slug : (existing?.slug || slugifyTurkish(title) || String(body.id)),
+      title,
+      category: body.category !== undefined ? body.category : (existing?.category || "Genel"),
       categorySlug: catSlug,
       selectedCategorySlugs: selCategorySlugs,
-      designType: body.designType || null,
-      recipient: body.recipient || null,
-      purpose: body.purpose || null,
-      color: body.color || null,
-      price: String(body.price || "0 ₺"),
-      oldPrice: body.oldPrice || body.old_price || null,
-      discount: body.discount || null,
-      image: body.image || null,
-      code: body.code || "DM" + Math.floor(10 + Math.random() * 89),
-      stock: body.stock !== false,
-      featured: body.featured === true,
-      description: body.description || null
+      designType: body.designType !== undefined ? body.designType : (existing?.designType || existing?.design_type || null),
+      recipient: body.recipient !== undefined ? body.recipient : (existing?.recipient || null),
+      purpose: body.purpose !== undefined ? body.purpose : (existing?.purpose || null),
+      color: body.color !== undefined ? body.color : (existing?.color || null),
+      price: body.price !== undefined ? String(body.price) : String(existing?.price || "0 ₺"),
+      oldPrice: body.oldPrice !== undefined ? body.oldPrice : (body.old_price !== undefined ? body.old_price : (existing?.oldPrice || existing?.old_price || null)),
+      discount: body.discount !== undefined ? body.discount : (existing?.discount || null),
+      image: body.image !== undefined ? body.image : (existing?.image || null),
+      code: body.code !== undefined ? body.code : (existing?.code || `DM${body.id || Date.now()}`),
+      stock: body.stock !== undefined ? body.stock !== false : (existing?.stock !== false),
+      featured: body.featured !== undefined ? body.featured === true : (existing?.featured === true),
+      description: body.description !== undefined ? body.description : (existing?.description || null)
     };
 
     const existingIdx = productsList.findIndex((p: any) => String(p.id) === String(newProduct.id));
     if (existingIdx >= 0) {
-      productsList[existingIdx] = { ...productsList[existingIdx], ...body, ...newProduct };
+      productsList[existingIdx] = { ...productsList[existingIdx], ...newProduct };
     } else {
       productsList.unshift(newProduct);
     }

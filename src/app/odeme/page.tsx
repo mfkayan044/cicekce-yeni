@@ -36,11 +36,57 @@ export default function CheckoutPage() {
   );
 
   const initialCities = (initialDbData?.cities || []).filter((c: any) => c.active !== false);
-  const defaultCity = initialCities[0] || { id: "34", name: "İstanbul", districts: [] };
-  const defaultDistricts = (defaultCity.districts || []).filter((d: any) => d.active !== false);
-  const defaultDistrict = defaultDistricts[0] || { id: "d_1", name: "Kadıköy", neighborhoods: [] };
-  const defaultNeighborhoods = (defaultDistrict.neighborhoods || []).filter((n: any) => n.active !== false);
-  const defaultNeigh = defaultNeighborhoods[0] || { id: "n_1", name: "Moda Mah." };
+
+  const getInitialAddressState = (cities: any[]) => {
+    let cityId = "";
+    let districtId = "";
+    let neighId = "";
+
+    if (cities && cities.length > 0) {
+      cityId = String(cities[0].id);
+      const dists = (cities[0].districts || []).filter((d: any) => d.active !== false);
+      if (dists.length > 0) {
+        districtId = String(dists[0].id);
+        const neighs = (dists[0].neighborhoods || []).filter((n: any) => n.active !== false);
+        if (neighs.length > 0) {
+          neighId = String(neighs[0].id);
+        }
+      }
+    }
+
+    if (typeof window !== "undefined") {
+      try {
+        const savedAddr = localStorage.getItem("pro_flower_delivery_address");
+        if (savedAddr && cities && cities.length > 0) {
+          const parts = savedAddr.split("/");
+          const cName = parts[0]?.trim()?.toLowerCase();
+          const dName = parts[1]?.trim()?.toLowerCase();
+          const nName = parts[2]?.split("-")[0]?.trim()?.toLowerCase();
+
+          const targetCity = cities.find((c: any) => c.name?.toLowerCase() === cName) || cities[0];
+          if (targetCity) {
+            cityId = String(targetCity.id);
+            const dists = (targetCity.districts || []).filter((d: any) => d.active !== false);
+            const targetDist = dists.find((d: any) => d.name?.toLowerCase() === dName) || dists[0];
+            if (targetDist) {
+              districtId = String(targetDist.id);
+              const neighs = (targetDist.neighborhoods || []).filter((n: any) => n.active !== false);
+              const targetNeigh = neighs.find((n: any) =>
+                nName ? n.name?.toLowerCase().includes(nName) || nName.includes(n.name?.toLowerCase()) : false
+              ) || neighs[0];
+              if (targetNeigh) {
+                neighId = String(targetNeigh.id);
+              }
+            }
+          }
+        }
+      } catch (e) {}
+    }
+
+    return { cityId, districtId, neighId };
+  };
+
+  const initialAddrState = getInitialAddressState(initialCities);
 
   // Active Regions from API (Pre-populated from initial DB to prevent any flicker)
   const [activeCities, setActiveCities] = useState<any[]>(initialCities);
@@ -49,9 +95,9 @@ export default function CheckoutPage() {
   // Step 1: Alıcı & Teslimat Adresi State
   const [recipientName, setRecipientName] = useState("");
   const [recipientPhone, setRecipientPhone] = useState("");
-  const [selectedCityId, setSelectedCityId] = useState(String(defaultCity.id));
-  const [selectedDistrictId, setSelectedDistrictId] = useState(String(defaultDistrict.id));
-  const [selectedNeighId, setSelectedNeighId] = useState(String(defaultNeigh.id));
+  const [selectedCityId, setSelectedCityId] = useState(initialAddrState.cityId);
+  const [selectedDistrictId, setSelectedDistrictId] = useState(initialAddrState.districtId);
+  const [selectedNeighId, setSelectedNeighId] = useState(initialAddrState.neighId);
   const [fullAddressDetails, setFullAddressDetails] = useState("");
   const [companySchool, setCompanySchool] = useState("");
 

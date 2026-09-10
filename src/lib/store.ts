@@ -70,7 +70,14 @@ if (typeof window !== "undefined") {
     const savedProds = localStorage.getItem("pro_flower_products");
     if (savedProds) {
       const parsed = JSON.parse(savedProds);
-      if (Array.isArray(parsed)) globalProducts = parsed;
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        const hasCorrupted = parsed.some((p: any) => p.title === "Yeni Ürün" || p.title === "urun" || !p.title);
+        if (!hasCorrupted) {
+          globalProducts = parsed;
+        } else {
+          try { localStorage.removeItem("pro_flower_products"); } catch (e) {}
+        }
+      }
     }
     const savedCats = localStorage.getItem("pro_flower_categories");
     if (savedCats) {

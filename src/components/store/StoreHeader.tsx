@@ -335,14 +335,6 @@ export default function StoreHeader({ onOpenAssistant }: { onOpenAssistant?: () 
       </Link>
     </li>
   ))}
-  <li className="shrink-0">
-    <Link
-      href="/abonelik"
-      className="px-3.5 py-2 rounded-xl text-emerald-900 bg-emerald-50 border border-emerald-200 font-extrabold hover:bg-emerald-100 transition whitespace-nowrap inline-flex items-center gap-1 shadow-2xs"
-    >
-      <span>🌿 Çiçek Aboneliği</span>
-    </Link>
-  </li>
 </ul>
 </div>
 </nav>

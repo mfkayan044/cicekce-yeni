@@ -8,48 +8,76 @@ const dbPath = path.join(process.cwd(), "src", "data", "db.json");
 const defaultHeroData = {
   sliders: [
     {
-      id: 1,
-      title: "30 Dakikada Hızlı Teslimat",
-      price: "",
-      discountBadge: "Hızlı Teslimat",
-      image: "/images/slider/banner1_hizli_teslimat.jpg",
-      link: "/kategori/guller"
-    },
-    {
       id: 2,
-      title: "Sevgiliye Özel Premium Gül Buketleri",
+      link: "/kategori/dogum-gunu",
+      image: "https://cksauvgjodsduhxtnqwm.supabase.co/storage/v1/object/public/cicekce-uploads/1788948885624-1218a0a4.jpg",
       price: "",
-      discountBadge: "Özel Tasarım",
-      image: "/images/slider/banner2_ask_buketleri.jpg",
-      link: "/kategori/sevgililer-icin"
+      title: "",
+      discountBadge: "%10 İndirim"
     },
     {
       id: 3,
-      title: "Doğum Gününe Özel Unutulmaz Sürprizler",
+      link: "/kategori/buketler",
+      image: "https://cksauvgjodsduhxtnqwm.supabase.co/storage/v1/object/public/cicekce-uploads/1788948865460-ca821060.jpg",
       price: "",
-      discountBadge: "Doğum Günü",
-      image: "/images/slider/banner3_dogum_gunu.jpg",
-      link: "/kategori/dogum-gunu"
+      title: "",
+      discountBadge: "%10 İndirim"
     },
     {
       id: 4,
-      title: "Evinize Doğal Zarafet Orkideler",
+      link: "/kategori/saksi-cicekleri",
+      image: "https://cksauvgjodsduhxtnqwm.supabase.co/storage/v1/object/public/cicekce-uploads/1788948897534-83a66d77.jpg",
       price: "",
-      discountBadge: "Saksı Çiçeği",
-      image: "/images/slider/banner4_orkide.jpg",
-      link: "/kategori/saksi-cicekleri"
+      title: "",
+      discountBadge: "%10 İndirim"
+    },
+    {
+      id: 4,
+      link: "/kategori/buketler",
+      image: "https://cksauvgjodsduhxtnqwm.supabase.co/storage/v1/object/public/cicekce-uploads/1788948837837-757aa67c.jpg",
+      price: "",
+      title: "",
+      discountBadge: "%10 İndirim"
     }
   ],
   promoCards: [
-    { title: "Geçmiş Olsun Çiçekleri", image: "/images/promo/gecmis_olsun.jpg", link: "/kategori/gecmis-olsun" },
-    { title: "Yıl Dönümü Çiçekleri", image: "/images/promo/yil_donumu.jpg", link: "/kategori/yil-donumu" },
-    { title: "Mevsim Çiçekleri", image: "/images/promo/mevsim_cicekleri.jpg", link: "/kategori/mevsim-cicekleri" },
-    { title: "Saksı Çiçekleri", image: "/images/promo/saksi_cicekleri.jpg", link: "/kategori/saksi-cicekleri" }
+    {
+      link: "kategori/yil-donumu",
+      image: "https://cksauvgjodsduhxtnqwm.supabase.co/storage/v1/object/public/cicekce-uploads/1788961280164-b8c428fd.jpg",
+      title: "Yıl Dönümü Çiçekleri"
+    },
+    {
+      link: "kategori/gecmis-olsun",
+      image: "https://cksauvgjodsduhxtnqwm.supabase.co/storage/v1/object/public/cicekce-uploads/1788961303917-9a7487c1.jpg",
+      title: "Geçmiş Olsun Çiçekleri"
+    },
+    {
+      link: "kategori/mevsim-cicekleri",
+      image: "https://cksauvgjodsduhxtnqwm.supabase.co/storage/v1/object/public/cicekce-uploads/1788961308818-0bb1fb08.jpg",
+      title: "Mevsim Çiçekleri"
+    },
+    {
+      link: "kategori/saksi-cicekleri",
+      image: "https://cksauvgjodsduhxtnqwm.supabase.co/storage/v1/object/public/cicekce-uploads/1788961314681-7fbcdcc0.jpg",
+      title: "Saksı Çiçekleri"
+    }
   ],
   horizontalBanners: [
-    { title: "AÇILIŞ & KUTLAMA ÇİÇEKLERİ", image: "/images/banners/acilis.jpg", link: "/kategori/acilis-cicekleri" },
-    { title: "EV HEDİYESİ ÇİÇEKLERİ", image: "/images/banners/ev_hediyesi.jpg", link: "/kategori/ev-hediyesi" },
-    { title: "ÖZÜR & BARIŞMA ÇİÇEKLERİ", image: "/images/banners/ozur.jpg", link: "/kategori/ozur-cicekleri" }
+    {
+      link: "kategori/acilis-cicekleri",
+      image: "https://cksauvgjodsduhxtnqwm.supabase.co/storage/v1/object/public/cicekce-uploads/1788964240598-b667d32d.jpg",
+      title: "AÇILIŞ ÖZEL"
+    },
+    {
+      link: "kategori/sevgiliye-ozel",
+      image: "https://cksauvgjodsduhxtnqwm.supabase.co/storage/v1/object/public/cicekce-uploads/1788964234212-090e22c6.jpg",
+      title: "SEVGİLİYE ÖZEL"
+    },
+    {
+      link: "kategori/ozur-cicekleri",
+      image: "https://cksauvgjodsduhxtnqwm.supabase.co/storage/v1/object/public/cicekce-uploads/1788964246531-93789c90.jpg",
+      title: "ÖZÜR ÇİÇEKLERİ ÖZEL"
+    }
   ]
 };
 

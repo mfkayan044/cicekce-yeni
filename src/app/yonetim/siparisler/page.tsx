@@ -1,7 +1,8 @@
 "use client";
 
 import AdminLayout from "@/components/layout/AdminLayout";
-import { useState, useEffect } from "react";
+import React, { useState, useEffect, Fragment } from "react";
+import { useStore } from "@/lib/store";
 import { Calendar, RefreshCw, Clock, CalendarDays, Globe, Truck, CheckCircle2, AlertTriangle, Search, Flower2, Bike, Camera, MessageSquare, Bot, UserCheck } from "lucide-react";
 
 function getCanonicalStatus(status?: string, courierId?: string) {
@@ -201,6 +202,7 @@ function getDeliveryPunctuality(
 }
 
 export default function AdminOrdersPage() {
+  const { products } = useStore();
   const [orders, setOrders] = useState<any[]>([]);
   const [couriers, setCouriers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -890,8 +892,23 @@ export default function AdminOrdersPage() {
                 ) : (
                   filteredOrders.map((o: any) => {
                     const firstItem = Array.isArray(o.items) && o.items[0] ? o.items[0] : null;
-                    const itemTitle = firstItem?.title || firstItem?.product?.title || "Özel Çiçek Aranjmanı";
-                    const itemImage = firstItem?.image || firstItem?.product?.image || "https://demo.procicek.com.tr/urunler/35-kirmizi-gul-buketi-13981-v2.webp";
+                    const itemTitle = firstItem?.title || firstItem?.product?.title || o.productName || o.product || "Özel Çiçek Aranjmanı";
+
+                    const catalogProd = (products || []).find(
+                      (p: any) =>
+                        String(p.id) === String(firstItem?.id || o.productId) ||
+                        (p.title || "").toLowerCase().trim() === (itemTitle || "").toLowerCase().trim() ||
+                        (p.title || "").toLowerCase().includes((itemTitle || "").toLowerCase()) ||
+                        (itemTitle || "").toLowerCase().includes((p.title || "").toLowerCase())
+                    );
+
+                    const itemImage =
+                      firstItem?.image ||
+                      firstItem?.product?.image ||
+                      catalogProd?.image ||
+                      o.image ||
+                      o.productImage ||
+                      "https://images.unsplash.com/photo-1549007994-cb92caebd54b?w=300";
 
                     const origin = typeof window !== "undefined" ? window.location.origin : "https://cicekce-yeni-two.vercel.app";
                     const approvalLink = `${origin}/siparis-onay/${o.id}`;
@@ -1453,11 +1470,28 @@ export default function AdminOrdersPage() {
                 </div>
 
                 {/* 4. PRODUCTS & EXTRAS TABLE */}
-                <div className="border rounded-2xl overflow-hidden bg-white shadow-2xs">
+                <div className="border rounded-2xl overflow-hidden bg-white shadow-2xs space-y-0">
                   <div className="bg-slate-50 px-4 py-2.5 border-b font-black text-xs text-slate-700 uppercase flex justify-between items-center">
                     <span>Siparişteki Çiçekler & Ek Ürünler</span>
                     <span>Toplam: <strong className="text-[#2b2623] text-sm">{selectedOrder.totalAmount || selectedOrder.totalPrice} ₺</strong></span>
                   </div>
+
+                  {/* ÇİÇEKPUAN BANNER IF USED */}
+                  {(Number(selectedOrder.usedPoints || 0) > 0 || selectedOrder.pointsDiscount || String(selectedOrder.paymentMethod || "").includes("ÇiçekPuan")) && (
+                    <div className="m-3 p-3.5 bg-amber-50/90 border border-amber-300 rounded-2xl flex items-center justify-between text-xs font-bold text-amber-950 shadow-2xs">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-xl bg-amber-200 text-amber-900 flex items-center justify-center font-black text-sm">⭐</div>
+                        <div>
+                          <div className="font-extrabold text-amber-900">ÇiçekPuan İndirimi Kullanıldı!</div>
+                          <div className="text-[11px] text-amber-800/90 font-medium">Bu sipariş tutarının bir kısmı üyenin biriken ÇiçekPuan bakiyesi ile ödenmiştir.</div>
+                        </div>
+                      </div>
+                      <div className="text-amber-950 font-black text-xs bg-white px-3 py-1.5 rounded-xl border border-amber-300 shrink-0">
+                        -{selectedOrder.usedPoints || selectedOrder.pointsDiscount || "50 ₺"} ÇiçekPuan İndirimi
+                      </div>
+                    </div>
+                  )}
+
                   <div className="table-responsive">
                     <table className="table table-hover align-middle mb-0 w-full text-xs">
                       <thead className="bg-slate-50/50 text-[11px] text-slate-500 uppercase">
@@ -1471,20 +1505,48 @@ export default function AdminOrdersPage() {
                       <tbody className="divide-y divide-slate-100">
                         {/* Items */}
                         {Array.isArray(selectedOrder.items) && selectedOrder.items.length > 0 ? (
-                          selectedOrder.items.map((it: any, idx: number) => (
-                            <tr key={idx}>
-                              <td className="px-4 py-3 font-bold text-slate-800">
-                                🌸 {it.title || it.name || "Çiçek Buketi"}
-                              </td>
-                              <td className="px-4 py-3">
-                                <span className="text-[10px] font-bold px-2 py-0.5 bg-emerald-50 text-emerald-800 rounded border border-emerald-200">
-                                  Ana Ürün
-                                </span>
-                              </td>
-                              <td className="px-4 py-3 text-center font-bold">{it.quantity || 1}</td>
-                              <td className="px-4 py-3 font-black text-end text-slate-900">{it.price || "—"}</td>
-                            </tr>
-                          ))
+                          selectedOrder.items.map((it: any, idx: number) => {
+                            const itImage = it.image || it.product?.image || "";
+                            return (
+                              <Fragment key={idx}>
+                                <tr>
+                                  <td className="px-4 py-3 font-bold text-slate-800">
+                                    <div className="flex items-center gap-2.5">
+                                      {itImage && (
+                                        <img src={itImage} alt={it.title || "Ürün"} className="w-9 h-9 rounded-lg object-cover border border-slate-200 shrink-0" />
+                                      )}
+                                      <span>🌸 {it.title || it.name || "Çiçek Buketi"}</span>
+                                    </div>
+                                  </td>
+                                  <td className="px-4 py-3">
+                                    <span className="text-[10px] font-bold px-2 py-0.5 bg-emerald-50 text-emerald-800 rounded border border-emerald-200">
+                                      Ana Ürün
+                                    </span>
+                                  </td>
+                                  <td className="px-4 py-3 text-center font-bold">{it.quantity || 1}</td>
+                                  <td className="px-4 py-3 font-black text-end text-slate-900">{it.price || "—"}</td>
+                                </tr>
+                                {/* Item Level Selected Extras */}
+                                {Array.isArray(it.selectedExtras) && it.selectedExtras.map((ex: any, exIdx: number) => (
+                                  <tr key={`ex-${idx}-${exIdx}`} className="bg-amber-50/30">
+                                    <td className="px-4 py-2.5 font-bold text-amber-950 pl-8">
+                                      <div className="flex items-center gap-2">
+                                        {ex.image && <img src={ex.image} alt={ex.name} className="w-7 h-7 rounded-md object-cover border border-amber-200 shrink-0" />}
+                                        <span>🎁 {ex.name || ex.title || "Ekstra Ürün"}</span>
+                                      </div>
+                                    </td>
+                                    <td className="px-4 py-2.5">
+                                      <span className="text-[10px] font-bold px-2 py-0.5 bg-amber-100 text-amber-900 rounded border border-amber-300">
+                                        Ekstra Ürün
+                                      </span>
+                                    </td>
+                                    <td className="px-4 py-2.5 text-center font-bold">{ex.quantity || 1}</td>
+                                    <td className="px-4 py-2.5 font-black text-end text-amber-900">{typeof ex.price === "number" ? `${ex.price} ₺` : ex.price || "—"}</td>
+                                  </tr>
+                                ))}
+                              </Fragment>
+                            );
+                          })
                         ) : (
                           <tr>
                             <td className="px-4 py-3 font-bold text-slate-800">
@@ -1500,19 +1562,22 @@ export default function AdminOrdersPage() {
                           </tr>
                         )}
 
-                        {/* Addons / Extras */}
-                        {Array.isArray(selectedOrder.addons) && selectedOrder.addons.map((add: any, idx: number) => (
-                          <tr key={`addon-${idx}`} className="bg-amber-50/30">
-                            <td className="px-4 py-3 font-bold text-amber-950 flex items-center gap-1.5">
-                              <span>🎁</span> <span>{add.name}</span>
+                        {/* Order Level Addons / Extras */}
+                        {(Array.isArray(selectedOrder.addons) ? selectedOrder.addons : Array.isArray(selectedOrder.extras) ? selectedOrder.extras : []).map((add: any, idx: number) => (
+                          <tr key={`addon-${idx}`} className="bg-amber-50/40">
+                            <td className="px-4 py-3 font-bold text-amber-950">
+                              <div className="flex items-center gap-2.5">
+                                {add.image && <img src={add.image} alt={add.name} className="w-8 h-8 rounded-lg object-cover border border-amber-200 shrink-0" />}
+                                <span>🎁 {add.name || add.title || "Ekstra Hediye"}</span>
+                              </div>
                             </td>
                             <td className="px-4 py-3">
                               <span className="text-[10px] font-bold px-2 py-0.5 bg-amber-100 text-amber-900 rounded border border-amber-300">
                                 Ekstra Hediye
                               </span>
                             </td>
-                            <td className="px-4 py-3 text-center font-bold">1</td>
-                            <td className="px-4 py-3 font-black text-end text-amber-900">{add.price}</td>
+                            <td className="px-4 py-3 text-center font-bold">{add.quantity || 1}</td>
+                            <td className="px-4 py-3 font-black text-end text-amber-900">{typeof add.price === "number" ? `${add.price} ₺` : add.price || "—"}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -1548,7 +1613,15 @@ export default function AdminOrdersPage() {
                       <div>Müşteri Adı: <strong className="text-slate-900">{selectedOrder.customerName || "Misafir"}</strong></div>
                       <div>Telefon: <strong className="text-slate-900">{selectedOrder.customerPhone || "—"}</strong></div>
                       <div>E-Posta: <strong className="text-slate-900">{selectedOrder.customerEmail || "—"}</strong></div>
-                      <div>Ödeme Türü: <strong className="text-slate-900">{selectedOrder.paymentMethod || "Kredi Kartı"}</strong></div>
+                      <div>
+                        Ödeme Türü: <strong className="text-slate-900">{selectedOrder.paymentMethod || "Kredi Kartı"}</strong>
+                        {(Number(selectedOrder.usedPoints || 0) > 0 || selectedOrder.pointsDiscount) && (
+                          <div className="mt-1.5 flex items-center gap-1 text-[11px] font-black text-amber-950 bg-amber-100 px-2.5 py-1 rounded-lg border border-amber-300">
+                            <span>⭐</span>
+                            <span>Ödemenin bir kısmı ÇiçekPuan ile yapılmıştır (-{selectedOrder.usedPoints || selectedOrder.pointsDiscount} İndirim)</span>
+                          </div>
+                        )}
+                      </div>
                       <div className="pt-2">
                         <a
                           href={`https://wa.me/90${(selectedOrder.customerPhone || "").replace(/[^\d]/g, "")}?text=${encodeURIComponent(`Merhaba ${selectedOrder.customerName}, #${selectedOrder.id} numaralı siparişiniz ile ilgili bilgi vermek için ulaşıyoruz.`)}`}

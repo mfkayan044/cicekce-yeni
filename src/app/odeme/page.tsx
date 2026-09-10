@@ -591,14 +591,22 @@ export default function CheckoutPage() {
             id: prod.id,
             title: prod.title || "Çiçek Buketi",
             price: prod.price || "2.510 ₺",
+            image: prod.image || item.image || "",
             quantity: item.quantity || 1,
             selectedExtras: item.selectedExtras || []
           };
         }),
-        addons: selectedAddons.map((a: any) => ({ name: a.name, price: a.price })),
+        addons: selectedAddons.map((a: any) => ({
+          name: a.name,
+          price: typeof a.price === "number" ? `${a.price} ₺` : a.price,
+          image: a.image || ""
+        })),
         cardNote: cardNote || "Kart notu belirtilmedi.",
         isAnonymous: isAnonymousSender,
         paymentMethod: paymentMethod === "card" ? "Kredi Kartı (3D Secure)" : paymentMethod === "iban" ? "Havale / EFT" : paymentMethod === "cash" ? "Kapıda Ödeme" : "WhatsApp Sipariş",
+        usedPoints: pointsDiscount,
+        pointsDiscount: pointsDiscount > 0 ? `${pointsDiscount} ₺` : null,
+        discountAmount: discountAmount > 0 ? `${discountAmount} ₺` : null,
         totalAmount: `${grandTotal.toLocaleString("tr-TR")} ₺`,
       };
 

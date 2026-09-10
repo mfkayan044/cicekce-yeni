@@ -35,28 +35,25 @@ export default function CheckoutPage() {
     () => `TSL-2026-${Math.floor(100000 + Math.random() * 900000)}`
   );
 
+  const initialMember = typeof window !== "undefined" ? getStoredMember() : null;
   const initialCities = (initialDbData?.cities || []).filter((c: any) => c.active !== false);
 
   const getInitialAddressState = (cities: any[]) => {
     let cityId = "";
     let districtId = "";
     let neighId = "";
-
-    if (cities && cities.length > 0) {
-      cityId = String(cities[0].id);
-      const dists = (cities[0].districts || []).filter((d: any) => d.active !== false);
-      if (dists.length > 0) {
-        districtId = String(dists[0].id);
-        const neighs = (dists[0].neighborhoods || []).filter((n: any) => n.active !== false);
-        if (neighs.length > 0) {
-          neighId = String(neighs[0].id);
-        }
-      }
-    }
+    let initialSavedAddrId = "";
 
     if (typeof window !== "undefined") {
       try {
-        const savedAddr = localStorage.getItem("pro_flower_delivery_address");
+        let savedAddr = localStorage.getItem("pro_flower_delivery_address");
+        const mem = getStoredMember();
+        if (!savedAddr && mem && mem.addresses && mem.addresses.length > 0) {
+          const firstAddr = mem.addresses[0];
+          savedAddr = `${firstAddr.city || "İstanbul"} / ${firstAddr.district || ""} / ${firstAddr.neighborhood || ""}`;
+          initialSavedAddrId = firstAddr.id || "";
+        }
+
         if (savedAddr && cities && cities.length > 0) {
           const parts = savedAddr.split("/");
           const cName = parts[0]?.trim()?.toLowerCase();
@@ -79,11 +76,32 @@ export default function CheckoutPage() {
               }
             }
           }
+
+          if (mem && mem.addresses) {
+            const matchedMemAddr = mem.addresses.find((a: any) => 
+              (a.district || "").toLowerCase() === dName || (a.city || "").toLowerCase() === cName
+            );
+            if (matchedMemAddr) {
+              initialSavedAddrId = matchedMemAddr.id;
+            }
+          }
         }
       } catch (e) {}
     }
 
-    return { cityId, districtId, neighId };
+    if (!cityId && cities && cities.length > 0) {
+      cityId = String(cities[0].id);
+      const dists = (cities[0].districts || []).filter((d: any) => d.active !== false);
+      if (dists.length > 0) {
+        districtId = String(dists[0].id);
+        const neighs = (dists[0].neighborhoods || []).filter((n: any) => n.active !== false);
+        if (neighs.length > 0) {
+          neighId = String(neighs[0].id);
+        }
+      }
+    }
+
+    return { cityId, districtId, neighId, initialSavedAddrId };
   };
 
   const initialAddrState = getInitialAddressState(initialCities);
@@ -102,8 +120,8 @@ export default function CheckoutPage() {
   const [companySchool, setCompanySchool] = useState("");
 
   // Logged-in member saved addresses state
-  const [loggedMember, setLoggedMember] = useState<any>(null);
-  const [selectedSavedAddrId, setSelectedSavedAddrId] = useState<string>("");
+  const [loggedMember, setLoggedMember] = useState<any>(initialMember);
+  const [selectedSavedAddrId, setSelectedSavedAddrId] = useState<string>(initialAddrState.initialSavedAddrId);
   const [saveNewAddressToProfile, setSaveNewAddressToProfile] = useState<boolean>(false);
   const [newAddressTitle, setNewAddressTitle] = useState<string>("");
 
@@ -120,9 +138,9 @@ export default function CheckoutPage() {
 
   // Step 3: Fatura Bilgileri State
   const [billingType, setBillingType] = useState<"bireysel" | "kurumsal">("bireysel");
-  const [senderName, setSenderName] = useState("");
-  const [senderPhone, setSenderPhone] = useState("");
-  const [senderEmail, setSenderEmail] = useState("");
+  const [senderName, setSenderName] = useState(() => initialMember?.name || "");
+  const [senderPhone, setSenderPhone] = useState(() => initialMember?.phone || "");
+  const [senderEmail, setSenderEmail] = useState(() => initialMember?.email || "");
   const [taxOffice, setTaxOffice] = useState("");
   const [taxNo, setTaxNo] = useState("");
 
@@ -292,16 +310,18 @@ export default function CheckoutPage() {
             const dName = parts[1]?.trim();
             const nName = parts[2]?.split("-")[0]?.trim();
 
-            const targetCity = data.find((c: any) => c.name.toLowerCase() === cName?.toLowerCase()) || data[0];
-            setSelectedCityId(String(targetCity.id));
+            const targetCity = data.find((c: any) => c.name.toLowerCase() === cName?.toLowerCase());
+            if (targetCity) {
+              setSelectedCityId(String(targetCity.id));
 
-            const districts = targetCity.districts || [];
-            const targetDist = districts.find((d: any) => d.name.toLowerCase() === dName?.toLowerCase()) || districts[0];
-            if (targetDist) {
-              setSelectedDistrictId(String(targetDist.id));
-              const neighs = targetDist.neighborhoods || [];
-              const targetNeigh = neighs.find((n: any) => n.name.toLowerCase().includes(nName?.toLowerCase() || "")) || neighs[0];
-              if (targetNeigh) setSelectedNeighId(String(targetNeigh.id));
+              const districts = targetCity.districts || [];
+              const targetDist = districts.find((d: any) => d.name.toLowerCase() === dName?.toLowerCase());
+              if (targetDist) {
+                setSelectedDistrictId(String(targetDist.id));
+                const neighs = targetDist.neighborhoods || [];
+                const targetNeigh = neighs.find((n: any) => n.name.toLowerCase().includes(nName?.toLowerCase() || "")) || neighs[0];
+                if (targetNeigh) setSelectedNeighId(String(targetNeigh.id));
+              }
             }
           }
         }

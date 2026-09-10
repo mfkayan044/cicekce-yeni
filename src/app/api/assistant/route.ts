@@ -58,32 +58,41 @@ Lütfen SADECE aşağıdaki JSON formatında geçerli bir JSON yanıtı ver (ba�
   "cardNoteAdvice": "Bu çiçeğin yanına çok yakışacak, duygusal veya neşeli 1-2 cümlelik özel kart notu"
 }`;
 
-        const geminiRes = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              contents: [{ parts: [{ text: prompt }] }],
-              generationConfig: { responseMimeType: "application/json" }
-            })
-          }
-        );
+        const modelsToTry = ["gemini-3.6-flash", "gemini-2.5-flash", "gemini-flash-latest"];
+        let generatedText = "";
 
-        if (geminiRes.ok) {
-          const resData = await geminiRes.json();
-          const generatedText = resData?.candidates?.[0]?.content?.parts?.[0]?.text;
-          if (generatedText) {
-            const parsed = JSON.parse(generatedText);
-            const matchedProduct = products.find((p) => String(p.id) === String(parsed.recommendedProductId)) || products[0];
+        for (const modelName of modelsToTry) {
+          try {
+            const geminiRes = await fetch(
+              `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${geminiKey}`,
+              {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  contents: [{ parts: [{ text: prompt }] }],
+                  generationConfig: { responseMimeType: "application/json" }
+                })
+              }
+            );
 
-            return NextResponse.json({
-              reply: parsed.botResponse,
-              recommendedProduct: matchedProduct,
-              cardNoteAdvice: parsed.cardNoteAdvice,
-              source: "gemini_ai"
-            });
-          }
+            if (geminiRes.ok) {
+              const resData = await geminiRes.json();
+              generatedText = resData?.candidates?.[0]?.content?.parts?.[0]?.text || "";
+              if (generatedText) break;
+            }
+          } catch (e) {}
+        }
+
+        if (generatedText) {
+          const parsed = JSON.parse(generatedText);
+          const matchedProduct = products.find((p) => String(p.id) === String(parsed.recommendedProductId)) || products[0];
+
+          return NextResponse.json({
+            reply: parsed.botResponse,
+            recommendedProduct: matchedProduct,
+            cardNoteAdvice: parsed.cardNoteAdvice,
+            source: "gemini_ai"
+          });
         }
       } catch (geminiError) {
         console.error("Gemini Assistant Error:", geminiError);

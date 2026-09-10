@@ -12,7 +12,16 @@ export async function POST(request: Request) {
       );
     }
 
-    const isValid = validateAdminCredentials(login, password);
+    const { getSetting } = await import("@/lib/settings-helper");
+    const genSettings = await getSetting("general_settings", {});
+
+    const dynamicUser = genSettings.username || process.env.ADMIN_USER || "admin";
+    const dynamicPass = genSettings.password || process.env.ADMIN_PASSWORD || "123456";
+    const dynamicEmail = genSettings.email || "admin@cicekce.com";
+
+    const isValid =
+      validateAdminCredentials(login, password) ||
+      ((login === dynamicUser || login === dynamicEmail) && password === dynamicPass);
 
     if (!isValid) {
       return NextResponse.json(

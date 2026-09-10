@@ -96,12 +96,6 @@ export default function ProductCard({
           />
         </Link>
 
-        {code && (
-          <span style={{ backgroundColor: "#2b2623", color: "#ffffff" }} className="absolute top-2.5 left-2.5 z-10 text-[10px] font-black px-2 py-0.5 rounded-md shadow-xs">
-            {code}
-          </span>
-        )}
-
         <button
           type="button"
           onClick={handleToggleFav}

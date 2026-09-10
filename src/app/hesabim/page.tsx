@@ -53,6 +53,18 @@ export default function MemberAccountPage() {
     setPhone(current.phone || "");
     setLoading(false);
 
+    if (current.email) {
+      fetch(`/api/members?email=${encodeURIComponent(current.email)}`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data && !data.error) {
+            setMember(data);
+            setStoredMember(data);
+          }
+        })
+        .catch(() => {});
+    }
+
     // Fetch user's orders matching email or phone
     fetchOrders(current.email, current.phone);
   }, []);
@@ -279,8 +291,14 @@ export default function MemberAccountPage() {
                 <p className="text-xs text-slate-500 m-0 mt-0.5">
                   {member.email} · {member.phone || "Telefon Belirtilmedi"}
                 </p>
-                <div className="text-[11px] font-bold text-emerald-700 mt-1 flex items-center gap-1">
-                  <ShieldCheck className="w-3.5 h-3.5" /> Çiçekçe Üyesi
+                <div className="flex flex-wrap items-center gap-2 mt-2">
+                  <div className="text-[11px] font-bold text-emerald-700 flex items-center gap-1 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200">
+                    <ShieldCheck className="w-3.5 h-3.5" /> Çiçekçe Üyesi
+                  </div>
+                  <div className="text-[11px] font-black text-amber-900 flex items-center gap-1.5 bg-amber-50 px-3 py-1 rounded-lg border border-amber-300 shadow-xs">
+                    <Sparkles className="w-3.5 h-3.5 text-amber-600 fill-amber-400" />
+                    <span>ÇiçekPuan: <strong className="text-xs font-black text-amber-950">{member.points || 0} Puan</strong></span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -292,6 +310,29 @@ export default function MemberAccountPage() {
             >
               <LogOut className="w-4 h-4" /> Çıkış Yap
             </button>
+          </div>
+
+          {/* ÇİÇEKPUAN BALANCE SUMMARY CARD */}
+          <div className="bg-gradient-to-r from-amber-500 via-amber-600 to-amber-700 rounded-3xl p-6 text-white shadow-md flex flex-col md:flex-row items-start md:items-center justify-between gap-4 relative overflow-hidden">
+            <div className="relative z-10 flex items-center gap-4">
+              <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center text-amber-100 shrink-0 border border-white/30 shadow-xs">
+                <Sparkles className="w-7 h-7 text-amber-100 fill-amber-200" />
+              </div>
+              <div>
+                <div className="text-xs font-extrabold text-amber-100 uppercase tracking-wider">Mevcut ÇiçekPuan Bakiyeniz</div>
+                <div className="text-2xl lg:text-3xl font-black text-white mt-0.5">
+                  {member.points || 0} <span className="text-base font-bold text-amber-200">ÇiçekPuan</span>
+                </div>
+                <p className="text-xs text-amber-100/90 mt-1 max-w-xl">
+                  Tüm alışverişlerinizden %5 ÇiçekPuan kazanırsınız. Biriken puanlarınızı sipariş adımlarında indirim olarak kullanabilirsiniz!
+                </p>
+              </div>
+            </div>
+
+            <div className="relative z-10 shrink-0 bg-white/15 backdrop-blur-md px-5 py-3.5 rounded-2xl border border-white/25 text-center min-w-[140px]">
+              <div className="text-[11px] font-bold text-amber-100 uppercase tracking-wide">İndirim Değeri</div>
+              <div className="text-2xl font-black text-white mt-0.5">{member.points || 0} ₺</div>
+            </div>
           </div>
 
           {/* NAVIGATION TABS */}

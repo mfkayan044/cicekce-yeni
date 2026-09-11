@@ -93,16 +93,24 @@ export async function DELETE(req: Request) {
     const id = searchParams.get("id");
     const clearAll = searchParams.get("all") === "true";
 
+    let body: any = null;
+    try {
+      body = await req.json();
+    } catch (e) {}
+
     let carts = await getAbandonedCartsFromDb();
 
     if (clearAll) {
       carts = [];
+    } else if (body && Array.isArray(body.ids)) {
+      const idsToDelete = body.ids.map((i: any) => String(i));
+      carts = carts.filter((c: any) => !idsToDelete.includes(String(c.id)));
     } else if (id) {
       carts = carts.filter((c: any) => String(c.id) !== String(id));
     }
 
     await saveAbandonedCartsToDb(carts);
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, remaining: carts.length });
   } catch (e) {
     return NextResponse.json({ success: true }, { status: 200 });
   }

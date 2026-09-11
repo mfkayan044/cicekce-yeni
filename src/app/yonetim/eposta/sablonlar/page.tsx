@@ -6,8 +6,10 @@ import { useState, useEffect } from "react";
 import { 
   getOrderReceivedHtml, 
   getPhotoApprovalHtml, 
+  getCourierNoticeHtml,
   getDeliveredNoticeHtml, 
-  getAbandonedCartHtml 
+  getAbandonedCartHtml,
+  getWelcomeNoticeHtml
 } from "@/lib/email-service";
 
 const sampleOrder = {
@@ -61,11 +63,11 @@ export default function EpostaSablonlarPage() {
   };
 
   const getInitialTemplates = () => [
-    { id: "1", name: "Sipariş Onayı (Kredi Kartı / Havale)", subject: "Siparişiniz Alındı - #SIP-56298", active: true, category: "Sipariş", engine: "Resend (Transactional)", type: "order_received" },
+    { id: "1", name: "Sipariş Onayı (Kredi Kartı / Havale)", subject: "🌸 Siparişiniz Alındı - #SIP-56298", active: true, category: "Sipariş", engine: "Resend (Transactional)", type: "order_received" },
     { id: "2", name: "Canlı Görsel Onayı İsteği", subject: "📸 Çiçeğiniz Hazırlandı! Görsel Onayı Bekliyor - #SIP-56298", active: true, category: "Fotoğraf Onayı", engine: "Resend (Transactional)", type: "photo_approval" },
-    { id: "3", name: "Sipariş Teslim Edildi & ÇiçekPuan İsteği", subject: "✅ Çiçeğiniz Teslim Edildi! 50 ÇiçekPuan Kazanın - #SIP-56298", active: true, category: "Teslimat", engine: "Resend (Transactional)", type: "delivered" },
-    { id: "4", name: "Yarım Kalan Sepet Hatırlatması", subject: "🛒 Sepetinizde Harika Çiçekler Bekliyor!", active: true, category: "Pazarlama", engine: "Brevo (Marketing)", type: "abandoned_cart" },
-    { id: "5", name: "Kurye Yola Çıktı / Hazırlanıyor", subject: "🛵 Çiçeğiniz Kuryede! Sipariş #SIP-56298 Yolda", active: true, category: "Kurye", engine: "Resend (Transactional)", type: "courier" },
+    { id: "3", name: "Kurye Yola Çıktı / Hazırlanıyor", subject: "🛵 Çiçeğiniz Kuryede! Sipariş #SIP-56298 Yolda", active: true, category: "Kurye", engine: "Resend (Transactional)", type: "courier" },
+    { id: "4", name: "Sipariş Teslim Edildi & ÇiçekPuan İsteği", subject: "✅ Çiçeğiniz Teslim Edildi! 50 ÇiçekPuan Kazanın - #SIP-56298", active: true, category: "Teslimat", engine: "Resend (Transactional)", type: "delivered" },
+    { id: "5", name: "Yarım Kalan Sepet Hatırlatması", subject: "🛒 Sepetinizde Harika Çiçekler Bekliyor! %10 İndirim Fırsatı", active: true, category: "Pazarlama", engine: "Brevo (Marketing)", type: "abandoned_cart" },
     { id: "6", name: "Yeni Üyelik Hoş Geldin Mesajı", subject: "🌸 Çiçekçe Ailesine Hoş Geldiniz! 100 ₺ İndiriminiz Tanımlandı", active: true, category: "Üyelik", engine: "Resend (Transactional)", type: "welcome" }
   ];
 
@@ -73,10 +75,14 @@ export default function EpostaSablonlarPage() {
     let html = "";
     if (t.type === "photo_approval") {
       html = getPhotoApprovalHtml(sampleOrder);
+    } else if (t.type === "courier") {
+      html = getCourierNoticeHtml(sampleOrder);
     } else if (t.type === "delivered") {
       html = getDeliveredNoticeHtml(sampleOrder);
     } else if (t.type === "abandoned_cart") {
       html = getAbandonedCartHtml(sampleCart);
+    } else if (t.type === "welcome") {
+      html = getWelcomeNoticeHtml({ name: "Ahmet Yılmaz" });
     } else {
       html = getOrderReceivedHtml(sampleOrder);
     }
@@ -186,7 +192,7 @@ export default function EpostaSablonlarPage() {
               </div>
 
               <div className="p-4 bg-white border-t flex justify-between items-center text-xs">
-                <span className="text-slate-500 font-medium">💡 Tasarım tüm e-posta istemcileriyle (Gmail, Apple Mail, Outlook) %100 uyumludur.</span>
+                <span className="text-slate-500 font-medium">💡 Tasarım tüm e-posta istemcileriyle (Gmail, Apple Mail, Hotmail) %100 uyumludur.</span>
                 <button
                   onClick={() => setPreviewModalHtml(null)}
                   style={{ backgroundColor: "#2b2623", color: "#ffffff" }}

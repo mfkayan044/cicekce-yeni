@@ -26,9 +26,17 @@ export async function POST(request: Request) {
 
     const resendApiKey = process.env.RESEND_API_KEY;
     const brevoApiKey = process.env.BREVO_API_KEY;
+    const senderEmail = process.env.SENDER_EMAIL || "siparis@cicekce.com";
 
     // 1. Try Resend API (Transactional)
-    if (type === "transactional" && resendApiKey) {
+    if (type === "transactional") {
+      if (!resendApiKey) {
+        return NextResponse.json({
+          success: false,
+          error: "RESEND_API_KEY Vercel veya .env dosyasında henüz tanımlı değil."
+        }, { status: 400 });
+      }
+
       try {
         const res = await fetch("https://api.resend.com/emails", {
           method: "POST",
@@ -37,27 +45,42 @@ export async function POST(request: Request) {
             "Content-Type": "application/json"
           },
           body: JSON.stringify({
-            from: `Çiçekçe <${process.env.SENDER_EMAIL || "siparis@cicekce.com"}>`,
+            from: `Çiçekçe <${senderEmail}>`,
             to: [to],
             subject: subject || "Çiçekçe Sipariş Bilgilendirmesi",
             html: html || "<p>Merhaba</p>",
           })
         });
 
+        const data = await res.json();
+
         if (res.ok) {
-          const data = await res.json();
           return NextResponse.json({
             success: true,
             provider: "resend_api",
             id: data.id,
             message: `E-posta Resend API ile (${to}) adresine ulaştırıldı.`
           });
+        } else {
+          return NextResponse.json({
+            success: false,
+            error: `Resend API Hatası: ${data.message || data.error || "Gönderilemedi"}`
+          }, { status: 400 });
         }
-      } catch (e) {}
+      } catch (e: any) {
+        return NextResponse.json({ success: false, error: `Resend Bağlantı Hatası: ${e?.message}` }, { status: 500 });
+      }
     }
 
     // 2. Try Brevo API (Marketing / Bulk)
-    if ((type === "marketing" || !resendApiKey) && brevoApiKey) {
+    if (type === "marketing") {
+      if (!brevoApiKey) {
+        return NextResponse.json({
+          success: false,
+          error: "BREVO_API_KEY Vercel veya .env dosyasında henüz tanımlı değil. Vercel paneline ekledikten sonra bir kez Deploy/Redeploy yapmanız gerekir."
+        }, { status: 400 });
+      }
+
       try {
         const res = await fetch("https://api.brevo.com/v3/smtp/email", {
           method: "POST",
@@ -67,26 +90,34 @@ export async function POST(request: Request) {
             "Accept": "application/json"
           },
           body: JSON.stringify({
-            sender: { name: "Çiçekçe", email: process.env.SENDER_EMAIL || "siparis@cicekce.com" },
+            sender: { name: "Çiçekçe", email: senderEmail },
             to: [{ email: to }],
             subject: subject || "Çiçekçe Bilgilendirme",
             htmlContent: html || "<p>Merhaba</p>",
           })
         });
 
+        const data = await res.json();
+
         if (res.ok) {
-          const data = await res.json();
           return NextResponse.json({
             success: true,
             provider: "brevo_api",
             messageId: data.messageId,
             message: `E-posta Brevo API ile (${to}) adresine ulaştırıldı.`
           });
+        } else {
+          return NextResponse.json({
+            success: false,
+            error: `Brevo API Hatası: ${data.message || JSON.stringify(data)} (Brevo panelinizde '${senderEmail}' adresinin Onaylı Gönderici olarak ekli olduğundan emin olun).`
+          }, { status: 400 });
         }
-      } catch (e) {}
+      } catch (e: any) {
+        return NextResponse.json({ success: false, error: `Brevo Bağlantı Hatası: ${e?.message}` }, { status: 500 });
+      }
     }
 
-    // 3. Fallback to Nodemailer SMTP
+    // 3. Try Nodemailer SMTP Direct
     let settings: any = {};
     try {
       const { data } = await supabase
@@ -114,7 +145,7 @@ export async function POST(request: Request) {
     if (!mailHost || !mailUsername || !mailPassword) {
       return NextResponse.json({
         success: false,
-        error: "E-posta API anahtarlarınız (RESEND_API_KEY / BREVO_API_KEY) veya SMTP ayarlarınız henüz tanımlanmadı."
+        error: "Yedek SMTP sunucu ayarlarınız (Host, Kullanıcı Adı, Şifre) /yonetim/eposta sayfasından henüz girilmemiş."
       }, { status: 400 });
     }
 

@@ -12,28 +12,49 @@ export default function AdminEditProductPage({ params }: { params: Promise<{ id:
   const router = useRouter();
   const { products, updateProduct, categories } = useStore();
 
-  const handleAutoSeo = () => {
-    if (!form.title) {
+  const [aiGenerating, setAiGenerating] = useState(false);
+
+  const handleGeminiGenerate = async () => {
+    if (!form.title.trim()) {
       alert("Lütfen önce ürün adını giriniz.");
       return;
     }
-    const res = generateSeoDetails({
-      title: form.title,
-      category: form.category,
-      designTypes: form.designTypes,
-      recipients: form.recipients,
-      purposes: form.purposes,
-      colors: form.colors,
-      price: form.price,
-    });
-    setForm((prev) => ({
-      ...prev,
-      description: res.description,
-      seoTitle: res.seoTitle,
-      seoDesc: res.seoDesc,
-      seoKeywords: res.seoKeywords,
-    }));
-    alert("✨ Ürün açıklaması ve SEO meta bilgileri (Title, Description, Keywords) ürün detaylarına uygun olarak başarıyla oluşturuldu!");
+
+    setAiGenerating(true);
+    try {
+      const res = await fetch("/api/generate-product-content", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: form.title,
+          category: form.category,
+          designTypes: form.designTypes,
+          recipients: form.recipients,
+          purposes: form.purposes,
+          colors: form.colors,
+          price: form.price,
+        })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setForm((prev: any) => ({
+          ...prev,
+          description: data.description || prev.description,
+          seoTitle: data.seoTitle || prev.seoTitle,
+          seoDesc: data.seoDesc || prev.seoDesc,
+          seoKeywords: data.seoKeywords || prev.seoKeywords,
+        }));
+        alert(data.source === "gemini_ai"
+          ? "✨ Gemini 3.6 Flash Yapay Zeka ürününüz için %100 özgün açıklama ve SEO metinlerini başarıyla üretti!"
+          : "✨ Ürün açıklaması ve SEO metinleri başarıyla oluşturuldu!");
+      } else {
+        alert("İçerik oluşturulamadı: " + (data.error || "Hata"));
+      }
+    } catch (err) {
+      alert("Yapay zeka ile içerik oluşturulurken bir hata meydana geldi.");
+    } finally {
+      setAiGenerating(false);
+    }
   };
 
   const currentProduct = products.find((p: Product) => String(p.id) === String(id));
@@ -266,11 +287,21 @@ export default function AdminEditProductPage({ params }: { params: Promise<{ id:
                     <span>SEO ({activeTab === "TR" ? "Türkçe" : activeTab})</span>
                     <button
                       type="button"
-                      onClick={handleAutoSeo}
-                      className="btn btn-xs fw-bold px-2.5 py-1 rounded-lg border text-xs"
-                      style={{ backgroundColor: "#f0fdf4", color: "#15803d", borderColor: "#86efac" }}
+                      onClick={handleGeminiGenerate}
+                      disabled={aiGenerating}
+                      className="btn btn-sm fw-bold px-3 py-1.5 rounded-3 text-white border-0 shadow-xs"
+                      style={{ background: "linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%)" }}
                     >
-                      ✨ Otomatik SEO Oluştur
+                      {aiGenerating ? (
+                        <>
+                          <span className="spinner-border spinner-border-sm me-1" role="status"></span>
+                          <span>Yapay Zeka Yazıyor...</span>
+                        </>
+                      ) : (
+                        <>
+                          <span>✨ Gemini AI İle Özgün İçerik & SEO Üret</span>
+                        </>
+                      )}
                     </button>
                   </div>
                   <div className="card-body">
@@ -434,11 +465,12 @@ export default function AdminEditProductPage({ params }: { params: Promise<{ id:
                         <label className="form-label fw-bold small mb-0">Ürün Açıklaması</label>
                         <button
                           type="button"
-                          onClick={handleAutoSeo}
-                          className="btn btn-xs btn-outline-primary fw-bold text-xs flex items-center gap-1 rounded-lg"
-                          style={{ backgroundColor: "#f0fdf4", color: "#15803d", borderColor: "#86efac" }}
+                          onClick={handleGeminiGenerate}
+                          disabled={aiGenerating}
+                          className="btn btn-xs fw-bold text-xs flex items-center gap-1 rounded-lg text-white border-0"
+                          style={{ background: "linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%)" }}
                         >
-                          ✨ Otomatik SEO Açıklaması Oluştur
+                          {aiGenerating ? "✨ Yapay Zeka Yazıyor..." : "✨ Gemini AI İle Özgün Açıklama Üret"}
                         </button>
                       </div>
                       <textarea

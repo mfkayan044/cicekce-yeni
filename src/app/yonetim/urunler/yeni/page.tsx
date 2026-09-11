@@ -10,17 +10,45 @@ export default function AdminNewProductPage() {
   const router = useRouter();
   const { addProduct, categories } = useStore();
 
-  const handleAutoSeo = () => {
-    if (!form.title) {
-      alert("Lütfen önce ürün adını giriniz.");
+  const [aiGenerating, setAiGenerating] = useState(false);
+
+  const handleGeminiGenerate = async () => {
+    if (!form.title.trim()) {
+      alert("Lütfen içerik üretmeden önce bir Ürün Adı giriniz.");
       return;
     }
-    const res = generateSeoDetails({
-      title: form.title,
-      category: form.category,
-      price: form.price,
-    });
-    setForm((prev) => ({ ...prev, description: res.description }));
+
+    setAiGenerating(true);
+    try {
+      const res = await fetch("/api/generate-product-content", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: form.title,
+          category: form.category,
+          price: form.price,
+        })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setForm((prev: any) => ({
+          ...prev,
+          description: data.description || prev.description,
+          seoTitle: data.seoTitle || prev.seoTitle,
+          seoDesc: data.seoDesc || prev.seoDesc,
+          seoKeywords: data.seoKeywords || prev.seoKeywords,
+        }));
+        alert(data.source === "gemini_ai" 
+          ? "✨ Gemini 3.6 Flash Yapay Zeka ürününüz için %100 özgün açıklama ve SEO metinlerini başarıyla üretti!" 
+          : "✨ Ürün açıklaması ve SEO metinleri başarıyla oluşturuldu!");
+      } else {
+        alert("İçerik oluşturulamadı: " + (data.error || "Hata"));
+      }
+    } catch (err) {
+      alert("Yapay zeka ile içerik oluşturulurken bir hata meydana geldi.");
+    } finally {
+      setAiGenerating(false);
+    }
   };
 
   const [form, setForm] = useState({
@@ -31,6 +59,9 @@ export default function AdminNewProductPage() {
     discount: "%10",
     image: "https://demo.procicek.com.tr/urunler/7-kirmizi-gul-ve-beyaz-bicme-179-v2.webp",
     description: "",
+    seoTitle: "",
+    seoDesc: "",
+    seoKeywords: "",
     stock: true,
     featured: true,
   });
@@ -81,6 +112,9 @@ export default function AdminNewProductPage() {
       discount: form.discount,
       image: form.image,
       description: form.description,
+      seoTitle: form.seoTitle,
+      seoDesc: form.seoDesc,
+      seoKeywords: form.seoKeywords,
       stock: form.stock,
       featured: form.featured,
     });
@@ -210,25 +244,88 @@ export default function AdminNewProductPage() {
                   )}
                 </div>
 
+                {/* GEMINI AI CONTENT GENERATOR BANNER */}
+                <div className="p-3 mb-4 rounded-3 border bg-gradient text-dark d-flex flex-wrap align-items-center justify-content-between gap-3 shadow-xs" style={{ background: "linear-gradient(135deg, #f5f3ff 0%, #eff6ff 100%)", borderColor: "#c084fc" }}>
+                  <div className="d-flex align-items-center gap-3">
+                    <div className="rounded-3 bg-primary text-white d-flex align-items-center justify-content-center font-bold" style={{ width: "40px", height: "40px", fontSize: "1.2rem", background: "linear-gradient(135deg, #9333ea 0%, #4f46e5 100%)" }}>
+                      ✨
+                    </div>
+                    <div>
+                      <div className="fw-bold small text-dark">Gemini 3.6 Flash Yapay Zeka İçerik Asistanı</div>
+                      <div className="text-muted small">Ürününüz için %100 özgün 3 paragraflık açıklama ve Google SEO etiketlerini otomatik yazar.</div>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleGeminiGenerate}
+                    disabled={aiGenerating}
+                    className="btn btn-sm fw-bold px-3 py-2 rounded-3 text-white border-0 shadow-xs"
+                    style={{ background: "linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%)" }}
+                  >
+                    {aiGenerating ? (
+                      <>
+                        <span className="spinner-border spinner-border-sm me-1" role="status"></span>
+                        <span>Yapay Zeka Yazıyor...</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>✨ Gemini AI İle Özgün İçerik & SEO Üret</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+
                 <div className="mb-4">
                   <div className="d-flex align-items-center justify-content-between mb-2">
                     <label className="form-label fw-bold mb-0">Ürün Açıklaması</label>
-                    <button
-                      type="button"
-                      onClick={handleAutoSeo}
-                      className="btn btn-sm btn-outline-primary fw-bold text-xs flex items-center gap-1 rounded-lg"
-                      style={{ backgroundColor: "#f0fdf4", color: "#15803d", borderColor: "#86efac" }}
-                    >
-                      ✨ Otomatik SEO Açıklaması Oluştur
-                    </button>
                   </div>
                   <textarea
                     className="form-control"
-                    rows={5}
-                    placeholder="Ürün hakkında detaylı bilgi... (Veya yukarıdaki butona tıklayarak otomatik oluşturabilirsiniz)"
+                    rows={6}
+                    placeholder="Ürün hakkında detaylı bilgi... (Veya yukarıdaki Gemini AI butonuna tıklayarak otomatik özgün metin ürettirebilirsiniz)"
                     value={form.description}
                     onChange={(e) => setForm({ ...form, description: e.target.value })}
                   />
+                </div>
+
+                {/* SEO META FIELDS */}
+                <div className="p-3 border rounded bg-light mb-4 space-y-3">
+                  <div className="fw-bold border-b pb-2 mb-3 text-dark d-flex align-items-center gap-2">
+                    <span>🔍</span> <span>Google & Arama Motoru SEO Meta Bilgileri</span>
+                  </div>
+
+                  <div className="mb-3">
+                    <label className="form-label fw-bold small text-muted">SEO Başlığı (Meta Title)</label>
+                    <input
+                      type="text"
+                      className="form-control form-control-sm"
+                      placeholder="Örn: 101 Kırmızı Gül Buketi Siparişi - Aynı Gün Teslimat | Çiçekçe"
+                      value={form.seoTitle}
+                      onChange={(e) => setForm({ ...form, seoTitle: e.target.value })}
+                    />
+                  </div>
+
+                  <div className="mb-3">
+                    <label className="form-label fw-bold small text-muted">SEO Açıklaması (Meta Description)</label>
+                    <textarea
+                      className="form-control form-control-sm"
+                      rows={2}
+                      placeholder="Google arama sonuçlarında görünecek çekici özet açıklama metni..."
+                      value={form.seoDesc}
+                      onChange={(e) => setForm({ ...form, seoDesc: e.target.value })}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="form-label fw-bold small text-muted">SEO Anahtar Kelimeleri (Keywords)</label>
+                    <input
+                      type="text"
+                      className="form-control form-control-sm"
+                      placeholder="kırmızı gül, buket siparişi, taze çiçek, hızlı teslimat"
+                      value={form.seoKeywords}
+                      onChange={(e) => setForm({ ...form, seoKeywords: e.target.value })}
+                    />
+                  </div>
                 </div>
 
                 <div className="d-flex align-items-center gap-4 mb-4">

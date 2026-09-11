@@ -9,11 +9,11 @@ export default function WelcomeDiscountModal() {
 
   const [popup, setPopup] = useState<any>({
     enabled: true,
-    title: "İlk Siparişinize Özel 150 ₺ İndirim!",
-    description: "İlk siparişinize özel 150 ₺ indirim kodu sizleri bekliyor. Hediye10 koduyla siparişinizi hemen oluşturabilirsiniz.",
-    couponCode: "Hediye10",
+    title: "İlk Siparişinize Özel 100 ₺ İndirim! 🎉",
+    description: "İlk siparişinize özel 100 ₺ indirim kodu sizleri bekliyor. HOSGELDIN100 koduyla siparişinizi hemen oluşturabilirsiniz.",
+    couponCode: "HOSGELDIN100",
     badgeText: "BİLGİLENDİRME",
-    buttonText: "Kodu Kopyala & Alışverişe Başla",
+    buttonText: "Kodu Kopyala & Alışverişe Başla 🛍️",
     icon: "Gift"
   });
 
@@ -49,7 +49,7 @@ export default function WelcomeDiscountModal() {
 
   const handleCopyCode = () => {
     if (typeof navigator !== "undefined" && navigator.clipboard) {
-      navigator.clipboard.writeText(popup.couponCode || "Hediye10");
+      navigator.clipboard.writeText(popup.couponCode || "HOSGELDIN100");
     }
     setCopied(true);
     setTimeout(() => {

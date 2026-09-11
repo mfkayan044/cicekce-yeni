@@ -5,9 +5,9 @@ import { useState, useEffect } from "react";
 
 export default function PopupYonetimiPage() {
   const [enabled, setEnabled] = useState(true);
-  const [title, setTitle] = useState("İlk Siparişinize Özel 150 ₺ İndirim! 🎉");
-  const [description, setDescription] = useState("İlk siparişinize özel 150 ₺ indirim kodu sizleri bekliyor. Hediye10 koduyla siparişinizi hemen oluşturabilirsiniz.");
-  const [couponCode, setCouponCode] = useState("Hediye10");
+  const [title, setTitle] = useState("İlk Siparişinize Özel 100 ₺ İndirim! 🎉");
+  const [description, setDescription] = useState("İlk siparişinize özel 100 ₺ indirim kodu sizleri bekliyor. HOSGELDIN100 koduyla siparişinizi hemen oluşturabilirsiniz.");
+  const [couponCode, setCouponCode] = useState("HOSGELDIN100");
   const [badgeText, setBadgeText] = useState("BİLGİLENDİRME");
   const [buttonText, setButtonText] = useState("Kodu Kopyala & Alışverişe Başla 🛍️");
   const [icon, setIcon] = useState("🎁");

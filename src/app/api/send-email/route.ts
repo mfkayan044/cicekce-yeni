@@ -18,9 +18,75 @@ function getEmailSettings() {
 
 export async function POST(request: Request) {
   try {
-    const { to, subject, html, isTest } = await request.json();
+    const { to, subject, html, type = "transactional" } = await request.json();
 
-    // 1. Fetch saved SMTP settings from Supabase or db.json
+    if (!to) {
+      return NextResponse.json({ success: false, error: "Alıcı e-posta adresi (to) gereklidir." }, { status: 400 });
+    }
+
+    const resendApiKey = process.env.RESEND_API_KEY;
+    const brevoApiKey = process.env.BREVO_API_KEY;
+
+    // 1. Try Resend API (Transactional)
+    if (type === "transactional" && resendApiKey) {
+      try {
+        const res = await fetch("https://api.resend.com/emails", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${resendApiKey}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            from: `Çiçekçe <${process.env.SENDER_EMAIL || "siparis@cicekce.com"}>`,
+            to: [to],
+            subject: subject || "Çiçekçe Sipariş Bilgilendirmesi",
+            html: html || "<p>Merhaba</p>",
+          })
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          return NextResponse.json({
+            success: true,
+            provider: "resend_api",
+            id: data.id,
+            message: `E-posta Resend API ile (${to}) adresine ulaştırıldı.`
+          });
+        }
+      } catch (e) {}
+    }
+
+    // 2. Try Brevo API (Marketing / Bulk)
+    if ((type === "marketing" || !resendApiKey) && brevoApiKey) {
+      try {
+        const res = await fetch("https://api.brevo.com/v3/smtp/email", {
+          method: "POST",
+          headers: {
+            "api-key": brevoApiKey,
+            "Content-Type": "application/json",
+            "Accept": "application/json"
+          },
+          body: JSON.stringify({
+            sender: { name: "Çiçekçe", email: process.env.SENDER_EMAIL || "siparis@cicekce.com" },
+            to: [{ email: to }],
+            subject: subject || "Çiçekçe Bilgilendirme",
+            htmlContent: html || "<p>Merhaba</p>",
+          })
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          return NextResponse.json({
+            success: true,
+            provider: "brevo_api",
+            messageId: data.messageId,
+            message: `E-posta Brevo API ile (${to}) adresine ulaştırıldı.`
+          });
+        }
+      } catch (e) {}
+    }
+
+    // 3. Fallback to Nodemailer SMTP
     let settings: any = {};
     try {
       const { data } = await supabase
@@ -48,18 +114,17 @@ export async function POST(request: Request) {
     if (!mailHost || !mailUsername || !mailPassword) {
       return NextResponse.json({
         success: false,
-        error: "SMTP ayarlarınız (/yonetim/eposta) henüz tanımlanmadı. Lütfen Host, Kullanıcı Adı ve Şifrenizi girin."
+        error: "E-posta API anahtarlarınız (RESEND_API_KEY / BREVO_API_KEY) veya SMTP ayarlarınız henüz tanımlanmadı."
       }, { status: 400 });
     }
 
     if (mailEnabled === false) {
       return NextResponse.json({
         success: false,
-        error: "E-posta gönderimi sistem ayarlarından kapatılmış (mail_enabled = false)."
+        error: "E-posta gönderimi sistem ayarlarından kapatılmış."
       }, { status: 400 });
     }
 
-    // 2. Configure Nodemailer Transporter
     const portNum = parseInt(mailPort || "587", 10);
     const isSecure = mailEncryption === "ssl" || portNum === 465;
 
@@ -85,20 +150,19 @@ export async function POST(request: Request) {
       html: html || "<p>Merhaba, bu bir test e-postasıdır.</p>"
     };
 
-    // 3. Send real email via SMTP
     const info = await transporter.sendMail(mailOptions);
 
     return NextResponse.json({
       success: true,
       messageId: info.messageId,
       accepted: info.accepted,
-      mode: "real_smtp",
-      message: `E-posta başarıyla (${info.accepted.join(", ")}) adresine gönderildi!`
+      provider: "real_smtp",
+      message: `E-posta başarıyla SMTP (${info.accepted.join(", ")}) adresine gönderildi!`
     });
   } catch (error: any) {
     return NextResponse.json({
       success: false,
-      error: error?.message || "SMTP e-posta gönderimi sırasında hata oluştu."
+      error: error?.message || "E-posta gönderimi sırasında hata oluştu."
     }, { status: 500 });
   }
 }

@@ -8,9 +8,9 @@ const initialTsPath = path.join(process.cwd(), "src", "lib", "initial-db.ts");
 
 const defaultPopup = {
   enabled: true,
-  title: "İlk Siparişinize Özel 150 ₺ İndirim! 🎉",
-  description: "İlk siparişinize özel 150 ₺ indirim kodu sizleri bekliyor. Hediye10 koduyla siparişinizi hemen oluşturabilirsiniz.",
-  couponCode: "Hediye10",
+  title: "İlk Siparişinize Özel 100 ₺ İndirim! 🎉",
+  description: "İlk siparişinize özel 100 ₺ indirim kodu sizleri bekliyor. HOSGELDIN100 koduyla siparişinizi hemen oluşturabilirsiniz.",
+  couponCode: "HOSGELDIN100",
   badgeText: "BİLGİLENDİRME",
   buttonText: "Kodu Kopyala & Alışverişe Başla 🛍️",
   icon: "🎁"

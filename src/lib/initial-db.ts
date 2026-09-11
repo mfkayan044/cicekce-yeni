@@ -2100,7 +2100,7 @@ export const initialDbData: any = {
   "popupSettings": {
     "enabled": true,
     "title": "İlk Siparişinize Özel 100 ₺ İndirim! 🎉",
-    "description": "İlk siparişinize özel 100 ₺ indirim kodu sizleri bekliyor. Hediye10 koduyla siparişinizi hemen oluşturabilirsiniz.",
+    "description": "İlk siparişinize özel 100 ₺ indirim kodu sizleri bekliyor. HOSGELDIN100 koduyla siparişinizi hemen oluşturabilirsiniz.",
     "couponCode": "HOSGELDIN100",
     "badgeText": "BİLGİLENDİRME",
     "buttonText": "Kodu Kopyala & Alışverişe Başla 🛍️",

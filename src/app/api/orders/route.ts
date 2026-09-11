@@ -596,30 +596,30 @@ export async function PUT(request: Request) {
           deliveredPhoto: deliveredPhoto || existingOrder?.delivered_photo
         };
 
-        if (preparedPhoto) {
+        if (status && status.includes("Teslim")) {
+          sendTransactionalEmail({
+            to: targetEmail,
+            subject: `✅ Çiçeğiniz Teslim Edildi! 50 ÇiçekPuan Kazanın - #${id}`,
+            html: getDeliveredNoticeHtml(mergedObj),
+          }).catch(() => {});
+        } else if (body.preparedPhoto && body.preparedPhoto !== existingOrder?.prepared_photo) {
           sendTransactionalEmail({
             to: targetEmail,
             subject: `📸 Çiçeğiniz Hazırlandı! Görsel Onayı Bekliyor - #${id}`,
             html: getPhotoApprovalHtml(mergedObj),
           }).catch(() => {});
         } else if (status) {
-          if (status.includes("Hazırlanıyor")) {
-            sendTransactionalEmail({
-              to: targetEmail,
-              subject: `💐 Çiçeğiniz Hazırlanıyor - #${id}`,
-              html: getPreparingNoticeHtml(mergedObj),
-            }).catch(() => {});
-          } else if (status.includes("Kuryede") || status.includes("Dağıtımda")) {
+          if (status.includes("Kuryede") || status.includes("Dağıtımda")) {
             sendTransactionalEmail({
               to: targetEmail,
               subject: `🛵 Çiçeğiniz Kuryede! Sipariş #${id} Yolda`,
               html: getCourierNoticeHtml(mergedObj),
             }).catch(() => {});
-          } else if (status === "Teslim Edildi") {
+          } else if (status.includes("Hazırlanıyor") && !status.includes("Onay")) {
             sendTransactionalEmail({
               to: targetEmail,
-              subject: `✅ Çiçeğiniz Teslim Edildi! 50 ÇiçekPuan Kazanın - #${id}`,
-              html: getDeliveredNoticeHtml(mergedObj),
+              subject: `💐 Çiçeğiniz Hazırlanıyor - #${id}`,
+              html: getPreparingNoticeHtml(mergedObj),
             }).catch(() => {});
           }
         }

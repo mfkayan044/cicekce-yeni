@@ -383,6 +383,29 @@ export async function POST(request: Request) {
     };
     await saveOrderCouriersMap(courierMap);
 
+    // Send Order Received Email automatically to customer
+    if (newOrder.customer_email) {
+      try {
+        const { sendTransactionalEmail, getOrderReceivedHtml } = await import("@/lib/email-service");
+        const mailHtml = getOrderReceivedHtml({
+          id: newOrder.id,
+          customerName: newOrder.customer_name,
+          recipientName: newOrder.recipient_name,
+          recipientPhone: newOrder.recipient_phone,
+          address: newOrder.address,
+          deliveryDate: newOrder.delivery_date,
+          deliveryTime: newOrder.delivery_time,
+          totalAmount: newOrder.total_amount,
+          items: newOrder.items
+        });
+        sendTransactionalEmail({
+          to: newOrder.customer_email,
+          subject: `🌸 Siparişiniz Alındı - #${newOrder.id}`,
+          html: mailHtml,
+        }).catch(() => {});
+      } catch (e) {}
+    }
+
     return NextResponse.json(newOrder, { status: 201 });
   } catch (error: any) {
     console.error("POST /api/orders error:", error);
@@ -510,6 +533,47 @@ export async function PUT(request: Request) {
           sendNetgsmSms({ phone: targetPhone, message: msg }).catch(() => {});
         });
       }
+    }
+
+    // Trigger Automatic E-Posta Notification based on status / prepared photo
+    const targetEmail = existingOrder?.customer_email || existingOrder?.customerEmail;
+    if (targetEmail) {
+      try {
+        const { sendTransactionalEmail, getPhotoApprovalHtml, getCourierNoticeHtml, getDeliveredNoticeHtml } = await import("@/lib/email-service");
+        const mergedObj = {
+          id,
+          customerName: custName,
+          recipientName: existingOrder?.recipient_name || existingOrder?.recipientName || "Alıcı Müşteri",
+          recipientPhone: existingOrder?.recipient_phone || existingOrder?.recipientPhone || "",
+          address: existingOrder?.address || "",
+          deliveryDate: existingOrder?.delivery_date || existingOrder?.deliveryDate || "Bugün",
+          deliveryTime: existingOrder?.delivery_time || existingOrder?.deliveryTime || "15:00 - 18:00",
+          preparedPhoto: preparedPhoto || existingOrder?.prepared_photo,
+          deliveredPhoto: deliveredPhoto || existingOrder?.delivered_photo
+        };
+
+        if (preparedPhoto && preparedPhoto !== existingOrder?.prepared_photo) {
+          sendTransactionalEmail({
+            to: targetEmail,
+            subject: `📸 Çiçeğiniz Hazırlandı! Görsel Onayı Bekliyor - #${id}`,
+            html: getPhotoApprovalHtml(mergedObj),
+          }).catch(() => {});
+        } else if (status && status !== existingOrder?.status) {
+          if (status.includes("Kuryede") || status.includes("Dağıtımda")) {
+            sendTransactionalEmail({
+              to: targetEmail,
+              subject: `🛵 Çiçeğiniz Kuryede! Sipariş #${id} Yolda`,
+              html: getCourierNoticeHtml(mergedObj),
+            }).catch(() => {});
+          } else if (status === "Teslim Edildi") {
+            sendTransactionalEmail({
+              to: targetEmail,
+              subject: `✅ Çiçeğiniz Teslim Edildi! 50 ÇiçekPuan Kazanın - #${id}`,
+              html: getDeliveredNoticeHtml(mergedObj),
+            }).catch(() => {});
+          }
+        }
+      } catch (e) {}
     }
 
     // Backup update to courierMap memory

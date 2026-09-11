@@ -119,6 +119,17 @@ export async function POST(req: Request) {
       members.unshift(newMember);
       await saveMembersToDb(members);
 
+      // Send Welcome Email
+      try {
+        const { sendTransactionalEmail, getWelcomeNoticeHtml } = await import("@/lib/email-service");
+        const welcomeHtml = getWelcomeNoticeHtml({ name: newMember.name });
+        sendTransactionalEmail({
+          to: newMember.email,
+          subject: "🌸 Çiçekçe Ailesine Hoş Geldiniz! 100 ₺ İndiriminiz Tanımlandı",
+          html: welcomeHtml,
+        }).catch(() => {});
+      } catch (e) {}
+
       const { password: _, ...safeUser } = newMember;
       return NextResponse.json({ success: true, member: safeUser }, { status: 201 });
     }

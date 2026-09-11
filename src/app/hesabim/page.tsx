@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { getStoredMember, setStoredMember, clearStoredMember, MemberUser, MemberAddress } from "@/lib/member-auth";
 import Link from "next/link";
 import OrderUpdateRequestModal from "@/components/orders/OrderUpdateRequestModal";
-import { Package, Calendar, MapPin, User, Flower2, Clock, CheckCircle, AlertCircle, Edit, Trash2, Plus, LogOut, Search, Cake, Sparkles, ShieldCheck } from "lucide-react";
+import { Package, Calendar, MapPin, User, Flower2, Clock, CheckCircle, AlertCircle, Edit, Trash2, Plus, LogOut, Search, Cake, Sparkles, ShieldCheck, Star } from "lucide-react";
 
 export default function MemberAccountPage() {
   const router = useRouter();
@@ -41,6 +41,55 @@ export default function MemberAccountPage() {
   const [spRecipient, setSpRecipient] = useState("");
   const [spRelationship, setSpRelationship] = useState("Eş / Sevgili");
   const [spNote, setSpNote] = useState("");
+
+  // Evaluation & Points State
+  const [evaluatingOrder, setEvaluatingOrder] = useState<any | null>(null);
+  const [evalRating, setEvalRating] = useState(5);
+  const [evalComment, setEvalComment] = useState("");
+  const [submittingEval, setSubmittingEval] = useState(false);
+
+  const handleEvaluateOrder = (o: any) => {
+    if (o.rated) {
+      alert("Bu siparişi daha önce değerlendirdiniz. 50 ÇiçekPuan hesabınıza eklenmiştir! 🌟");
+      return;
+    }
+    setEvaluatingOrder(o);
+    setEvalRating(5);
+    setEvalComment("");
+  };
+
+  const submitOrderEvaluation = async () => {
+    if (!evaluatingOrder || !member) return;
+    setSubmittingEval(true);
+    try {
+      const newPoints = (member.points || 0) + 50;
+      const updatedMem = { ...member, points: newPoints };
+      setStoredMember(updatedMem);
+      setMember(updatedMem);
+
+      fetch("/api/members", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "update",
+          id: member.id,
+          updatedData: { points: newPoints },
+        }),
+      }).catch(() => {});
+
+      setMyOrders((prev) =>
+        prev.map((ord) => (ord.id === evaluatingOrder.id ? { ...ord, rated: true } : ord))
+      );
+
+      alert("🎉 TEBRİKLER! Sipariş değerlendirmeniz alındı, 50 ÇiçekPuan hesabınıza anında yüklendi!");
+      setEvaluatingOrder(null);
+    } catch (e) {
+      alert("Değerlendirmeniz alındı.");
+      setEvaluatingOrder(null);
+    } finally {
+      setSubmittingEval(false);
+    }
+  };
 
   useEffect(() => {
     const current = getStoredMember();
@@ -522,6 +571,17 @@ export default function MemberAccountPage() {
                           </Link>
                         ) : null}
 
+                        {o.status === "Teslim Edildi" ? (
+                          <button
+                            type="button"
+                            onClick={() => handleEvaluateOrder(o)}
+                            className="py-2 px-4 rounded-xl text-xs font-black bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-300 transition flex items-center gap-1.5 shadow-2xs"
+                          >
+                            <Star className="w-3.5 h-3.5 text-amber-600 fill-amber-500" />
+                            <span>{o.rated ? "⭐ Değerlendirildi (+50 Puan)" : "⭐ Değerlendir & 50 ÇiçekPuan Kazan"}</span>
+                          </button>
+                        ) : null}
+
                         {o.status !== "Teslim Edildi" && o.updateRequest?.status !== "PENDING" && (
                           <button
                             type="button"
@@ -945,6 +1005,63 @@ export default function MemberAccountPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* EVALUATION & POINTS MODAL */}
+      {evaluatingOrder && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4">
+          <div className="bg-white rounded-3xl max-w-md w-full border border-slate-200 shadow-2xl p-6 space-y-4 font-sans text-center">
+            <div className="w-16 h-16 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center mx-auto text-3xl shadow-xs">
+              ⭐
+            </div>
+            <div>
+              <h3 className="font-extrabold text-slate-900 text-lg">Siparişi Değerlendir</h3>
+              <p className="text-xs text-slate-500 mt-1">
+                #{evaluatingOrder.id} numaralı siparişinizi değerlendirin, <strong>50 ÇiçekPuan</strong> anında hesabınıza yüklensin!
+              </p>
+            </div>
+
+            <div className="flex justify-center gap-2 py-2">
+              {[1, 2, 3, 4, 5].map((star) => (
+                <button
+                  key={star}
+                  type="button"
+                  onClick={() => setEvalRating(star)}
+                  className="text-3xl transition hover:scale-110"
+                >
+                  {star <= evalRating ? "⭐" : "☆"}
+                </button>
+              ))}
+            </div>
+
+            <textarea
+              className="w-full p-3 border border-slate-300 rounded-2xl text-xs font-medium text-slate-900 bg-slate-50 focus:outline-none"
+              rows={3}
+              placeholder="Çiçek kalitesi, kurye hızı ve teslimat hakkındaki görüşleriniz..."
+              value={evalComment}
+              onChange={(e) => setEvalComment(e.target.value)}
+            />
+
+            <div className="flex justify-end gap-2 pt-2 border-t">
+              <button
+                type="button"
+                onClick={() => setEvaluatingOrder(null)}
+                className="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200"
+              >
+                Vazgeç
+              </button>
+              <button
+                type="button"
+                onClick={submitOrderEvaluation}
+                disabled={submittingEval}
+                style={{ backgroundColor: "#2b2623", color: "#ffffff" }}
+                className="px-6 py-2.5 rounded-xl text-xs font-black shadow-md hover:opacity-95 transition"
+              >
+                {submittingEval ? "Gönderiliyor..." : "⭐ Değerlendir & 50 Puan Kazan"}
+              </button>
+            </div>
           </div>
         </div>
       )}

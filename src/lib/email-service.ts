@@ -15,12 +15,9 @@ export const SENDER_EMAIL = process.env.SENDER_EMAIL || "siparis@cicekce.com";
 // Common Header HTML
 function getHeaderHtml(title: string, subtitle: string, headerBg: string = "#2b2623"): string {
   return `
-    <div style="background-color: ${headerBg}; padding: 32px 24px; text-align: center; color: #ffffff; border-bottom: 3px solid #d97706;">
-      <div style="font-size: 26px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; font-family: 'Cinzel', Georgia, serif; color: #ffffff; margin-bottom: 6px;">
+    <div style="background-color: ${headerBg}; padding: 30px 24px; text-align: center; color: #ffffff; border-bottom: 3px solid #d97706;">
+      <div style="font-size: 26px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; font-family: 'Cinzel', Georgia, serif; color: #ffffff; margin-bottom: 8px;">
         🌸 Ç İ Ç E K Ç E
-      </div>
-      <div style="font-size: 11px; text-transform: uppercase; tracking: 3px; color: #d97706; font-weight: 800; margin-bottom: 12px;">
-        PREMIUM FLORIST & BOTANICAL DESIGN
       </div>
       <h1 style="margin: 0; font-size: 22px; font-weight: 900; color: #ffffff;">${title}</h1>
       <p style="margin: 6px 0 0 0; font-size: 13px; color: #e2e8f0; font-weight: 500;">${subtitle}</p>
@@ -32,8 +29,8 @@ function getHeaderHtml(title: string, subtitle: string, headerBg: string = "#2b2
 function getFooterHtml(): string {
   return `
     <div style="background-color: #faf6f0; padding: 24px; text-align: center; font-size: 12px; color: #78716c; border-top: 1px solid #e7e5e4;">
-      <div style="font-weight: 800; color: #2b2623; font-size: 13px; margin-bottom: 6px;">🌸 Çiçekçe Canlı Çiçekçilik ve Botani San. Tic. A.Ş.</div>
-      <div style="margin-bottom: 10px;">Aynı Gün Teslimat · Canlı Fotoğraf Onayı · Özel Tasarım Çiçekler</div>
+      <div style="font-weight: 800; color: #2b2623; font-size: 14px; margin-bottom: 6px;">🌸 Çiçekçe</div>
+      <div style="margin-bottom: 10px; color: #57534e;">Aynı Gün Teslimat · Canlı Fotoğraf Onayı · Özel Tasarım Çiçekler</div>
       <div>
         <a href="${BASE_URL}" style="color: #b45309; font-weight: bold; text-decoration: none;">www.cicekce.com</a> · 
         <a href="${BASE_URL}/siparis-takip" style="color: #44403c; text-decoration: none;">Sipariş Takibi</a> · 
@@ -49,19 +46,25 @@ function getFooterHtml(): string {
  */
 export function getOrderReceivedHtml(order: any): string {
   const itemsHtml = (order.items || [])
-    .map((item: any) => `
-      <tr>
-        <td style="padding: 14px; border-bottom: 1px solid #f3f4f6;">
-          <div style="font-weight: 800; color: #1c1917; font-size: 14px;">🌸 ${item.title || item.name || "Özel Çiçek Aranjmanı"}</div>
-        </td>
-        <td style="padding: 14px; border-bottom: 1px solid #f3f4f6; text-align: center; font-weight: 800; color: #78716c;">
-          ${item.quantity || 1} Adet
-        </td>
-        <td style="padding: 14px; border-bottom: 1px solid #f3f4f6; text-align: right; font-weight: 900; color: #2b2623;">
-          ${item.price || "—"}
-        </td>
-      </tr>
-    `).join("");
+    .map((item: any) => {
+      const imgUrl = item.image || item.img || item.photo || item.imageUrl || "https://images.unsplash.com/photo-1563241527-3004b7be0ffd?w=120";
+      return `
+        <tr>
+          <td style="padding: 14px; border-bottom: 1px solid #f3f4f6;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <img src="${imgUrl}" alt="${item.title || item.name || "Çiçek"}" style="width: 48px; height: 48px; border-radius: 10px; object-fit: cover; border: 1px solid #e2e8f0; display: inline-block; vertical-align: middle; margin-right: 10px;" />
+              <span style="font-weight: 800; color: #1c1917; font-size: 14px; vertical-align: middle;">🌸 ${item.title || item.name || "Özel Çiçek Aranjmanı"}</span>
+            </div>
+          </td>
+          <td style="padding: 14px; border-bottom: 1px solid #f3f4f6; text-align: center; font-weight: 800; color: #78716c;">
+            ${item.quantity || 1} Adet
+          </td>
+          <td style="padding: 14px; border-bottom: 1px solid #f3f4f6; text-align: right; font-weight: 900; color: #2b2623;">
+            ${item.price || "—"}
+          </td>
+        </tr>
+      `;
+    }).join("");
 
   const trackingLink = `${BASE_URL}/siparis-takip?orderId=${order.id}`;
 
@@ -83,7 +86,7 @@ export function getOrderReceivedHtml(order: any): string {
 
           <p style="font-size: 15px; color: #44403c; line-height: 1.6; margin-bottom: 24px;">
             Sayın <strong>${order.customerName || "Değerli Müşterimiz"}</strong>,<br>
-            Siparişiniz floristlerimizin atölyesine ulaştı! Çiçeğiniz taze canlı taze çiçeklerle özenle hazırlanacak, yola çıkmadan önce <strong>canlı fotoğraf onayı</strong> e-posta ve SMS ile tarafınıza iletilecektir.
+            Siparişiniz floristlerimizin atölyesine ulaştı! Çiçeğiniz taze canlı çiçeklerle özenle hazırlanacak, yola çıkmadan önce <strong>canlı fotoğraf onayı</strong> e-posta ve SMS ile tarafınıza iletilecektir.
           </p>
 
           <!-- Order Summary Table -->
@@ -149,11 +152,7 @@ export function getPhotoApprovalHtml(order: any): string {
             <img src="${photoUrl}" alt="Hazırlanan Çiçek" style="width: 100%; max-height: 420px; object-fit: cover; display: block;" />
           </div>
 
-          <div style="background-color: #f3e8ff; border: 1.5px solid #ddd6fe; border-radius: 16px; padding: 12px 20px; font-size: 13px; color: #5b21b6; font-weight: 800; margin-bottom: 26px; display: inline-block;">
-            ⏳ 15 Dakika İçinde Otomatik Onaylanıp Kuryeye Verilecektir
-          </div>
-
-          <div>
+          <div style="margin-top: 26px;">
             <a href="${approvalLink}" style="display: inline-block; background-color: #5b21b6; color: #ffffff; text-decoration: none; padding: 18px 40px; border-radius: 18px; font-weight: 900; font-size: 16px; box-shadow: 0 8px 22px rgba(91, 33, 182, 0.35);">
               ✨ Görseli İncele & Onayla
             </a>
@@ -360,9 +359,6 @@ export function getWelcomeNoticeHtml(user: any): string {
 
 // --- EMAIL SENDING ENGINES ---
 
-/**
- * Send Transactional Email via Resend API (Primary) or SMTP (Fallback)
- */
 export async function sendTransactionalEmail({ to, subject, html }: { to: string; subject: string; html: string }) {
   const resendApiKey = process.env.RESEND_API_KEY;
 
@@ -389,7 +385,6 @@ export async function sendTransactionalEmail({ to, subject, html }: { to: string
     } catch (e) {}
   }
 
-  // Fallback to internal /api/send-email (SMTP)
   try {
     const fallbackRes = await fetch(`${BASE_URL}/api/send-email`, {
       method: "POST",
@@ -404,9 +399,6 @@ export async function sendTransactionalEmail({ to, subject, html }: { to: string
   return { success: false, error: "Email sending failed" };
 }
 
-/**
- * Send Marketing Email via Brevo API (Primary)
- */
 export async function sendMarketingEmail({ to, subject, html }: { to: string; subject: string; html: string }) {
   const brevoApiKey = process.env.BREVO_API_KEY;
 

@@ -222,6 +222,21 @@ export default function CheckoutPage() {
       return;
     }
 
+    // 1. Strict Member Only Check
+    const currentMember = typeof window !== "undefined" ? getStoredMember() : null;
+    if (!currentMember) {
+      setCouponError("🔒 İndirim kuponlarını (HOSGELDIN100 vb.) yalnızca üye girişi yapan müşterilerimiz kullanabilir. Üye olarak %10 indirimden faydalanmak için lütfen üye girişi yapın!");
+      return;
+    }
+
+    // 2. Strict Single Use per Customer Account Check
+    const memberIdOrEmail = currentMember.email || currentMember.phone || currentMember.id;
+    const usedKey = `cicekce_used_coupon_${memberIdOrEmail}_${codeClean}`;
+    if (typeof window !== "undefined" && localStorage.getItem(usedKey)) {
+      setCouponError("⚠️ Bu indirim kuponunu hesabınızla daha önce kullandınız. Her indirim kuponu müşteri başına yalnızca 1 kez kullanılabilir!");
+      return;
+    }
+
     const totalBefore = (mainCartTotal || 2510) + (addonsTotal || 0);
 
     try {
@@ -620,6 +635,15 @@ export default function CheckoutPage() {
         const createdData = await res.json();
         const finalId = createdData.id || `SIP-${Math.floor(10000 + Math.random() * 90000)}`;
         setCreatedOrderId(finalId);
+
+        // Record single use coupon for member
+        if (loggedMember && appliedCouponName) {
+          const codeClean = couponCodeInput.trim().toUpperCase();
+          const memberIdOrEmail = loggedMember.email || loggedMember.phone || loggedMember.id;
+          try {
+            localStorage.setItem(`cicekce_used_coupon_${memberIdOrEmail}_${codeClean}`, "true");
+          } catch (e) {}
+        }
 
         // Update Member ÇiçekPuan points (subtracted used points + earned 5% points)
         if (loggedMember) {

@@ -42,29 +42,66 @@ function getFooterHtml(): string {
 }
 
 /**
+ * Helper to parse arrays from possible stringified JSON
+ */
+function parseJsonArray(val: any): any[] {
+  if (!val) return [];
+  if (Array.isArray(val)) return val;
+  if (typeof val === "string") {
+    try {
+      const parsed = JSON.parse(val);
+      if (Array.isArray(parsed)) return parsed;
+    } catch (e) {}
+  }
+  return [];
+}
+
+/**
  * 1. Sipariş Onayı (Kredi Kartı / Havale)
  */
 export function getOrderReceivedHtml(order: any): string {
-  const itemsHtml = (order.items || [])
-    .map((item: any) => {
-      const imgUrl = item.image || item.img || item.photo || item.imageUrl || "https://images.unsplash.com/photo-1563241527-3004b7be0ffd?w=120";
-      return `
-        <tr>
-          <td style="padding: 14px; border-bottom: 1px solid #f3f4f6;">
-            <div style="display: flex; align-items: center; gap: 12px;">
-              <img src="${imgUrl}" alt="${item.title || item.name || "Çiçek"}" style="width: 48px; height: 48px; border-radius: 10px; object-fit: cover; border: 1px solid #e2e8f0; display: inline-block; vertical-align: middle; margin-right: 10px;" />
-              <span style="font-weight: 800; color: #1c1917; font-size: 14px; vertical-align: middle;">🌸 ${item.title || item.name || "Özel Çiçek Aranjmanı"}</span>
-            </div>
-          </td>
-          <td style="padding: 14px; border-bottom: 1px solid #f3f4f6; text-align: center; font-weight: 800; color: #78716c;">
-            ${item.quantity || 1} Adet
-          </td>
-          <td style="padding: 14px; border-bottom: 1px solid #f3f4f6; text-align: right; font-weight: 900; color: #2b2623;">
-            ${item.price || "—"}
-          </td>
-        </tr>
-      `;
-    }).join("");
+  const items = parseJsonArray(order.items);
+  const addons = parseJsonArray(order.addons || order.extras || order.selectedExtras);
+
+  const itemsHtml = items.map((item: any) => {
+    const imgUrl = item.image || item.img || item.photo || item.imageUrl || "https://images.unsplash.com/photo-1563241527-3004b7be0ffd?w=120";
+    return `
+      <tr>
+        <td style="padding: 14px; border-bottom: 1px solid #f3f4f6;">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <img src="${imgUrl}" alt="${item.title || item.name || "Çiçek"}" style="width: 48px; height: 48px; border-radius: 10px; object-fit: cover; border: 1px solid #e2e8f0; display: inline-block; vertical-align: middle; margin-right: 10px;" />
+            <span style="font-weight: 800; color: #1c1917; font-size: 14px; vertical-align: middle;">🌸 ${item.title || item.name || "Özel Çiçek Aranjmanı"}</span>
+          </div>
+        </td>
+        <td style="padding: 14px; border-bottom: 1px solid #f3f4f6; text-align: center; font-weight: 800; color: #78716c;">
+          ${item.quantity || 1} Adet
+        </td>
+        <td style="padding: 14px; border-bottom: 1px solid #f3f4f6; text-align: right; font-weight: 900; color: #2b2623;">
+          ${typeof item.price === "number" ? `${item.price} ₺` : item.price || "—"}
+        </td>
+      </tr>
+    `;
+  }).join("");
+
+  const addonsHtml = addons.map((add: any) => {
+    const addImg = add.image || add.img || add.photo || "";
+    return `
+      <tr style="background-color: #fefce8;">
+        <td style="padding: 12px 14px; border-bottom: 1px solid #fef08a;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            ${addImg ? `<img src="${addImg}" alt="${add.name || add.title}" style="width: 36px; height: 36px; border-radius: 8px; object-fit: cover; border: 1px solid #fde047; display: inline-block; vertical-align: middle; margin-right: 8px;" />` : `<span style="font-size: 16px; margin-right: 8px;">🎁</span>`}
+            <span style="font-weight: 700; color: #713f12; font-size: 13px; vertical-align: middle;">🎁 ${add.name || add.title || "Ekstra Ürün"}</span>
+          </div>
+        </td>
+        <td style="padding: 12px 14px; border-bottom: 1px solid #fef08a; text-align: center; font-weight: 700; color: #854d0e;">
+          ${add.quantity || 1} Adet
+        </td>
+        <td style="padding: 12px 14px; border-bottom: 1px solid #fef08a; text-align: right; font-weight: 900; color: #713f12;">
+          ${typeof add.price === "number" ? `${add.price} ₺` : add.price || "—"}
+        </td>
+      </tr>
+    `;
+  }).join("");
 
   const trackingLink = `${BASE_URL}/siparis-takip?orderId=${order.id}`;
 
@@ -96,6 +133,7 @@ export function getOrderReceivedHtml(order: any): string {
             </div>
             <table style="width: 100%; border-collapse: collapse;">
               ${itemsHtml}
+              ${addonsHtml}
             </table>
             <div style="background-color: #faf6f0; padding: 16px 18px; text-align: right; font-weight: 900; font-size: 17px; color: #2b2623; border-top: 1px solid #e7e5e4;">
               Toplam Ödenen: <span style="color: #b45309;">${order.totalAmount || order.totalPrice || "1.250 ₺"}</span>
@@ -114,6 +152,52 @@ export function getOrderReceivedHtml(order: any): string {
           <div style="text-align: center; margin-top: 32px;">
             <a href="${trackingLink}" style="display: inline-block; background-color: #2b2623; color: #ffffff; text-decoration: none; padding: 16px 36px; border-radius: 16px; font-weight: 900; font-size: 15px; box-shadow: 0 6px 18px rgba(43, 38, 35, 0.25);">
               🔎 Canlı Sipariş Takibi Yap
+            </a>
+          </div>
+        </div>
+
+        ${getFooterHtml()}
+      </div>
+    </body>
+    </html>
+  `;
+}
+
+/**
+ * Sipariş Hazırlanıyor Bildirimi
+ */
+export function getPreparingNoticeHtml(order: any): string {
+  const trackingLink = `${BASE_URL}/siparis-takip?orderId=${order.id}`;
+
+  return `
+    <!DOCTYPE html>
+    <html lang="tr">
+    <head><meta charset="utf-8"><title>Siparişiniz Hazırlanıyor</title></head>
+    <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f5f5f4; margin: 0; padding: 20px;">
+      <div style="max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 24px; overflow: hidden; border: 1px solid #e7e5e4; box-shadow: 0 12px 30px rgba(0,0,0,0.06);">
+        
+        ${getHeaderHtml("💐 Çiçeğiniz Hazırlanmaya Başlandı!", `Sipariş #${order.id} Atölyemizde`, "#b45309")}
+
+        <div style="padding: 30px; text-align: center;">
+          <p style="font-size: 15px; color: #44403c; line-height: 1.6; margin-bottom: 24px;">
+            Sayın <strong>${order.customerName || "Değerli Müşterimiz"}</strong>,<br>
+            <strong>#${order.id}</strong> numaralı siparişiniz floristlerimiz tarafından en taze canlı çiçeklerle hazırlanmaya başladı! Hazırlandığında canlı fotoğraf onayı tarafınıza iletilecektir.
+          </p>
+
+          <div style="background-color: #faf6f0; border-radius: 18px; padding: 20px; margin-bottom: 24px; border: 1.5px solid #f5efe6;">
+            <div style="font-size: 13px; font-weight: 900; color: #2b2623; margin-bottom: 14px; text-align: center; text-transform: uppercase;">
+              🌸 Sipariş Durum Bilgisi
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 12px; font-weight: bold; color: #78716c; text-align: center;">
+              <div style="flex: 1;"><span style="color: #b45309; font-size: 14px; font-weight: 900;">💐 Hazırlanıyor</span></div>
+              <div style="flex: 1;"><span>📸 Fotoğraf Onayı</span></div>
+              <div style="flex: 1;"><span>🛵 Kuryede</span></div>
+            </div>
+          </div>
+
+          <div style="text-align: center;">
+            <a href="${trackingLink}" style="display: inline-block; background-color: #2b2623; color: #ffffff; text-decoration: none; padding: 16px 36px; border-radius: 16px; font-weight: 900; font-size: 15px; box-shadow: 0 6px 18px rgba(43, 38, 35, 0.25);">
+              🔎 Canlı Sipariş Takibi
             </a>
           </div>
         </div>

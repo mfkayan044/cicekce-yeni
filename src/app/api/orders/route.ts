@@ -25,6 +25,18 @@ function parsePrice(val: any): number {
   return parseFloat(cleaned) || 0;
 }
 
+function parseJsonArray(val: any): any[] {
+  if (!val) return [];
+  if (Array.isArray(val)) return val;
+  if (typeof val === "string") {
+    try {
+      const parsed = JSON.parse(val);
+      if (Array.isArray(parsed)) return parsed;
+    } catch (e) {}
+  }
+  return [];
+}
+
 // In-memory cache fallback to guarantee instant persistence across requests
 let memoryCourierMap: Record<string, any> = {};
 
@@ -135,10 +147,27 @@ export async function GET(request: Request) {
       }
 
       const cleanInputId = orderId.trim();
+      const formattedInputId = cleanInputId.toUpperCase().startsWith("SIP-") ? cleanInputId.toUpperCase() : `SIP-${cleanInputId.toUpperCase()}`;
       const cleanPhone = phone ? phone.replace(/[^0-9]/g, "") : "";
 
-      const { data: order, error } = await supabase.from("orders").select("*").eq("id", cleanInputId).single();
-      if (error || !order) {
+      let order: any = null;
+      const { data: sbOrder } = await supabase
+        .from("orders")
+        .select("*")
+        .or(`id.eq.${cleanInputId},id.ilike.${cleanInputId},id.eq.${formattedInputId}`)
+        .maybeSingle();
+      order = sbOrder;
+
+      if (!order) {
+        try {
+          const neonRes = await sql`SELECT * FROM orders WHERE UPPER(id) = ${cleanInputId.toUpperCase()} OR UPPER(id) = ${formattedInputId} LIMIT 1;`;
+          if (neonRes && neonRes.length > 0) {
+            order = neonRes[0];
+          }
+        } catch (e) {}
+      }
+
+      if (!order) {
         return NextResponse.json({ error: "Sipariş bulunamadı." }, { status: 404 });
       }
 
@@ -147,8 +176,11 @@ export async function GET(request: Request) {
       const custPhoneClean = String(order.customer_phone || order.customerPhone || "").replace(/[^0-9]/g, "");
       const recipPhoneClean = String(order.recipient_phone || order.recipientPhone || "").replace(/[^0-9]/g, "");
 
-      const matchesCustomer = cleanPhone && cleanPhone.length >= 4 && custPhoneClean && (custPhoneClean.endsWith(cleanPhone) || cleanPhone.endsWith(custPhoneClean));
-      const matchesRecipient = cleanPhone && cleanPhone.length >= 4 && recipPhoneClean && (recipPhoneClean.endsWith(cleanPhone) || cleanPhone.endsWith(recipPhoneClean));
+      const inputDigits = cleanPhone;
+      const inputLast7 = inputDigits.length >= 7 ? inputDigits.slice(-7) : inputDigits;
+
+      const matchesCustomer = inputLast7.length >= 4 && custPhoneClean.includes(inputLast7);
+      const matchesRecipient = inputLast7.length >= 4 && recipPhoneClean.includes(inputLast7);
 
       const isTokenValidCust = token && (await verifyTrackingToken(order.id, custPhoneClean, token));
       const isTokenValidRecip = token && (await verifyTrackingToken(order.id, recipPhoneClean, token));
@@ -163,6 +195,10 @@ export async function GET(request: Request) {
       const extra = courierMap[order.id] || memoryCourierMap[order.id] || {};
       const meta = parseOrderMeta(order, extra);
 
+      const itemsArr = parseJsonArray(order.items);
+      const rawAddons = order.addons || order.selectedExtras || extra.addons || extra.selectedExtras;
+      const addonsArr = parseJsonArray(rawAddons);
+
       return NextResponse.json({
         id: order.id,
         date: order.date,
@@ -175,10 +211,10 @@ export async function GET(request: Request) {
         address: order.address,
         deliveryDate: order.delivery_date || order.deliveryDate,
         deliveryTime: order.delivery_time || order.deliveryTime,
-        items: order.items || [],
-        addons: (order.addons && Array.isArray(order.addons) && order.addons.length > 0) ? order.addons : (extra.addons || []),
-        extras: (order.extras && Array.isArray(order.extras) && order.extras.length > 0) ? order.extras : (extra.extras || []),
-        selectedExtras: (order.selectedExtras && Array.isArray(order.selectedExtras) && order.selectedExtras.length > 0) ? order.selectedExtras : (extra.selectedExtras || []),
+        items: itemsArr,
+        addons: addonsArr,
+        extras: parseJsonArray(order.extras || extra.extras),
+        selectedExtras: parseJsonArray(order.selectedExtras || extra.selectedExtras),
         cardNote: order.card_note || order.cardNote,
         isAnonymous: order.is_anonymous === true,
         paymentMethod: order.payment_method || order.paymentMethod,
@@ -245,13 +281,8 @@ export async function GET(request: Request) {
 
       const status = currentStatus;
 
-      const mergedAddons = (o.addons && Array.isArray(o.addons) && o.addons.length > 0)
-        ? o.addons
-        : (sbOrder.addons && Array.isArray(sbOrder.addons) && sbOrder.addons.length > 0)
-        ? sbOrder.addons
-        : (extra.addons && Array.isArray(extra.addons))
-        ? extra.addons
-        : [];
+      const rawAddons = o.addons || sbOrder.addons || extra.addons || o.selectedExtras || sbOrder.selectedExtras || extra.selectedExtras;
+      const mergedAddons = parseJsonArray(rawAddons);
 
       const mergedUsedPoints = o.used_points || o.usedPoints || sbOrder.used_points || sbOrder.usedPoints || extra.usedPoints || null;
       const mergedPointsDiscount = o.points_discount || o.pointsDiscount || sbOrder.points_discount || sbOrder.pointsDiscount || extra.pointsDiscount || null;
@@ -269,10 +300,10 @@ export async function GET(request: Request) {
         address: o.address || sbOrder.address,
         deliveryDate: o.delivery_date || o.deliveryDate || sbOrder.delivery_date,
         deliveryTime: o.delivery_time || o.deliveryTime || sbOrder.delivery_time,
-        items: (o.items && Array.isArray(o.items) && o.items.length > 0) ? o.items : (sbOrder.items || []),
+        items: parseJsonArray(o.items || sbOrder.items),
         addons: mergedAddons,
-        extras: o.extras || sbOrder.extras || extra.extras || [],
-        selectedExtras: o.selectedExtras || sbOrder.selectedExtras || extra.selectedExtras || [],
+        extras: parseJsonArray(o.extras || sbOrder.extras || extra.extras),
+        selectedExtras: parseJsonArray(o.selectedExtras || sbOrder.selectedExtras || extra.selectedExtras),
         cardNote: o.card_note || o.cardNote || sbOrder.card_note,
         isAnonymous: o.is_anonymous === true || sbOrder.is_anonymous === true,
         paymentMethod: o.payment_method || o.paymentMethod || sbOrder.payment_method,
@@ -396,7 +427,8 @@ export async function POST(request: Request) {
           deliveryDate: newOrder.delivery_date,
           deliveryTime: newOrder.delivery_time,
           totalAmount: newOrder.total_amount,
-          items: newOrder.items
+          items: newOrder.items,
+          addons: newOrder.addons
         });
         sendTransactionalEmail({
           to: newOrder.customer_email,
@@ -433,7 +465,8 @@ export async function PUT(request: Request) {
       recipientPhone,
       address,
       deliveryDate,
-      deliveryTime
+      deliveryTime,
+      customerEmail
     } = body;
 
     if (!id) {
@@ -536,10 +569,10 @@ export async function PUT(request: Request) {
     }
 
     // Trigger Automatic E-Posta Notification based on status / prepared photo
-    const targetEmail = existingOrder?.customer_email || existingOrder?.customerEmail;
+    const targetEmail = customerEmail || body.customer_email || existingOrder?.customer_email || existingOrder?.customerEmail || courierMap[id]?.customerEmail || courierMap[id]?.customer_email;
     if (targetEmail) {
       try {
-        const { sendTransactionalEmail, getPhotoApprovalHtml, getCourierNoticeHtml, getDeliveredNoticeHtml } = await import("@/lib/email-service");
+        const { sendTransactionalEmail, getPhotoApprovalHtml, getCourierNoticeHtml, getDeliveredNoticeHtml, getPreparingNoticeHtml } = await import("@/lib/email-service");
         const mergedObj = {
           id,
           customerName: custName,
@@ -552,14 +585,20 @@ export async function PUT(request: Request) {
           deliveredPhoto: deliveredPhoto || existingOrder?.delivered_photo
         };
 
-        if (preparedPhoto && preparedPhoto !== existingOrder?.prepared_photo) {
+        if (preparedPhoto) {
           sendTransactionalEmail({
             to: targetEmail,
             subject: `📸 Çiçeğiniz Hazırlandı! Görsel Onayı Bekliyor - #${id}`,
             html: getPhotoApprovalHtml(mergedObj),
           }).catch(() => {});
-        } else if (status && status !== existingOrder?.status) {
-          if (status.includes("Kuryede") || status.includes("Dağıtımda")) {
+        } else if (status) {
+          if (status.includes("Hazırlanıyor")) {
+            sendTransactionalEmail({
+              to: targetEmail,
+              subject: `💐 Çiçeğiniz Hazırlanıyor - #${id}`,
+              html: getPreparingNoticeHtml(mergedObj),
+            }).catch(() => {});
+          } else if (status.includes("Kuryede") || status.includes("Dağıtımda")) {
             sendTransactionalEmail({
               to: targetEmail,
               subject: `🛵 Çiçeğiniz Kuryede! Sipariş #${id} Yolda`,

@@ -23,6 +23,18 @@ function parsePrice(val: any): number {
   return parseFloat(cleaned) || 0;
 }
 
+function parseJsonArray(val: any): any[] {
+  if (!val) return [];
+  if (Array.isArray(val)) return val;
+  if (typeof val === "string") {
+    try {
+      const parsed = JSON.parse(val);
+      if (Array.isArray(parsed)) return parsed;
+    } catch (e) {}
+  }
+  return [];
+}
+
 function normalizeDateStr(dateVal?: string): string {
   if (!dateVal) return "";
   let str = String(dateVal).trim();
@@ -407,6 +419,7 @@ export default function AdminOrdersPage() {
     }
 
     try {
+      const targetOrder = orders.find((o) => o.id === orderId) || selectedOrder;
       await fetch("/api/orders", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -415,6 +428,7 @@ export default function AdminOrdersPage() {
           courierId,
           courierName,
           status: newStatus,
+          customerEmail: targetOrder?.customerEmail || targetOrder?.customer_email,
         }),
       });
     } catch (e) {
@@ -438,13 +452,19 @@ export default function AdminOrdersPage() {
   };
 
   const handleStatusChange = async (orderId: string, newStatus: string) => {
+    const targetOrder = orders.find((o) => o.id === orderId) || selectedOrder;
     const deliveredAt = newStatus === "Teslim Edildi" ? new Date().toLocaleString("tr-TR") : undefined;
 
     try {
       const res = await fetch("/api/orders", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: orderId, status: newStatus, deliveredAt }),
+        body: JSON.stringify({
+          id: orderId,
+          status: newStatus,
+          deliveredAt,
+          customerEmail: targetOrder?.customerEmail || targetOrder?.customer_email,
+        }),
       });
       if (res.ok) {
         setOrders(
@@ -464,6 +484,7 @@ export default function AdminOrdersPage() {
     if (!file) return;
 
     setUploadingOrderId(orderId);
+    const targetOrder = orders.find((o) => o.id === orderId) || selectedOrder;
     const formData = new FormData();
     formData.append("file", file);
 
@@ -485,6 +506,7 @@ export default function AdminOrdersPage() {
             status: "Fotoğraflı Onay Bekliyor",
             customerApprovalStatus: "Bekliyor",
             rejectionReason: "",
+            customerEmail: targetOrder?.customerEmail || targetOrder?.customer_email,
           }),
         });
 
@@ -1482,24 +1504,22 @@ export default function AdminOrdersPage() {
                 {/* 4. PRODUCTS & EXTRAS TABLE */}
                 {(() => {
                   const rawAddons = [
-                    ...(Array.isArray(selectedOrder.addons) ? selectedOrder.addons : []),
-                    ...(Array.isArray(selectedOrder.extras) ? selectedOrder.extras : []),
-                    ...(Array.isArray(selectedOrder.selectedExtras) ? selectedOrder.selectedExtras : []),
+                    ...parseJsonArray(selectedOrder.addons),
+                    ...parseJsonArray(selectedOrder.extras),
+                    ...parseJsonArray(selectedOrder.selectedExtras),
                   ];
 
                   let itemsSubtotal = 0;
-                  if (Array.isArray(selectedOrder.items)) {
-                    selectedOrder.items.forEach((it: any) => {
-                      const itemPrice = parsePrice(it.price);
-                      const qty = it.quantity || 1;
-                      itemsSubtotal += itemPrice * qty;
-                      if (Array.isArray(it.selectedExtras)) {
-                        it.selectedExtras.forEach((ex: any) => {
-                          itemsSubtotal += parsePrice(ex.price) * (ex.quantity || 1);
-                        });
-                      }
+                  const orderItems = parseJsonArray(selectedOrder.items);
+                  orderItems.forEach((it: any) => {
+                    const itemPrice = parsePrice(it.price);
+                    const qty = it.quantity || 1;
+                    itemsSubtotal += itemPrice * qty;
+                    const itemExtras = parseJsonArray(it.selectedExtras);
+                    itemExtras.forEach((ex: any) => {
+                      itemsSubtotal += parsePrice(ex.price) * (ex.quantity || 1);
                     });
-                  }
+                  });
 
                   let addonsSubtotal = 0;
                   rawAddons.forEach((add: any) => {

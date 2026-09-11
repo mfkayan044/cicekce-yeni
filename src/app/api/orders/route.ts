@@ -580,7 +580,17 @@ export async function PUT(request: Request) {
     }
 
     // Trigger Automatic E-Posta Notification based on status / prepared photo
-    const targetEmail = customerEmail || body.customer_email || existingOrder?.customer_email || existingOrder?.customerEmail || courierMap[id]?.customerEmail || courierMap[id]?.customer_email;
+    let dbCustomerEmail = existingOrder?.customer_email || existingOrder?.customerEmail;
+    if (!dbCustomerEmail) {
+      try {
+        const neonRes = await sql`SELECT customer_email, customer_name FROM orders WHERE id = ${String(id)} LIMIT 1;`;
+        if (neonRes && neonRes.length > 0) {
+          dbCustomerEmail = neonRes[0].customer_email;
+        }
+      } catch (e) {}
+    }
+
+    const targetEmail = customerEmail || body.customer_email || dbCustomerEmail || courierMap[id]?.customerEmail || courierMap[id]?.customer_email;
     if (targetEmail) {
       try {
         const { sendTransactionalEmail, getPhotoApprovalHtml, getCourierNoticeHtml, getDeliveredNoticeHtml, getPreparingNoticeHtml } = await import("@/lib/email-service");

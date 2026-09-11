@@ -28,6 +28,8 @@ interface Order {
   cardNote?: string;
   items?: any[];
   addons?: any[];
+  customerEmail?: string;
+  customer_email?: string;
   courierId?: string;
   courierName?: string;
   preparedPhoto?: string;
@@ -471,6 +473,7 @@ export default function CourierPortalPage() {
           deliveredPhoto: finalPhoto,
           deliveredAt: deliveredAtFull,
           deliveryNote: deliveredNote || "Alıcının kendisine teslim edildi.",
+          customerEmail: deliveringOrder.customerEmail || deliveringOrder.customer_email,
         }),
       });
 

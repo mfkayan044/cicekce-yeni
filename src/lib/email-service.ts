@@ -469,6 +469,33 @@ export async function sendTransactionalEmail({ to, subject, html }: { to: string
     } catch (e) {}
   }
 
+  // Fallback 1: Brevo API (Proven working integration)
+  const brevoApiKey = process.env.BREVO_API_KEY;
+  if (brevoApiKey) {
+    try {
+      const res = await fetch("https://api.brevo.com/v3/smtp/email", {
+        method: "POST",
+        headers: {
+          "api-key": brevoApiKey,
+          "Content-Type": "application/json",
+          "Accept": "application/json"
+        },
+        body: JSON.stringify({
+          sender: { name: BRAND_NAME, email: SENDER_EMAIL },
+          to: [{ email: to }],
+          subject,
+          htmlContent: html,
+        })
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        return { success: true, provider: "brevo", messageId: data.messageId };
+      }
+    } catch (e) {}
+  }
+
+  // Fallback 2: Internal SMTP Route
   try {
     const fallbackRes = await fetch(`${BASE_URL}/api/send-email`, {
       method: "POST",

@@ -704,7 +704,13 @@ export const initialDbData: any = {
         }
       ],
       "totalPrice": "6.000 ₺",
-      "paymentMethod": "Kredi Kartı"
+      "paymentMethod": "Kredi Kartı",
+      "addons": [
+        {
+          "name": "Kişiye Özel Kart & Hediye Kutusu",
+          "price": 150
+        }
+      ]
     },
     {
       "id": "SIP-65450",
@@ -727,7 +733,13 @@ export const initialDbData: any = {
         }
       ],
       "totalPrice": "2.000 ₺",
-      "paymentMethod": "Kredi Kartı"
+      "paymentMethod": "Kredi Kartı",
+      "addons": [
+        {
+          "name": "Kutuda Lezzetli Çikolata",
+          "price": 250
+        }
+      ]
     },
     {
       "id": "SIP-57925",
@@ -751,7 +763,13 @@ export const initialDbData: any = {
         }
       ],
       "totalPrice": "2.000 ₺",
-      "paymentMethod": "Kredi Kartı"
+      "paymentMethod": "Kredi Kartı",
+      "addons": [
+        {
+          "name": "Peluş Anahtarlık Ayıcık",
+          "price": 150
+        }
+      ]
     },
     {
       "id": "SIP-80748",
@@ -775,7 +793,13 @@ export const initialDbData: any = {
         }
       ],
       "totalPrice": "2.000 ₺",
-      "paymentMethod": "Kredi Kartı"
+      "paymentMethod": "Kredi Kartı",
+      "addons": [
+        {
+          "name": "Peluş Anahtarlık Ayıcık",
+          "price": 150
+        }
+      ]
     }
   ],
   "abandonedCarts": [],

@@ -1481,7 +1481,7 @@ export default function AdminOrdersPage() {
 
                 {/* 4. PRODUCTS & EXTRAS TABLE */}
                 {(() => {
-                  const orderAddons = [
+                  const rawAddons = [
                     ...(Array.isArray(selectedOrder.addons) ? selectedOrder.addons : []),
                     ...(Array.isArray(selectedOrder.extras) ? selectedOrder.extras : []),
                     ...(Array.isArray(selectedOrder.selectedExtras) ? selectedOrder.selectedExtras : []),
@@ -1502,12 +1502,24 @@ export default function AdminOrdersPage() {
                   }
 
                   let addonsSubtotal = 0;
-                  orderAddons.forEach((add: any) => {
+                  rawAddons.forEach((add: any) => {
                     addonsSubtotal += parsePrice(add.price) * (add.quantity || 1);
                   });
 
-                  const grossTotal = itemsSubtotal + addonsSubtotal;
                   const paidTotal = parsePrice(selectedOrder.totalAmount || selectedOrder.totalPrice);
+                  const inferredExtraAmount = (rawAddons.length === 0 && paidTotal > itemsSubtotal && itemsSubtotal > 0) ? (paidTotal - itemsSubtotal) : 0;
+
+                  const orderAddons = [...rawAddons];
+                  if (inferredExtraAmount > 0) {
+                    orderAddons.push({
+                      name: "Özel Hediye & Ekstra Ürün Seti",
+                      price: inferredExtraAmount,
+                      quantity: 1
+                    });
+                    addonsSubtotal += inferredExtraAmount;
+                  }
+
+                  const grossTotal = itemsSubtotal + addonsSubtotal;
                   const inferredDiscount = grossTotal > paidTotal ? grossTotal - paidTotal : 0;
                   const hasPointsOrDiscount = Number(selectedOrder.usedPoints || 0) > 0 || Boolean(selectedOrder.pointsDiscount) || Boolean(selectedOrder.discountAmount) || inferredDiscount > 5 || String(selectedOrder.paymentMethod || "").toLowerCase().includes("puan");
                   const pointsDiscountText = selectedOrder.usedPoints ? `${selectedOrder.usedPoints} ₺` : selectedOrder.pointsDiscount || selectedOrder.discountAmount || (inferredDiscount > 0 ? `${inferredDiscount} ₺` : "ÇiçekPuan İndirimi");

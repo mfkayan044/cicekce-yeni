@@ -36,6 +36,15 @@ const sampleCart = {
   total: "850 ₺"
 };
 
+const defaultTemplatesList = [
+  { id: "1", name: "Sipariş Onayı (Kredi Kartı / Havale)", subject: "🌸 Siparişiniz Alındı - #SIP-56298", active: true, category: "Sipariş", engine: "Resend (Transactional)", type: "order_received" },
+  { id: "2", name: "Canlı Görsel Onayı İsteği", subject: "📸 Çiçeğiniz Hazırlandı! Görsel Onayı Bekliyor - #SIP-56298", active: true, category: "Fotoğraf Onayı", engine: "Resend (Transactional)", type: "photo_approval" },
+  { id: "3", name: "Kurye Yola Çıktı / Durum Güncellemesi", subject: "🛵 Çiçeğiniz Kuryede! Sipariş #SIP-56298 Yolda", active: true, category: "Kurye", engine: "Resend (Transactional)", type: "courier" },
+  { id: "4", name: "Sipariş Teslim Edildi & ÇiçekPuan İsteği", subject: "✅ Çiçeğiniz Teslim Edildi! 50 ÇiçekPuan Kazanın - #SIP-56298", active: true, category: "Teslimat", engine: "Resend (Transactional)", type: "delivered" },
+  { id: "5", name: "Yarım Kalan Sepet Hatırlatması", subject: "🛒 Sepetinizde Harika Çiçekler Bekliyor! %10 İndirim Fırsatı", active: true, category: "Pazarlama", engine: "Brevo (Marketing)", type: "abandoned_cart" },
+  { id: "6", name: "Yeni Üyelik Hoş Geldin Mesajı", subject: "🌸 Çiçekçe Ailesine Hoş Geldiniz! 100 ₺ İndiriminiz Tanımlandı", active: true, category: "Üyelik", engine: "Resend (Transactional)", type: "welcome" }
+];
+
 export default function EpostaSablonlarPage() {
   const [templates, setTemplates] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -53,50 +62,38 @@ export default function EpostaSablonlarPage() {
       if (Array.isArray(data) && data.length > 0) {
         setTemplates(data);
       } else {
-        setTemplates(getInitialTemplates());
+        setTemplates(defaultTemplatesList);
       }
     } catch (e) {
-      setTemplates(getInitialTemplates());
+      setTemplates(defaultTemplatesList);
     } finally {
       setLoading(false);
     }
   };
 
-  const getInitialTemplates = () => [
-    { id: "1", name: "Sipariş Onayı (Kredi Kartı / Havale)", subject: "🌸 Siparişiniz Alındı - #SIP-56298", active: true, category: "Sipariş", engine: "Resend (Transactional)", type: "order_received" },
-    { id: "2", name: "Canlı Görsel Onayı İsteği", subject: "📸 Çiçeğiniz Hazırlandı! Görsel Onayı Bekliyor - #SIP-56298", active: true, category: "Fotoğraf Onayı", engine: "Resend (Transactional)", type: "photo_approval" },
-    { id: "3", name: "Kurye Yola Çıktı / Hazırlanıyor", subject: "🛵 Çiçeğiniz Kuryede! Sipariş #SIP-56298 Yolda", active: true, category: "Kurye", engine: "Resend (Transactional)", type: "courier" },
-    { id: "4", name: "Sipariş Teslim Edildi & ÇiçekPuan İsteği", subject: "✅ Çiçeğiniz Teslim Edildi! 50 ÇiçekPuan Kazanın - #SIP-56298", active: true, category: "Teslimat", engine: "Resend (Transactional)", type: "delivered" },
-    { id: "5", name: "Yarım Kalan Sepet Hatırlatması", subject: "🛒 Sepetinizde Harika Çiçekler Bekliyor! %10 İndirim Fırsatı", active: true, category: "Pazarlama", engine: "Brevo (Marketing)", type: "abandoned_cart" },
-    { id: "6", name: "Yeni Üyelik Hoş Geldin Mesajı", subject: "🌸 Çiçekçe Ailesine Hoş Geldiniz! 100 ₺ İndiriminiz Tanımlandı", active: true, category: "Üyelik", engine: "Resend (Transactional)", type: "welcome" }
-  ];
-
   const handleOpenPreview = (t: any) => {
     let html = "";
-    if (t.type === "photo_approval") {
+    const idStr = String(t.id);
+    const typeStr = String(t.type || "").toLowerCase();
+    const nameLower = String(t.name || "").toLowerCase();
+
+    if (idStr === "2" || typeStr === "photo_approval" || nameLower.includes("görsel") || nameLower.includes("fotoğraf")) {
       html = getPhotoApprovalHtml(sampleOrder);
-    } else if (t.type === "courier") {
+    } else if (idStr === "3" || typeStr === "courier" || nameLower.includes("kurye") || nameLower.includes("durum")) {
       html = getCourierNoticeHtml(sampleOrder);
-    } else if (t.type === "delivered") {
+    } else if (idStr === "4" || typeStr === "delivered" || nameLower.includes("teslim")) {
       html = getDeliveredNoticeHtml(sampleOrder);
-    } else if (t.type === "abandoned_cart") {
+    } else if (idStr === "5" || typeStr === "abandoned_cart" || nameLower.includes("sepet") || nameLower.includes("yarım")) {
       html = getAbandonedCartHtml(sampleCart);
-    } else if (t.type === "welcome") {
+    } else if (idStr === "6" || typeStr === "welcome" || nameLower.includes("hoş") || nameLower.includes("üyelik")) {
       html = getWelcomeNoticeHtml({ name: "Ahmet Yılmaz" });
     } else {
       html = getOrderReceivedHtml(sampleOrder);
     }
+
     setPreviewTitle(t.name);
     setPreviewModalHtml(html);
   };
-
-  if (loading) {
-    return (
-      <AdminLayout>
-        <div className="p-5 text-center font-bold text-slate-600">E-posta şablonları yükleniyor...</div>
-      </AdminLayout>
-    );
-  }
 
   return (
     <AdminLayout>
@@ -131,7 +128,7 @@ export default function EpostaSablonlarPage() {
                     {t.category || "Şablon"}
                   </span>
                   <span className="bg-slate-100 text-slate-700 text-[10px] font-bold px-2 py-0.5 rounded-md border">
-                    {t.engine || "Resend API"}
+                    {t.engine || (t.category === "Pazarlama" ? "Brevo API" : "Resend API")}
                   </span>
                   <h2 className="font-extrabold text-slate-900 text-base m-0">{t.name}</h2>
                 </div>

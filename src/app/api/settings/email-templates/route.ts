@@ -7,11 +7,12 @@ const dbPath = path.join(process.cwd(), "src", "data", "db.json");
 const initialTsPath = path.join(process.cwd(), "src", "lib", "initial-db.ts");
 
 const defaultTemplates = [
-  { id: "1", name: "Sipariş Onayı (Kredi Kartı)", subject: "Siparişiniz Alındı - #{SIPARIS_NO}", active: true, category: "Sipariş" },
-  { id: "2", name: "Sipariş Onayı (Havale / EFT)", subject: "Ödeme Bekleniyor - #{SIPARIS_NO}", active: true, category: "Ödeme" },
-  { id: "3", name: "Sipariş Durumu Güncellendi", subject: "Siparişinizin Durumu: {DURUM}", active: true, category: "Teslimat" },
-  { id: "4", name: "Yarım Kalan Sepet Hatırlatması", subject: "Sepetinizde Harika Çiçekler Bekliyor!", active: true, category: "Pazarlama" },
-  { id: "5", name: "Yeni Üyelik Hoşgeldin Mesajı", subject: "Çiçekçe Ailesine Hoş Geldiniz", active: true, category: "Üyelik" },
+  { id: "1", name: "Sipariş Onayı (Kredi Kartı / Havale)", subject: "🌸 Siparişiniz Alındı - #SIP-56298", active: true, category: "Sipariş", type: "order_received", engine: "Resend API" },
+  { id: "2", name: "Canlı Görsel Onayı İsteği", subject: "📸 Çiçeğiniz Hazırlandı! Görsel Onayı Bekliyor - #SIP-56298", active: true, category: "Fotoğraf Onayı", type: "photo_approval", engine: "Resend API" },
+  { id: "3", name: "Kurye Yola Çıktı / Durum Güncellemesi", subject: "🛵 Çiçeğiniz Kuryede! Sipariş #SIP-56298 Yolda", active: true, category: "Kurye", type: "courier", engine: "Resend API" },
+  { id: "4", name: "Sipariş Teslim Edildi & ÇiçekPuan İsteği", subject: "✅ Çiçeğiniz Teslim Edildi! 50 ÇiçekPuan Kazanın - #SIP-56298", active: true, category: "Teslimat", type: "delivered", engine: "Resend API" },
+  { id: "5", name: "Yarım Kalan Sepet Hatırlatması", subject: "🛒 Sepetinizde Harika Çiçekler Bekliyor! %10 İndirim Fırsatı", active: true, category: "Pazarlama", type: "abandoned_cart", engine: "Brevo API" },
+  { id: "6", name: "Yeni Üyelik Hoş Geldin Mesajı", subject: "🌸 Çiçekçe Ailesine Hoş Geldiniz! 100 ₺ İndiriminiz Tanımlandı", active: true, category: "Üyelik", type: "welcome", engine: "Resend API" },
 ];
 
 function readDb() {
@@ -41,7 +42,7 @@ export async function GET() {
       .eq("id", "email_templates")
       .single();
 
-    const templates = (data && Array.isArray(data.value)) ? data.value : (readDb().emailTemplates || defaultTemplates);
+    const templates = (data && Array.isArray(data.value) && data.value.length > 0) ? data.value : defaultTemplates;
     return NextResponse.json(templates);
   } catch (e) {
     const db = readDb();
@@ -56,7 +57,7 @@ export async function POST(request: Request) {
     let templates: any[] = db.emailTemplates || defaultTemplates;
 
     if (body.id) {
-      templates = templates.map((t) => (t.id === body.id ? { ...t, ...body } : t));
+      templates = templates.map((t) => (String(t.id) === String(body.id) ? { ...t, ...body } : t));
     } else {
       templates.push({ id: "et_" + Date.now(), ...body });
     }

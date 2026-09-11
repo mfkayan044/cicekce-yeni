@@ -37,6 +37,16 @@ function parseJsonArray(val: any): any[] {
   return [];
 }
 
+function getFirstNonEmptyArray(...sources: any[]): any[] {
+  for (const src of sources) {
+    const arr = parseJsonArray(src);
+    if (arr && arr.length > 0) {
+      return arr;
+    }
+  }
+  return [];
+}
+
 // In-memory cache fallback to guarantee instant persistence across requests
 let memoryCourierMap: Record<string, any> = {};
 
@@ -196,8 +206,7 @@ export async function GET(request: Request) {
       const meta = parseOrderMeta(order, extra);
 
       const itemsArr = parseJsonArray(order.items);
-      const rawAddons = order.addons || order.selectedExtras || extra.addons || extra.selectedExtras;
-      const addonsArr = parseJsonArray(rawAddons);
+      const addonsArr = getFirstNonEmptyArray(order.addons, extra.addons, order.selectedExtras, extra.selectedExtras, order.extras, extra.extras);
 
       return NextResponse.json({
         id: order.id,
@@ -281,8 +290,7 @@ export async function GET(request: Request) {
 
       const status = currentStatus;
 
-      const rawAddons = o.addons || sbOrder.addons || extra.addons || o.selectedExtras || sbOrder.selectedExtras || extra.selectedExtras;
-      const mergedAddons = parseJsonArray(rawAddons);
+      const mergedAddons = getFirstNonEmptyArray(o.addons, sbOrder.addons, extra.addons, o.selectedExtras, sbOrder.selectedExtras, extra.selectedExtras, o.extras, extra.extras);
 
       const mergedUsedPoints = o.used_points || o.usedPoints || sbOrder.used_points || sbOrder.usedPoints || extra.usedPoints || null;
       const mergedPointsDiscount = o.points_discount || o.pointsDiscount || sbOrder.points_discount || sbOrder.pointsDiscount || extra.pointsDiscount || null;
@@ -368,8 +376,9 @@ export async function POST(request: Request) {
     };
 
     try {
+      await sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS addons TEXT;`;
       await sql`
-        INSERT INTO orders (id, order_no, customer_name, customer_phone, customer_email, recipient_name, recipient_phone, city, district, address, delivery_date, delivery_slot, card_note, total_amount, status, payment_method, payment_status, items)
+        INSERT INTO orders (id, order_no, customer_name, customer_phone, customer_email, recipient_name, recipient_phone, city, district, address, delivery_date, delivery_slot, card_note, total_amount, status, payment_method, payment_status, items, addons)
         VALUES (
           ${String(newOrder.id)},
           ${String(newOrder.id)},
@@ -388,11 +397,13 @@ export async function POST(request: Request) {
           ${newOrder.status},
           ${newOrder.payment_method},
           ${"Ödendi"},
-          ${JSON.stringify(newOrder.items || [])}
+          ${JSON.stringify(newOrder.items || [])},
+          ${JSON.stringify(newOrder.addons || [])}
         )
         ON CONFLICT (id) DO UPDATE SET
           status = EXCLUDED.status,
-          total_amount = EXCLUDED.total_amount;
+          total_amount = EXCLUDED.total_amount,
+          addons = EXCLUDED.addons;
       `;
     } catch (neonErr) {}
 

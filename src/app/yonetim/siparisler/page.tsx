@@ -35,6 +35,16 @@ function parseJsonArray(val: any): any[] {
   return [];
 }
 
+function getFirstNonEmptyArray(...sources: any[]): any[] {
+  for (const src of sources) {
+    const arr = parseJsonArray(src);
+    if (arr && arr.length > 0) {
+      return arr;
+    }
+  }
+  return [];
+}
+
 function normalizeDateStr(dateVal?: string): string {
   if (!dateVal) return "";
   let str = String(dateVal).trim();
@@ -1503,11 +1513,11 @@ export default function AdminOrdersPage() {
 
                 {/* 4. PRODUCTS & EXTRAS TABLE */}
                 {(() => {
-                  const rawAddons = [
-                    ...parseJsonArray(selectedOrder.addons),
-                    ...parseJsonArray(selectedOrder.extras),
-                    ...parseJsonArray(selectedOrder.selectedExtras),
-                  ];
+                  const rawAddons = getFirstNonEmptyArray(
+                    selectedOrder.addons,
+                    selectedOrder.extras,
+                    selectedOrder.selectedExtras
+                  );
 
                   let itemsSubtotal = 0;
                   const orderItems = parseJsonArray(selectedOrder.items);

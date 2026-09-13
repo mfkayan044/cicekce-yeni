@@ -245,7 +245,15 @@ export async function GET(request: Request) {
       }, { headers: NO_CACHE_HEADERS });
     }
 
-    // Full orders list
+    // Full orders list requires admin auth
+    const isAuth = await isRequestAuthorized(request);
+    if (!isAuth) {
+      return NextResponse.json(
+        { error: "Yetkisiz erişim. Sipariş listesini görüntülemek için yönetici girişi yapınız." },
+        { status: 401 }
+      );
+    }
+
     let orders: any[] = [];
     try {
       orders = await sql`SELECT * FROM orders ORDER BY created_at DESC`;
@@ -375,8 +383,17 @@ export async function POST(request: Request) {
       customer_approval_status: orderData.customerApprovalStatus || "Bekliyor"
     };
 
+    let orderCity = String(orderData.city || "").trim();
+    let orderDistrict = String(orderData.district || "").trim();
+    if (!orderCity && newOrder.address && newOrder.address.includes("/")) {
+      const parts = newOrder.address.split("/");
+      orderCity = parts[0]?.trim() || "İstanbul";
+      orderDistrict = parts[1]?.trim() || "Merkez";
+    }
+    if (!orderCity) orderCity = "İstanbul";
+    if (!orderDistrict) orderDistrict = "Merkez";
+
     try {
-      await sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS addons TEXT;`;
       await sql`
         INSERT INTO orders (id, order_no, customer_name, customer_phone, customer_email, recipient_name, recipient_phone, city, district, address, delivery_date, delivery_slot, card_note, total_amount, status, payment_method, payment_status, items, addons)
         VALUES (
@@ -387,13 +404,13 @@ export async function POST(request: Request) {
           ${newOrder.customer_email},
           ${newOrder.recipient_name},
           ${newOrder.recipient_phone},
-          ${"İstanbul"},
-          ${"Merkez"},
+          ${orderCity},
+          ${orderDistrict},
           ${newOrder.address},
           ${newOrder.delivery_date},
           ${newOrder.delivery_time},
           ${newOrder.card_note},
-          ${typeof newOrder.total_amount === "number" ? newOrder.total_amount : (parseFloat(newOrder.total_amount) || 0)},
+          ${typeof newOrder.total_amount === "number" ? newOrder.total_amount : parsePrice(newOrder.total_amount)},
           ${newOrder.status},
           ${newOrder.payment_method},
           ${"Ödendi"},
@@ -484,27 +501,39 @@ export async function PUT(request: Request) {
       return NextResponse.json({ error: "Sipariş ID gereklidir." }, { status: 400 });
     }
 
+    const isAuth = await isRequestAuthorized(request);
+    const isCustomerApproval = (customerApprovalStatus !== undefined || rejectionReason !== undefined || updateRequest !== undefined) && !courierName && !address && !recipientName;
+    const isCourierDelivery = status === "Teslim Edildi" && (deliveredPhoto !== undefined || deliveredAt !== undefined);
+
+    if (!isAuth && !isCustomerApproval && !isCourierDelivery) {
+      return NextResponse.json(
+        { error: "Yetkisiz işlem. Sipariş durumunu ve detaylarını değiştirmek için yönetici girişi gereklidir." },
+        { status: 401 }
+      );
+    }
+
     const courierMap = await getOrderCouriersMap();
     const { data: existingOrder } = await supabase.from("orders").select("*").eq("id", id).single();
     const existingMeta = parseOrderMeta(existingOrder || {}, courierMap[id] || {});
 
-    const nowIso = new Date().toISOString();
-    let finalPreparedPhotoTime = preparedPhotoTime;
-    if ((status === "Fotoğraflı Onay Bekliyor" || preparedPhoto) && !finalPreparedPhotoTime) {
-      finalPreparedPhotoTime = existingMeta.preparedPhotoTime || nowIso;
-    }
-
-    const updatedMetaObj: any = {
-      status: customerApprovalStatus !== undefined ? customerApprovalStatus : existingMeta.customerApprovalStatus,
-      photoTime: finalPreparedPhotoTime !== undefined ? finalPreparedPhotoTime : existingMeta.preparedPhotoTime,
+    // Preserve and update structured metadata:
+    const updatedMetaObj = {
+      ...existingMeta,
+      preparedPhoto: preparedPhoto !== undefined ? preparedPhoto : existingMeta.preparedPhoto,
+      preparedPhotoTime: preparedPhotoTime !== undefined ? preparedPhotoTime : (preparedPhoto && !existingMeta.preparedPhotoTime ? new Date().toISOString() : existingMeta.preparedPhotoTime),
+      customerApprovalStatus: customerApprovalStatus !== undefined ? customerApprovalStatus : existingMeta.customerApprovalStatus,
+      rejectionReason: rejectionReason !== undefined ? rejectionReason : existingMeta.rejectionReason,
       courierId: courierId !== undefined ? courierId : existingMeta.courierId,
       courierName: courierName !== undefined ? courierName : existingMeta.courierName,
       deliveredAt: deliveredAt !== undefined ? deliveredAt : existingMeta.deliveredAt,
       deliveredPhoto: deliveredPhoto !== undefined ? deliveredPhoto : existingMeta.deliveredPhoto,
       deliveryNote: deliveryNote !== undefined ? deliveryNote : existingMeta.deliveryNote,
-      rejectionReason: rejectionReason !== undefined ? rejectionReason : existingMeta.rejectionReason,
       updateRequest: updateRequest !== undefined ? updateRequest : existingMeta.updateRequest
     };
+
+    courierMap[id] = updatedMetaObj;
+    await saveOrderCouriersMap(courierMap);
+    memoryCourierMap[id] = updatedMetaObj;
 
     const updatePayload: any = {
       customer_approval_status: JSON.stringify(updatedMetaObj)
@@ -517,13 +546,6 @@ export async function PUT(request: Request) {
     if (address !== undefined) updatePayload.address = address;
     if (deliveryDate !== undefined) updatePayload.delivery_date = deliveryDate;
     if (deliveryTime !== undefined) updatePayload.delivery_time = deliveryTime;
-
-    try {
-      await sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS prepared_photo TEXT;`;
-      await sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS customer_approval_status TEXT;`;
-      await sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS courier_id TEXT;`;
-      await sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS courier_name TEXT;`;
-    } catch (e) {}
 
     try {
       await sql`
@@ -551,17 +573,18 @@ export async function PUT(request: Request) {
     // Trigger NetGSM Automatic SMS Notification if status changed OR prepared photo uploaded
     const targetPhone = existingOrder?.customer_phone || existingOrder?.customerPhone || existingOrder?.recipient_phone;
     const custName = existingOrder?.customer_name || existingOrder?.customerName || "Müşterimiz";
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.cicekce.com";
 
     if (targetPhone) {
       const cleanPhone = String(targetPhone).replace(/[^0-9]/g, "");
       let msg = "";
 
       if (preparedPhoto && preparedPhoto !== existingOrder?.prepared_photo) {
-        const trackingLink = `https://cicekce-yeni-two.vercel.app/siparis-takip?orderId=${id}&phone=${encodeURIComponent(cleanPhone.slice(-7))}`;
+        const trackingLink = `${siteUrl}/siparis-takip?orderId=${id}&phone=${encodeURIComponent(cleanPhone.slice(-7))}`;
         msg = `Sayin ${custName}, ${id} nolu siparisinizin hazirlanan cicek fotografi yuklenmistir. Fotografinizi incelemek ve onaylamak icin tiklayin: ${trackingLink} Cicekce`;
       } else if (status && status !== existingOrder?.status) {
         if (status === "Fotoğraflı Onay Bekliyor") {
-          const trackingLink = `https://cicekce-yeni-two.vercel.app/siparis-takip?orderId=${id}&phone=${encodeURIComponent(cleanPhone.slice(-7))}`;
+          const trackingLink = `${siteUrl}/siparis-takip?orderId=${id}&phone=${encodeURIComponent(cleanPhone.slice(-7))}`;
           msg = `Sayin ${custName}, ${id} nolu siparisinizin cicek fotografi yuklenmistir. Onaylamak icin tiklayin: ${trackingLink} Cicekce`;
         } else if (status === "Hazırlanıyor" || status === "Hazırlanıyor / Onaylandı") {
           msg = `Sayin ${custName}, ${id} nolu cicek siparisiniz ozenle hazirlanmaya baslanmistir. Cicekce`;
@@ -645,7 +668,7 @@ export async function PUT(request: Request) {
       ...(deliveredPhoto !== undefined ? { deliveredPhoto } : {}),
       ...(deliveryNote !== undefined ? { deliveryNote } : {}),
       ...(preparedPhoto !== undefined ? { preparedPhoto } : {}),
-      ...(finalPreparedPhotoTime ? { preparedPhotoTime: finalPreparedPhotoTime } : {}),
+      ...(preparedPhotoTime !== undefined ? { preparedPhotoTime } : {}),
       ...(customerApprovalStatus !== undefined ? { customerApprovalStatus } : {}),
       ...(rejectionReason !== undefined ? { rejectionReason } : {}),
       ...(updateRequest !== undefined ? { updateRequest } : {}),

@@ -18,6 +18,12 @@ export interface ProductCardProps {
   onRemoveFromCart?: (id: string | number) => void;
 }
 
+function parseNum(str?: string): number {
+  if (!str) return 0;
+  const cl = String(str).replace(/\./g, "").replace(",", ".").replace(/[^0-9.]/g, "");
+  return parseFloat(cl) || 0;
+}
+
 export default function ProductCard({
   id,
   slug,
@@ -27,7 +33,9 @@ export default function ProductCard({
   discount,
   image,
   code,
+  isInCart,
   onQuickOrder,
+  onRemoveFromCart,
 }: ProductCardProps) {
   const { setSingleCartItem, toggleFavorite, isFavorite } = useStore();
   const isFav = isFavorite(id);
@@ -109,23 +117,11 @@ export default function ProductCard({
           </svg>
         </button>
 
-        {(() => {
-          const parseNum = (str?: string) => {
-            if (!str) return 0;
-            const cl = String(str).replace(/\./g, "").replace(",", ".").replace(/[^0-9.]/g, "");
-            return parseFloat(cl) || 0;
-          };
-          const pNum = parseNum(price);
-          const oNum = parseNum(oldPrice);
-          if (discount && oNum > pNum) {
-            return (
-              <span className="absolute bottom-2.5 left-2.5 z-10 bg-red-500 text-white text-[10px] font-black px-2 py-0.5 rounded-md shadow-xs">
-                {discount}
-              </span>
-            );
-          }
-          return null;
-        })()}
+        {discount && parseNum(oldPrice) > parseNum(price) && (
+          <span className="absolute bottom-2.5 left-2.5 z-10 bg-red-500 text-white text-[10px] font-black px-2 py-0.5 rounded-md shadow-xs">
+            {discount}
+          </span>
+        )}
       </div>
 
       {/* Product Content */}
@@ -141,35 +137,34 @@ export default function ProductCard({
         {/* Price & Action Buttons */}
         <div className="mt-3 pt-2 border-t border-slate-100 flex items-center justify-between gap-2">
           <div>
-            {(() => {
-              const parseNum = (str?: string) => {
-                if (!str) return 0;
-                const cl = String(str).replace(/\./g, "").replace(",", ".").replace(/[^0-9.]/g, "");
-                return parseFloat(cl) || 0;
-              };
-              const pNum = parseNum(price);
-              const oNum = parseNum(oldPrice);
-              if (oldPrice && oNum > pNum) {
-                return (
-                  <div className="text-[10px] line-through text-slate-400 font-semibold leading-none mb-0.5">
-                    {oldPrice}
-                  </div>
-                );
-              }
-              return null;
-            })()}
+            {oldPrice && parseNum(oldPrice) > parseNum(price) && (
+              <div className="text-[10px] line-through text-slate-400 font-semibold leading-none mb-0.5">
+                {oldPrice}
+              </div>
+            )}
             <div style={{ color: "#2b2623" }} className="font-black text-sm sm:text-base leading-none">
               {price}
             </div>
           </div>
 
-          <Link
-            href={`/urun/${slug}`}
-            style={{ backgroundColor: "#2b2623", color: "#ffffff" }}
-            className="px-3 py-2 rounded-xl text-xs font-extrabold shadow-xs hover:opacity-95 transition whitespace-nowrap flex items-center gap-1"
-          >
-            <span>🛒 Sipariş Ver</span>
-          </Link>
+          {onQuickOrder ? (
+            <button
+              type="button"
+              onClick={handleDirectBuy}
+              style={{ backgroundColor: "#2b2623", color: "#ffffff" }}
+              className="px-3 py-2 rounded-xl text-xs font-extrabold shadow-xs hover:opacity-95 transition whitespace-nowrap flex items-center gap-1 cursor-pointer"
+            >
+              <span>🛒 {isInCart ? "Sepette (Satın Al)" : "Hızlı Sipariş"}</span>
+            </button>
+          ) : (
+            <Link
+              href={`/urun/${slug}`}
+              style={{ backgroundColor: "#2b2623", color: "#ffffff" }}
+              className="px-3 py-2 rounded-xl text-xs font-extrabold shadow-xs hover:opacity-95 transition whitespace-nowrap flex items-center gap-1"
+            >
+              <span>🛒 Sipariş Ver</span>
+            </Link>
+          )}
         </div>
       </div>
     </div>

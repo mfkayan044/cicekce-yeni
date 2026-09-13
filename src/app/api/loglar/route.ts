@@ -1,9 +1,14 @@
 import { NextResponse } from "next/server";
 import { getAuditLogs, addAuditLog } from "@/lib/audit-logger";
 import { setSetting } from "@/lib/settings-helper";
+import { isRequestAuthorized } from "@/lib/auth";
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    const isAuth = await isRequestAuthorized(request);
+    if (!isAuth) {
+      return NextResponse.json({ error: "Yetkisiz erişim. Yönetici girişi gereklidir." }, { status: 401 });
+    }
     const logs = await getAuditLogs();
     return NextResponse.json(logs);
   } catch (e) {
@@ -13,6 +18,11 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    const isAuth = await isRequestAuthorized(request);
+    if (!isAuth) {
+      return NextResponse.json({ error: "Yetkisiz işlem. Yönetici girişi gereklidir." }, { status: 401 });
+    }
+
     const body = await request.json();
     if (body.action === "clear") {
       await setSetting("audit_logs", []);

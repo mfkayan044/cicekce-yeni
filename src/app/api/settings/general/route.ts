@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSetting as getSettingsHelper, setSetting as setSettingsHelper } from "@/lib/settings-helper";
+import { isRequestAuthorized } from "@/lib/auth";
 import fs from "fs";
 import path from "path";
 
@@ -25,19 +26,35 @@ function writeDbAndTs(genData: any) {
   } catch (e) {}
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    const isAuth = await isRequestAuthorized(request);
     const local = readDb().generalSettings || {};
     const settings = await getSettingsHelper("general_settings", local);
+    
+    if (!isAuth && settings) {
+      const { password, ...safeSettings } = settings;
+      return NextResponse.json(safeSettings);
+    }
     return NextResponse.json(settings);
   } catch (e) {
     const db = readDb();
-    return NextResponse.json(db.generalSettings || {});
+    const local = db.generalSettings || {};
+    const { password, ...safeLocal } = local;
+    return NextResponse.json(safeLocal);
   }
 }
 
 export async function POST(request: Request) {
   try {
+    const isAuth = await isRequestAuthorized(request);
+    if (!isAuth) {
+      return NextResponse.json(
+        { error: "Yetkisiz işlem. Genel ayarları değiştirmek için yönetici girişi gereklidir." },
+        { status: 401 }
+      );
+    }
+
     const body = await request.json();
     const local = readDb().generalSettings || {};
     const existing = await getSettingsHelper("general_settings", local);

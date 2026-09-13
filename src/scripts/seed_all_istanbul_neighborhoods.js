@@ -1,6 +1,19 @@
 const { neon } = require("@neondatabase/serverless");
+const fs = require("fs");
+const path = require("path");
 
-const DATABASE_URL = "postgresql://neondb_owner:npg_zhlvHLFGVA76@ep-plain-mode-b2fq4008-pooler.c-6.eu-central-1.aws.neon.tech/neondb?sslmode=require";
+let DATABASE_URL = process.env.DATABASE_URL;
+if (!DATABASE_URL) {
+  try {
+    const envPath = path.join(__dirname, '..', '..', '.env.local');
+    if (fs.existsSync(envPath)) {
+      const content = fs.readFileSync(envPath, 'utf8');
+      const match = content.match(/DATABASE_URL=["']?([^"'\r\n]+)["']?/);
+      if (match) DATABASE_URL = match[1];
+    }
+  } catch (e) {}
+}
+if (!DATABASE_URL) throw new Error("DATABASE_URL is not set.");
 const sql = neon(DATABASE_URL);
 
 const istanbulData = [

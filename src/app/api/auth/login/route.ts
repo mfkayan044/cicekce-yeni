@@ -27,17 +27,13 @@ export async function POST(request: Request) {
 
     let isValid = false;
 
-    if (targetUser || targetPass) {
+    if (targetUser && targetPass) {
       const allowedUsernames = [
         savedUser ? savedUser.toLowerCase() : null,
         savedEmail ? savedEmail.toLowerCase() : null,
-        !savedUser ? "admin" : null,
-        !savedUser ? "admin@cicekce.com" : null,
       ].filter(Boolean) as string[];
 
-      const requiredPass = targetPass || "123456";
-
-      isValid = allowedUsernames.includes(inputUser) && inputPass === requiredPass;
+      isValid = allowedUsernames.includes(inputUser) && inputPass === targetPass;
     } else {
       isValid = validateAdminCredentials(login, password);
     }

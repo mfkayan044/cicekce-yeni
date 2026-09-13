@@ -4,13 +4,13 @@ import Link from "next/link";
 import React, { useState, useEffect } from "react";
 import { getStoredMember, clearStoredMember, MemberUser } from "@/lib/member-auth";
 import { useStore } from "@/lib/store";
-import { User, LogOut, Package, Headphones, Heart, ShoppingCart, Search, Menu, X, Sparkles, ChevronDown } from "lucide-react";
+import { User, LogOut, Package, Heart, ShoppingCart, Search, Menu, X, Sparkles, ChevronDown } from "lucide-react";
 
 import { getInitialDbData } from "@/lib/server-settings";
 
 const _hdrDb = getInitialDbData();
 
-export default function StoreHeader({ onOpenAssistant }: { onOpenAssistant?: () => void }) {
+export default function StoreHeader({ onOpenAssistant }: { onOpenAssistant?: () => void } = {}) {
   const { cart, favorites, products } = useStore();
   const [topbarData, setTopbarData] = useState<any>(_hdrDb.headerBant || null);
   const [dismissed, setDismissed] = useState(false);
@@ -129,7 +129,7 @@ export default function StoreHeader({ onOpenAssistant }: { onOpenAssistant?: () 
 
       <header className="border-b sticky top-0 z-40 bg-white lg:static" style={{ "borderBottomColor": "rgba(203,213,225,.6)" }}>
         <div className="max-w-[1400px] mx-auto px-4 lg:px-6 py-4 flex items-center justify-between gap-4">
-          <a href="/" className="shrink-0" aria-label="Anasayfa">
+          <Link href="/" className="shrink-0" aria-label="Anasayfa">
             <span className="h-10 lg:h-[54px] inline-flex items-center gap-3" role="img" aria-label="Çiçekçe">
               {genSettings?.logoMode === "image" && genSettings?.logoUrl ? (
                 <img
@@ -146,7 +146,7 @@ export default function StoreHeader({ onOpenAssistant }: { onOpenAssistant?: () 
                 </span>
               )}
             </span>
-          </a>
+          </Link>
 
           {/* Desktop Search Bar with Live Instant Results */}
           <div className="hidden lg:block relative flex-1 max-w-md mx-4">

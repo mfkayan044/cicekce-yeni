@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
+import { isRequestAuthorized } from "@/lib/auth";
 import nodemailer from "nodemailer";
 import fs from "fs";
 import path from "path";
@@ -18,6 +19,17 @@ function getEmailSettings() {
 
 export async function POST(request: Request) {
   try {
+    const isAuth = await isRequestAuthorized(request);
+    const authHeader = request.headers.get("authorization");
+    const isInternalAuth = authHeader === `Bearer ${process.env.ADMIN_JWT_SECRET}` || authHeader === `Bearer ${process.env.CRON_SECRET}`;
+
+    if (!isAuth && !isInternalAuth) {
+      return NextResponse.json(
+        { success: false, error: "Yetkisiz erişim. E-posta göndermek için yönetici yetkisi gereklidir." },
+        { status: 401 }
+      );
+    }
+
     const { to, subject, html, type = "transactional" } = await request.json();
 
     if (!to) {

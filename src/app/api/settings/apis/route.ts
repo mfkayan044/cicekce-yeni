@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
 import { getSetting, setSetting } from "@/lib/settings-helper";
+import { isRequestAuthorized } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import fs from "fs";
 import path from "path";
@@ -12,9 +13,11 @@ const initialTsPath = path.join(process.cwd(), "src", "lib", "initial-db.ts");
 
 function extractGaId(raw: string): string {
   if (!raw) return "";
-  const trimmed = raw.trim();
-  const match = trimmed.match(/(G|GT|UA)-[A-Za-z0-9]+/i);
-  return match ? match[0].toUpperCase() : trimmed;
+  const trimmed = raw.trim().toUpperCase();
+  const match = trimmed.match(/^(G|GT|UA)-[A-Z0-9-]+$/);
+  if (match) return match[0];
+  const partial = trimmed.match(/(G|GT|UA)-[A-Z0-9-]+/);
+  return partial ? partial[0] : "";
 }
 
 function extractPixelId(raw: string): string {
@@ -45,7 +48,8 @@ function writeDbAndTs(apiData: any) {
   } catch (e) {}
 }
 
-export async function GET() {
+export async function GET(request: Request) {
+  const isAuth = await isRequestAuthorized(request);
   let settings: any = {};
 
   // 1. Try fetching from Supabase
@@ -76,11 +80,30 @@ export async function GET() {
     settings = readDb().apiSettings || {};
   }
 
+  if (!isAuth) {
+    // Only return public tracking IDs to unauthenticated callers (e.g. storefront AnalyticsTracker)
+    return NextResponse.json({
+      googleAnalyticsId: settings.googleAnalyticsId || "",
+      googleTagId: settings.googleAnalyticsId || "",
+      metaPixelId: settings.metaPixelId || "",
+      googleAdsId: settings.googleAdsId || "",
+      googleAdsLabel: settings.googleAdsLabel || ""
+    });
+  }
+
   return NextResponse.json(settings);
 }
 
 export async function POST(request: Request) {
   try {
+    const isAuth = await isRequestAuthorized(request);
+    if (!isAuth) {
+      return NextResponse.json(
+        { error: "Yetkisiz işlem. API ayarlarını değiştirmek için yönetici girişi gereklidir." },
+        { status: 401 }
+      );
+    }
+
     const body = await request.json();
     
     // Automatically sanitize / extract GA ID and Pixel ID

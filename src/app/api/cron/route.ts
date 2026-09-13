@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSetting, setSetting } from "@/lib/settings-helper";
 import { addAuditLog } from "@/lib/audit-logger";
+import { isRequestAuthorized } from "@/lib/auth";
 import fs from "fs";
 import path from "path";
 
@@ -63,8 +64,15 @@ function writeDbAndTs(cronData: any) {
   } catch (e) {}
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    const authHeader = request.headers.get("authorization");
+    const isCronSecretValid = authHeader === `Bearer ${process.env.CRON_SECRET || "cicekce_cron_secret_key_2026"}`;
+    const isAuth = isCronSecretValid || (await isRequestAuthorized(request));
+    if (!isAuth) {
+      return NextResponse.json({ error: "Yetkisiz erişim. Cron yetkilendirmesi gereklidir." }, { status: 401 });
+    }
+
     const local = readDb().cronSettings || defaultCronData;
     const settings = await getSetting("cron_settings", local);
     return NextResponse.json(settings || defaultCronData);
@@ -75,6 +83,13 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    const authHeader = request.headers.get("authorization");
+    const isCronSecretValid = authHeader === `Bearer ${process.env.CRON_SECRET || "cicekce_cron_secret_key_2026"}`;
+    const isAuth = isCronSecretValid || (await isRequestAuthorized(request));
+    if (!isAuth) {
+      return NextResponse.json({ error: "Yetkisiz işlem. Cron yetkilendirmesi gereklidir." }, { status: 401 });
+    }
+
     const body = await request.json();
 
     // Trigger instant job execution

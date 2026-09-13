@@ -534,8 +534,16 @@ export default function CheckoutPage() {
   useEffect(() => {
     if (isMounted) {
       window.scrollTo({ top: 0, behavior: "smooth" });
-      syncAbandonedCart(step);
     }
+  }, [step, isMounted]);
+
+  useEffect(() => {
+    if (!isMounted) return;
+    const timer = setTimeout(() => {
+      syncAbandonedCart(step);
+    }, 1500);
+
+    return () => clearTimeout(timer);
   }, [step, isMounted, recipientName, recipientPhone, senderName, senderPhone, selectedAddons]);
 
   // Step 1 Validation & Proceed
@@ -597,6 +605,8 @@ export default function CheckoutPage() {
         customerEmail: senderEmail || "musteri@example.com",
         recipientName: recipientName || "Alıcı Müşteri",
         recipientPhone: recipientPhone || "0544 000 00 00",
+        city: currentCityObj?.name || "İstanbul",
+        district: currentDistrictObj?.name || "Merkez",
         address: constructedDeliveryAddress,
         deliveryDate: typeof window !== "undefined" ? localStorage.getItem("pro_flower_delivery_date") || "Bugün" : "Bugün",
         deliveryTime: typeof window !== "undefined" ? localStorage.getItem("pro_flower_delivery_time") || "18:00 - 21:00" : "18:00 - 21:00",

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSetting, setSetting } from "@/lib/settings-helper";
+import { isRequestAuthorized } from "@/lib/auth";
 import fs from "fs";
 import path from "path";
 
@@ -41,6 +42,7 @@ export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("id");
     const code = searchParams.get("code");
+    const isAuth = await isRequestAuthorized(req);
     const coupons = await getCouponsList();
 
     if (id) {
@@ -55,6 +57,13 @@ export async function GET(req: Request) {
       return NextResponse.json(found);
     }
 
+    if (!isAuth) {
+      return NextResponse.json(
+        { error: "Yetkisiz erişim. Kupon listesini görüntülemek için yönetici yetkisi gereklidir." },
+        { status: 401 }
+      );
+    }
+
     return NextResponse.json(coupons);
   } catch (e) {
     return NextResponse.json({ error: "Failed to fetch coupons" }, { status: 500 });
@@ -63,6 +72,11 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
+    const isAuth = await isRequestAuthorized(req);
+    if (!isAuth) {
+      return NextResponse.json({ error: "Yetkisiz işlem. Yönetici girişi gereklidir." }, { status: 401 });
+    }
+
     const body = await req.json();
     const coupons = await getCouponsList();
 
@@ -86,6 +100,11 @@ export async function POST(req: Request) {
 
 export async function PUT(req: Request) {
   try {
+    const isAuth = await isRequestAuthorized(req);
+    if (!isAuth) {
+      return NextResponse.json({ error: "Yetkisiz işlem. Yönetici girişi gereklidir." }, { status: 401 });
+    }
+
     const body = await req.json();
     if (!body.id) {
       return NextResponse.json({ error: "Coupon ID is required" }, { status: 400 });
@@ -109,6 +128,11 @@ export async function PUT(req: Request) {
 
 export async function DELETE(req: Request) {
   try {
+    const isAuth = await isRequestAuthorized(req);
+    if (!isAuth) {
+      return NextResponse.json({ error: "Yetkisiz işlem. Yönetici girişi gereklidir." }, { status: 401 });
+    }
+
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("id");
     if (!id) {

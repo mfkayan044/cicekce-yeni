@@ -1,8 +1,8 @@
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
 const ADMIN_SECRET = process.env.ADMIN_JWT_SECRET || "cicekce_admin_super_secret_key_2026_florist";
 const ADMIN_USER = process.env.ADMIN_USER || "admin";
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "123456";
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
 
 // Create HMAC-SHA256 signature using native Web Crypto API
 async function signData(data: string, secret: string): Promise<string> {
@@ -62,7 +62,27 @@ export async function verifyAdminToken(token: string | undefined | null): Promis
 }
 
 export function validateAdminCredentials(user: string, pass: string): boolean {
-  return (user === ADMIN_USER || user === "demo" || user === "admin@cicekce.com") && (pass === ADMIN_PASSWORD || pass === "123456");
+  if (!ADMIN_PASSWORD) {
+    console.error("KRİTİK GÜVENLİK UYARISI: ADMIN_PASSWORD ortam değişkeni tanımlanmamış!");
+    return false;
+  }
+  const cleanUser = String(user || "").trim().toLowerCase();
+  const validUser = ADMIN_USER.toLowerCase();
+  return cleanUser === validUser && pass === ADMIN_PASSWORD;
+}
+
+export async function requireAdminAuth(req: NextRequest | Request): Promise<{ authorized: boolean; response?: NextResponse }> {
+  const authorized = await isRequestAuthorized(req);
+  if (!authorized) {
+    return {
+      authorized: false,
+      response: NextResponse.json(
+        { error: "Yetkisiz erişim. Lütfen yönetici girişi yapınız." },
+        { status: 401 }
+      ),
+    };
+  }
+  return { authorized: true };
 }
 
 export async function isRequestAuthorized(req: NextRequest | Request): Promise<boolean> {

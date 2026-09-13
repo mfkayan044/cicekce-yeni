@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { usePathname } from "next/navigation";
 import { Flower2, Sparkles, X, ShoppingBag, ArrowRight, Copy, Check, MessageSquareHeart } from "lucide-react";
 import Link from "next/link";
 import { useStore } from "@/lib/store";
@@ -14,11 +15,17 @@ interface MessageItem {
 }
 
 export default function AiFloristWidget() {
+  const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
-  const { products, categories, addToCart } = useStore();
+  const { products, addToCart } = useStore();
   const [loading, setLoading] = useState(false);
   const [copiedNote, setCopiedNote] = useState<string | null>(null);
+  const [toastMsg, setToastMsg] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
+
+  if (pathname?.startsWith("/yonetim") || pathname?.startsWith("/kurye")) {
+    return null;
+  }
 
   const [messages, setMessages] = useState<MessageItem[]>([
     {
@@ -70,7 +77,7 @@ export default function AiFloristWidget() {
         const botMsg: MessageItem = {
           sender: "bot",
           text: `"${queryText}" isteğiniz için öne çıkan çiçeklerimiz:`,
-          recommendedProduct: matching[0] || products[0],
+          recommendedProduct: (matching && matching.length > 0 ? matching[0] : (products && products.length > 0 ? products[0] : null)),
           cardNoteAdvice: "💡 Kart Notu Tavsiyesi: 'Bu özel günde tüm sevginiz ve neşeniz daim olsun!'",
         };
         setMessages((prev) => [...prev, botMsg]);
@@ -79,7 +86,7 @@ export default function AiFloristWidget() {
       const botMsg: MessageItem = {
         sender: "bot",
         text: "Sizin için seçtiğimiz harika ürün önerisi:",
-        recommendedProduct: products[0],
+        recommendedProduct: (products && products.length > 0 ? products[0] : null),
       };
       setMessages((prev) => [...prev, botMsg]);
     } finally {
@@ -195,7 +202,8 @@ export default function AiFloristWidget() {
                         type="button"
                         onClick={() => {
                           addToCart(m.recommendedProduct);
-                          alert(`"${m.recommendedProduct.title}" sepetinize eklendi!`);
+                          setToastMsg(`"${m.recommendedProduct.title}" sepete eklendi!`);
+                          setTimeout(() => setToastMsg(null), 3000);
                         }}
                         className="flex-1 bg-[#2b2623] hover:opacity-90 text-white text-[11px] font-black py-1.5 rounded-xl flex items-center justify-center gap-1 shadow-2xs"
                       >
@@ -244,6 +252,11 @@ export default function AiFloristWidget() {
               <div className="flex items-center gap-2 text-slate-500 p-2 bg-white rounded-2xl border border-slate-200 w-fit animate-pulse">
                 <Flower2 className="w-4 h-4 text-amber-500 animate-spin" />
                 <span className="font-bold text-[11px]">Floristiniz önerileri hazırlıyor...</span>
+              </div>
+            )}
+            {toastMsg && (
+              <div className="p-2 bg-emerald-100 border border-emerald-300 text-emerald-800 text-[11px] font-extrabold rounded-xl text-center shadow-xs">
+                ✓ {toastMsg}
               </div>
             )}
             <div ref={messagesEndRef} />

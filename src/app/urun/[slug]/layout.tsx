@@ -18,11 +18,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       .single();
 
     if (product) {
+      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.cicekce.com';
       const title = `${product.title} (${product.price || ''}) - Çiçekçe Aynı Gün Teslimat`;
       const description = `${product.title} ${product.price || ''} - En taze canlı çiçekler, özel aranjmanlar ve fotoğraflı onay garantisi ile Çiçekçe'de!`;
       const imageUrl = product.image.startsWith('http')
         ? product.image
-        : `https://cicekce-yeni-two.vercel.app${product.image}`;
+        : `${siteUrl}${product.image}`;
 
       return {
         title,
@@ -30,7 +31,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         openGraph: {
           title,
           description,
-          url: `https://cicekce-yeni-two.vercel.app/urun/${slug}`,
+          url: `${siteUrl}/urun/${slug}`,
           siteName: 'Çiçekçe',
           images: [
             {
@@ -71,10 +72,11 @@ export default async function ProductLayout({ params, children }: Props) {
       .single();
 
     if (product) {
+      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.cicekce.com';
       const cleanPrice = String(product.price || '0').replace(/[^0-9.]/g, '') || '100';
       const imageUrl = product.image?.startsWith('http')
         ? product.image
-        : `https://cicekce-yeni-two.vercel.app${product.image}`;
+        : `${siteUrl}${product.image}`;
 
       jsonLd = {
         '@context': 'https://schema.org',
@@ -89,7 +91,7 @@ export default async function ProductLayout({ params, children }: Props) {
         },
         offers: {
           '@type': 'Offer',
-          url: `https://cicekce-yeni-two.vercel.app/urun/${slug}`,
+          url: `${siteUrl}/urun/${slug}`,
           priceCurrency: 'TRY',
           price: cleanPrice,
           priceValidUntil: '2027-12-31',

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSetting, setSetting } from "@/lib/settings-helper";
+import { isRequestAuthorized } from "@/lib/auth";
 import fs from "fs";
 import path from "path";
 
@@ -8,17 +9,17 @@ const dbPath = path.join(process.cwd(), "src", "data", "db.json");
 const defaultHeroData = {
   sliders: [
     {
-      id: 2,
-      link: "/kategori/dogum-gunu",
-      image: "https://cksauvgjodsduhxtnqwm.supabase.co/storage/v1/object/public/cicekce-uploads/1788948885624-1218a0a4.jpg",
+      id: 3,
+      link: "/kategori/buketler",
+      image: "https://cksauvgjodsduhxtnqwm.supabase.co/storage/v1/object/public/cicekce-uploads/1788948865460-ca821060.jpg",
       price: "",
       title: "",
       discountBadge: "%10 İndirim"
     },
     {
-      id: 3,
-      link: "/kategori/buketler",
-      image: "https://cksauvgjodsduhxtnqwm.supabase.co/storage/v1/object/public/cicekce-uploads/1788948865460-ca821060.jpg",
+      id: 2,
+      link: "/kategori/dogum-gunu",
+      image: "https://cksauvgjodsduhxtnqwm.supabase.co/storage/v1/object/public/cicekce-uploads/1788948885624-1218a0a4.jpg",
       price: "",
       title: "",
       discountBadge: "%10 İndirim"
@@ -32,7 +33,7 @@ const defaultHeroData = {
       discountBadge: "%10 İndirim"
     },
     {
-      id: 4,
+      id: 5,
       link: "/kategori/buketler",
       image: "https://cksauvgjodsduhxtnqwm.supabase.co/storage/v1/object/public/cicekce-uploads/1788948837837-757aa67c.jpg",
       price: "",
@@ -116,6 +117,11 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    const isAuth = await isRequestAuthorized(request);
+    if (!isAuth) {
+      return NextResponse.json({ error: "Yetkisiz işlem. Yönetici girişi gereklidir." }, { status: 401, headers: noCacheHeaders });
+    }
+
     const body = await request.json();
     saveLocalHero(body);
     await setSetting("hero", body);
@@ -127,6 +133,11 @@ export async function POST(request: Request) {
 
 export async function PUT(request: Request) {
   try {
+    const isAuth = await isRequestAuthorized(request);
+    if (!isAuth) {
+      return NextResponse.json({ error: "Yetkisiz işlem. Yönetici girişi gereklidir." }, { status: 401, headers: noCacheHeaders });
+    }
+
     const body = await request.json();
     saveLocalHero(body);
     await setSetting("hero", body);

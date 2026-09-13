@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { isRequestAuthorized } from "@/lib/auth";
 import fs from "fs";
 import path from "path";
 
@@ -41,6 +42,14 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    const isAuth = await isRequestAuthorized(request);
+    if (!isAuth) {
+      return NextResponse.json(
+        { error: "Yetkisiz işlem. Ödeme yöntemlerini değiştirmek için yönetici girişi gereklidir." },
+        { status: 401 }
+      );
+    }
+
     const body = await request.json();
     const dbObj = readDb();
     

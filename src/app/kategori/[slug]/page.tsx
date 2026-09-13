@@ -127,22 +127,27 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
     return false;
   });
 
-  const handleAddToCart = (product: QuickOrderProduct) => {
-    if (!cartItemIds.includes(product.id)) {
-      setCartItemIds([...cartItemIds, product.id]);
+  const handleAddToCart = (prod: QuickOrderProduct) => {
+    if (!cartItemIds.includes(prod.id)) {
+      setCartItemIds([...cartItemIds, prod.id]);
     }
-    setSingleCartItem({
-      id: String(product.id),
-      slug: String(product.id),
-      title: product.title,
-      price: product.price,
-      image: product.image,
-      code: product.code || "",
-      category: "Kategori",
-      categorySlug: "kategori",
-      stock: true,
-      featured: true
-    }, 1);
+    const fullProd = products.find((p: any) => String(p.id) === String(prod.id));
+    if (fullProd) {
+      setSingleCartItem(fullProd, 1);
+    } else {
+      setSingleCartItem({
+        id: String(prod.id),
+        slug: prod.slug || String(prod.id),
+        title: prod.title,
+        price: prod.price,
+        image: prod.image,
+        code: prod.code || "",
+        category: categoryName,
+        categorySlug: targetSlug,
+        stock: true,
+        featured: true
+      }, 1);
+    }
   };
 
   const handleRemoveFromCart = (id: string | number) => {
@@ -176,7 +181,10 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
                   image={product.image}
                   code={product.code}
                   isInCart={cartItemIds.includes(product.id)}
-                  onQuickOrder={() => { window.location.href = "/odeme"; }}
+                  onQuickOrder={() => {
+                    setSingleCartItem(product, 1);
+                    window.location.href = "/odeme";
+                  }}
                   onRemoveFromCart={(id) => handleRemoveFromCart(id)}
                 />
               ))}

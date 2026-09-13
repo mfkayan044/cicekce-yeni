@@ -46,7 +46,7 @@ export default function AdminRemindersPage() {
     else if (noteLower.includes("geçmiş")) occasion = "Geçmiş Olsun";
 
     const couponCode = `HATIRLATMA10`;
-    const origin = typeof window !== "undefined" ? window.location.origin : "https://cicekce-yeni-two.vercel.app";
+    const origin = typeof window !== "undefined" ? window.location.origin : (process.env.NEXT_PUBLIC_SITE_URL || "https://www.cicekce.com");
     const waMsg = `Merhaba Sayın ${custName}, Çiçekçe'den geçen yıl bu zamanlar sevdiklerinize unutulmaz bir çiçek sürprizi yapmıştınız! 🌸 Yaklaşan ${occasion} kutlamanızı unutmayın diye size özel %10 indirim tanımladık. İndirim Kodunuz: ${couponCode}\n\nHemen sipariş verin: ${origin}`;
     const waUrl = `https://wa.me/90${cleanPhone.slice(-10)}?text=${encodeURIComponent(waMsg)}`;
 

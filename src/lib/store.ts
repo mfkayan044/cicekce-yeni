@@ -1,6 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { create } from "zustand";
+import { persist, createJSONStorage } from "zustand/middleware";
+import { useEffect } from "react";
 
 export interface Product {
   id: string;
@@ -58,330 +60,355 @@ export const extraGiftsList: ExtraGift[] = [
   { id: "e3", name: "Kişiye Özel Doğum Günü Balonu", price: 150, image: "🎈" },
 ];
 
-import { getInitialDbData } from "./server-settings";
+export const initialCategories: CategoryItem[] = [];
+export const initialProducts: Product[] = [];
 
-const _initialDb = getInitialDbData();
-export const initialCategories: CategoryItem[] = _initialDb.categories || [];
-export const initialProducts: Product[] = _initialDb.products || [];
+let lastFetchTimestamp = 0;
+let isFetchingInProgress = false;
+const FETCH_COOLDOWN_MS = 5 * 60 * 1000; // 5 minutes client cache cooldown
 
-let globalProducts: Product[] = initialProducts;
-let globalCategories: CategoryItem[] = initialCategories;
-let globalCart: CartItem[] = [];
-let globalFavorites: Product[] = [];
-if (typeof window !== "undefined") {
-  try {
-    const savedProds = localStorage.getItem("pro_flower_products");
-    if (savedProds) {
-      const parsed = JSON.parse(savedProds);
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        const hasCorruptedOrDemo = parsed.some((p: any) =>
-          p.title === "Yeni Ürün" ||
-          p.title === "urun" ||
-          !p.title ||
-          (p.title && p.title.includes("Gerbera")) ||
-          (p.title && p.title.includes("Biçme")) ||
-          (p.title && p.title.includes("İhtişam Buketi"))
-        );
-        if (!hasCorruptedOrDemo) {
-          globalProducts = parsed;
-        } else {
-          try { localStorage.removeItem("pro_flower_products"); } catch (e) {}
+interface StoreState {
+  products: Product[];
+  categories: CategoryItem[];
+  cart: CartItem[];
+  favorites: Product[];
+  coupon: string | null;
+  discountAmount: number;
+
+  fetchFromApi: (force?: boolean) => Promise<void>;
+  addProduct: (newProd: Partial<Product>) => Promise<void>;
+  updateProduct: (id: string, updatedFields: Partial<Product>) => Promise<void>;
+  deleteProduct: (id: string) => Promise<void>;
+  addCategory: (newCat: Partial<CategoryItem>) => Promise<void>;
+  updateCategory: (id: string, updatedFields: Partial<CategoryItem>) => Promise<void>;
+  deleteCategory: (id: string) => Promise<void>;
+  setSingleCartItem: (product: Product, quantity?: number, selectedExtras?: ExtraGift[]) => void;
+  addToCart: (product: Product, quantity?: number, selectedExtras?: ExtraGift[]) => void;
+  removeFromCart: (productId: string) => void;
+  addExtraToCart: (extra: ExtraGift) => void;
+  removeExtraFromCart: (extraId: string) => void;
+  updateQuantity: (productId: string, quantity: number) => void;
+  applyCoupon: (code: string, customAmount?: number) => boolean;
+  clearCart: () => void;
+  toggleFavorite: (product: Product) => void;
+  isFavorite: (productId: string | number) => boolean;
+  clearFavorites: () => void;
+}
+
+export const useZustandStore = create<StoreState>()(
+  persist(
+    (set, get) => ({
+      products: [],
+      categories: [],
+      cart: [],
+      favorites: [],
+      coupon: null,
+      discountAmount: 0,
+
+      fetchFromApi: async (force = false) => {
+        const now = Date.now();
+        if (isFetchingInProgress) return;
+        const currentProducts = get().products;
+        if (!force && currentProducts.length > 0 && now - lastFetchTimestamp < FETCH_COOLDOWN_MS) {
+          return;
         }
-      }
-    }
-    const savedCats = localStorage.getItem("pro_flower_categories");
-    if (savedCats) {
-      const parsed = JSON.parse(savedCats);
-      if (Array.isArray(parsed)) globalCategories = parsed;
-    }
-    const savedCart = localStorage.getItem("pro_flower_cart");
-    if (savedCart) globalCart = JSON.parse(savedCart);
-    const savedFavs = localStorage.getItem("pro_flower_favorites");
-    if (savedFavs) globalFavorites = JSON.parse(savedFavs);
-  } catch (e) {}
-}
-let globalCoupon: string | null = null;
-let globalDiscountAmount = 0;
-const listeners: Array<() => void> = [];
 
-let lastFetchTime = 0;
-let isFetching = false;
+        isFetchingInProgress = true;
+        try {
+          const [pRes, cRes] = await Promise.all([
+            fetch("/api/products", { cache: force ? "no-store" : "default" }),
+            fetch("/api/categories", { cache: force ? "no-store" : "default" }),
+          ]);
 
-async function fetchFromApi(force = false) {
-  const now = Date.now();
-  if (isFetching) return;
-  if (!force && now - lastFetchTime < 15000) return;
+          if (pRes.ok) {
+            const productsData = await pRes.json();
+            if (Array.isArray(productsData)) {
+              set({ products: productsData });
+            }
+          }
 
-  isFetching = true;
-  try {
-    const [pRes, cRes] = await Promise.all([
-      fetch("/api/products"),
-      fetch("/api/categories"),
-    ]);
-    if (pRes.ok) {
-      globalProducts = await pRes.json();
-      if (typeof window !== "undefined") {
-        try { localStorage.setItem("pro_flower_products", JSON.stringify(globalProducts)); } catch (e) {}
-      }
+          if (cRes.ok) {
+            const categoriesData = await cRes.json();
+            if (Array.isArray(categoriesData)) {
+              set({ categories: categoriesData });
+            }
+          }
+
+          lastFetchTimestamp = Date.now();
+        } catch (e) {
+          console.error("Zustand fetchFromApi error:", e);
+        } finally {
+          isFetchingInProgress = false;
+        }
+      },
+
+      addProduct: async (newProd: Partial<Product>) => {
+        try {
+          const res = await fetch("/api/products", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(newProd),
+          });
+          if (res.ok) {
+            await get().fetchFromApi(true);
+          }
+        } catch (e) {
+          console.error(e);
+        }
+      },
+
+      updateProduct: async (id: string, updatedFields: Partial<Product>) => {
+        set((state) => ({
+          products: state.products.map((p) =>
+            String(p.id) === String(id) ? { ...p, ...updatedFields } : p
+          ),
+        }));
+        try {
+          const res = await fetch("/api/products", {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id, ...updatedFields }),
+          });
+          if (res.ok) {
+            await get().fetchFromApi(true);
+          }
+        } catch (e) {
+          console.error(e);
+        }
+      },
+
+      deleteProduct: async (id: string) => {
+        set((state) => ({
+          products: state.products.filter((p) => String(p.id) !== String(id)),
+        }));
+        try {
+          const res = await fetch(`/api/products?id=${id}`, { method: "DELETE" });
+          if (res.ok) {
+            await get().fetchFromApi(true);
+          }
+        } catch (e) {
+          console.error(e);
+        }
+      },
+
+      addCategory: async (newCat: Partial<CategoryItem>) => {
+        try {
+          const res = await fetch("/api/categories", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(newCat),
+          });
+          if (res.ok) {
+            await get().fetchFromApi(true);
+          }
+        } catch (e) {
+          console.error(e);
+        }
+      },
+
+      updateCategory: async (id: string, updatedFields: Partial<CategoryItem>) => {
+        set((state) => ({
+          categories: state.categories.map((c) =>
+            String(c.id) === String(id) ? { ...c, ...updatedFields } : c
+          ),
+        }));
+        try {
+          const res = await fetch("/api/categories", {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id, ...updatedFields }),
+          });
+          if (res.ok) {
+            await get().fetchFromApi(true);
+          }
+        } catch (e) {
+          console.error(e);
+        }
+      },
+
+      deleteCategory: async (id: string) => {
+        set((state) => ({
+          categories: state.categories.filter((c) => String(c.id) !== String(id)),
+        }));
+        try {
+          const res = await fetch(`/api/categories?id=${id}`, { method: "DELETE" });
+          if (res.ok) {
+            await get().fetchFromApi(true);
+          }
+        } catch (e) {
+          console.error(e);
+        }
+      },
+
+      setSingleCartItem: (product: Product, quantity = 1, selectedExtras: ExtraGift[] = []) => {
+        set({
+          cart: [{ product, quantity: 1, selectedExtras }],
+        });
+      },
+
+      addToCart: (product: Product, quantity = 1, selectedExtras: ExtraGift[] = []) => {
+        set((state) => {
+          const existing = state.cart.find((item) => String(item.product.id) === String(product.id));
+          if (existing) {
+            return {
+              cart: state.cart.map((item) =>
+                String(item.product.id) === String(product.id)
+                  ? { ...item, quantity: item.quantity + quantity }
+                  : item
+              ),
+            };
+          }
+          return {
+            cart: [...state.cart, { product, quantity, selectedExtras }],
+          };
+        });
+      },
+
+      removeFromCart: (productId: string) => {
+        set((state) => ({
+          cart: state.cart.filter((item) => String(item.product.id) !== String(productId)),
+        }));
+      },
+
+      addExtraToCart: (extra: ExtraGift) => {
+        set((state) => {
+          if (state.cart.length === 0) return state;
+          return {
+            cart: state.cart.map((item, idx) => {
+              if (idx === 0) {
+                const extras = item.selectedExtras || [];
+                const exists = extras.some((e) => e.id === extra.id);
+                if (!exists) {
+                  return { ...item, selectedExtras: [...extras, extra] };
+                }
+              }
+              return item;
+            }),
+          };
+        });
+      },
+
+      removeExtraFromCart: (extraId: string) => {
+        set((state) => ({
+          cart: state.cart.map((item) => ({
+            ...item,
+            selectedExtras: (item.selectedExtras || []).filter((e) => e.id !== extraId),
+          })),
+        }));
+      },
+
+      updateQuantity: (productId: string, quantity: number) => {
+        set((state) => {
+          if (quantity <= 0) {
+            return {
+              cart: state.cart.filter((item) => String(item.product.id) !== String(productId)),
+            };
+          }
+          return {
+            cart: state.cart.map((item) =>
+              String(item.product.id) === String(productId) ? { ...item, quantity } : item
+            ),
+          };
+        });
+      },
+
+      applyCoupon: (code: string, customAmount?: number) => {
+        const codeClean = code.toUpperCase().trim();
+        if (customAmount !== undefined && customAmount > 0) {
+          set({
+            coupon: codeClean,
+            discountAmount: customAmount,
+          });
+          return true;
+        }
+        if (codeClean === "HOSGELDIN100" || codeClean === "HOSGELDIN") {
+          set({
+            coupon: "HOSGELDIN100",
+            discountAmount: 100,
+          });
+          return true;
+        }
+        return false;
+      },
+
+      clearCart: () => {
+        set({
+          cart: [],
+          coupon: null,
+          discountAmount: 0,
+        });
+      },
+
+      toggleFavorite: (product: Product) => {
+        set((state) => {
+          const exists = state.favorites.some((p) => String(p.id) === String(product.id));
+          if (exists) {
+            return {
+              favorites: state.favorites.filter((p) => String(p.id) !== String(product.id)),
+            };
+          }
+          return {
+            favorites: [...state.favorites, product],
+          };
+        });
+      },
+
+      isFavorite: (productId: string | number) => {
+        return get().favorites.some((p) => String(p.id) === String(productId));
+      },
+
+      clearFavorites: () => {
+        set({ favorites: [] });
+      },
+    }),
+    {
+      name: "cicekce_store",
+      storage: createJSONStorage(() => localStorage),
+      partialize: (state) => ({
+        cart: state.cart,
+        favorites: state.favorites,
+        products: state.products,
+        categories: state.categories,
+        coupon: state.coupon,
+        discountAmount: state.discountAmount,
+      }),
+      onRehydrateStorage: () => (state) => {
+        if (typeof window !== "undefined" && state) {
+          try {
+            if (!state.cart || state.cart.length === 0) {
+              const oldCart = localStorage.getItem("pro_flower_cart");
+              if (oldCart) state.cart = JSON.parse(oldCart);
+            }
+            if (!state.favorites || state.favorites.length === 0) {
+              const oldFavs = localStorage.getItem("pro_flower_favorites");
+              if (oldFavs) state.favorites = JSON.parse(oldFavs);
+            }
+            if (!state.products || state.products.length === 0) {
+              const oldProds = localStorage.getItem("pro_flower_products");
+              if (oldProds) state.products = JSON.parse(oldProds);
+            }
+            if (!state.categories || state.categories.length === 0) {
+              const oldCats = localStorage.getItem("pro_flower_categories");
+              if (oldCats) state.categories = JSON.parse(oldCats);
+            }
+          } catch (e) {}
+        }
+      },
     }
-    if (cRes.ok) {
-      globalCategories = await cRes.json();
-      if (typeof window !== "undefined") {
-        try { localStorage.setItem("pro_flower_categories", JSON.stringify(globalCategories)); } catch (e) {}
-      }
-    }
-    lastFetchTime = Date.now();
-    listeners.forEach((l) => l());
-  } catch (e) {
-    console.error("API Fetch Error:", e);
-  } finally {
-    isFetching = false;
-  }
-}
+  )
+);
 
-// Global Store Hook
-export function useStore<T>(selector?: (state: any) => T): any {
-  const [, setTick] = useState(0);
+export function useStore<T>(selector?: (state: StoreState) => T): any {
+  const store = useZustandStore();
 
   useEffect(() => {
-    fetchFromApi();
-    const handler = () => setTick((t) => t + 1);
-    listeners.push(handler);
-    return () => {
-      const idx = listeners.indexOf(handler);
-      if (idx > -1) listeners.splice(idx, 1);
-    };
+    store.fetchFromApi();
   }, []);
 
-  const notify = () => {
-    if (typeof window !== "undefined") {
-      try {
-        localStorage.setItem("pro_flower_cart", JSON.stringify(globalCart));
-        localStorage.setItem("pro_flower_favorites", JSON.stringify(globalFavorites));
-        localStorage.setItem("pro_flower_products", JSON.stringify(globalProducts));
-        localStorage.setItem("pro_flower_categories", JSON.stringify(globalCategories));
-      } catch (e) {}
-    }
-    listeners.forEach((l) => l());
-  };
-
-  const state = {
-    products: globalProducts,
-    categories: globalCategories,
-    cart: globalCart,
-    favorites: globalFavorites,
-    coupon: globalCoupon,
-    discountAmount: globalDiscountAmount,
-
-    // Product CRUD Operations via API
-    addProduct: async (newProd: Partial<Product>) => {
-      try {
-        const res = await fetch("/api/products", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(newProd),
-        });
-        if (res.ok) {
-          await fetchFromApi();
-        }
-      } catch (e) {
-        console.error(e);
-      }
-    },
-
-    updateProduct: async (id: string, updatedFields: Partial<Product>) => {
-      globalProducts = globalProducts.map((p: any) =>
-        String(p.id) === String(id) ? { ...p, ...updatedFields } : p
-      );
-      notify();
-      try {
-        const res = await fetch("/api/products", {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ id, ...updatedFields }),
-        });
-        if (res.ok) {
-          await fetchFromApi(true);
-        }
-      } catch (e) {
-        console.error(e);
-      }
-    },
-
-    deleteProduct: async (id: string) => {
-      globalProducts = globalProducts.filter((p: any) => String(p.id) !== String(id));
-      notify();
-      try {
-        const res = await fetch(`/api/products?id=${id}`, { method: "DELETE" });
-        if (res.ok) {
-          await fetchFromApi(true);
-        }
-      } catch (e) {
-        console.error(e);
-      }
-    },
-
-    // Category CRUD Operations via API
-    updateCategory: async (id: string, updatedFields: Partial<CategoryItem>) => {
-      globalCategories = globalCategories.map((c: any) =>
-        String(c.id) === String(id) ? { ...c, ...updatedFields } : c
-      );
-      notify();
-      try {
-        const res = await fetch("/api/categories", {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ id, ...updatedFields }),
-        });
-        if (res.ok) {
-          await fetchFromApi(true);
-        }
-      } catch (e) {
-        console.error(e);
-      }
-    },
-
-    addCategory: async (newCat: Partial<CategoryItem>) => {
-      try {
-        const res = await fetch("/api/categories", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(newCat),
-        });
-        if (res.ok) {
-          await fetchFromApi(true);
-        }
-      } catch (e) {
-        console.error(e);
-      }
-    },
-
-    deleteCategory: async (id: string) => {
-      globalCategories = globalCategories.filter((c: any) => String(c.id) !== String(id));
-      notify();
-      try {
-        const res = await fetch(`/api/categories?id=${id}`, { method: "DELETE" });
-        if (res.ok) {
-          await fetchFromApi(true);
-        }
-      } catch (e) {
-        console.error(e);
-      }
-    },
-
-        // Hard-lock cart to a single item with EXACTLY 1 quantity
-    setSingleCartItem: (product: Product, quantity = 1, selectedExtras: ExtraGift[] = []) => {
-      globalCart = [{ product, quantity: 1, selectedExtras }];
-      if (typeof window !== "undefined") {
-        try {
-          localStorage.setItem("pro_flower_cart", JSON.stringify(globalCart));
-        } catch (e) {}
-      }
-      notify();
-    },
-
-    // Cart Operations
-    addToCart: (product: Product, quantity = 1, selectedExtras: ExtraGift[] = []) => {
-      const existing = globalCart.find((item) => item.product.id === product.id);
-      if (existing) {
-        globalCart = globalCart.map((item) =>
-          item.product.id === product.id
-            ? { ...item, quantity: item.quantity + quantity }
-            : item
-        );
-      } else {
-        globalCart = [...globalCart, { product, quantity, selectedExtras }];
-      }
-      notify();
-    },
-
-    removeFromCart: (productId: string) => {
-      globalCart = globalCart.filter((item) => item.product.id !== productId);
-      notify();
-    },
-
-    addExtraToCart: (extra: ExtraGift) => {
-      if (globalCart.length === 0) return;
-      globalCart = globalCart.map((item, idx) => {
-        if (idx === 0) {
-          const extras = item.selectedExtras || [];
-          const exists = extras.some((e) => e.id === extra.id);
-          if (!exists) {
-            return { ...item, selectedExtras: [...extras, extra] };
-          }
-        }
-        return item;
-      });
-      notify();
-    },
-
-    removeExtraFromCart: (extraId: string) => {
-      globalCart = globalCart.map((item) => ({
-        ...item,
-        selectedExtras: (item.selectedExtras || []).filter((e) => e.id !== extraId),
-      }));
-      notify();
-    },
-
-    updateQuantity: (productId: string, quantity: number) => {
-      if (quantity <= 0) {
-        globalCart = globalCart.filter((item) => item.product.id !== productId);
-      } else {
-        globalCart = globalCart.map((item) =>
-          item.product.id === productId ? { ...item, quantity } : item
-        );
-      }
-      notify();
-    },
-
-    applyCoupon: (code: string, customAmount?: number) => {
-      const codeClean = code.toUpperCase().trim();
-      if (customAmount !== undefined && customAmount > 0) {
-        globalCoupon = codeClean;
-        globalDiscountAmount = customAmount;
-        notify();
-        return true;
-      }
-      if (codeClean === "HOSGELDIN100" || codeClean === "HOSGELDIN") {
-        globalCoupon = "HOSGELDIN100";
-        globalDiscountAmount = 100;
-        notify();
-        return true;
-      }
-      return false;
-    },
-
-    clearCart: () => {
-      globalCart = [];
-      globalCoupon = null;
-      globalDiscountAmount = 0;
-      notify();
-    },
-
-    toggleFavorite: (product: Product) => {
-      const exists = globalFavorites.some((p) => String(p.id) === String(product.id));
-      if (exists) {
-        globalFavorites = globalFavorites.filter((p) => String(p.id) !== String(product.id));
-      } else {
-        globalFavorites = [...globalFavorites, product];
-      }
-      notify();
-    },
-
-    isFavorite: (productId: string | number) => {
-      return globalFavorites.some((p) => String(p.id) === String(productId));
-    },
-
-    clearFavorites: () => {
-      globalFavorites = [];
-      notify();
-    },
-  };
-
   if (selector) {
-    return selector(state);
+    return selector(store);
   }
-  return state;
+  return store;
 }
 
 export function generateSeoDetails(data: {

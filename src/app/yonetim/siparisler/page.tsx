@@ -952,7 +952,7 @@ export default function AdminOrdersPage() {
                       o.productImage ||
                       "https://images.unsplash.com/photo-1549007994-cb92caebd54b?w=300";
 
-                    const origin = typeof window !== "undefined" ? window.location.origin : "https://cicekce-yeni-two.vercel.app";
+                    const origin = typeof window !== "undefined" ? window.location.origin : (process.env.NEXT_PUBLIC_SITE_URL || "https://www.cicekce.com");
                     const approvalLink = `${origin}/siparis-onay/${o.id}`;
                     const waMessage = `Merhaba Sayın ${o.customerName || "Müşterimiz"}, Çiçekçe'den sipariş ettiğiniz çiçeğiniz özenle hazırlandı! 🌸 Hazırlanan çiçeğinizin fotoğrafını incelemek ve onaylamak için tıklayın: ${approvalLink}`;
                     const waUrl = `https://wa.me/${(o.customerPhone || "").replace(/[^0-9]/g, "")}?text=${encodeURIComponent(waMessage)}`;

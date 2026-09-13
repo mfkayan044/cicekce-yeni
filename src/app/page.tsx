@@ -26,17 +26,17 @@ const _pageDb = getInitialDbData();
 const initialHeroData = _pageDb.hero || {
   sliders: [
     {
-      id: 2,
-      link: "/kategori/dogum-gunu",
-      image: "https://cksauvgjodsduhxtnqwm.supabase.co/storage/v1/object/public/cicekce-uploads/1788948885624-1218a0a4.jpg",
+      id: 3,
+      link: "/kategori/buketler",
+      image: "https://cksauvgjodsduhxtnqwm.supabase.co/storage/v1/object/public/cicekce-uploads/1788948865460-ca821060.jpg",
       price: "",
       title: "",
       discountBadge: "%10 İndirim"
     },
     {
-      id: 3,
-      link: "/kategori/buketler",
-      image: "https://cksauvgjodsduhxtnqwm.supabase.co/storage/v1/object/public/cicekce-uploads/1788948865460-ca821060.jpg",
+      id: 2,
+      link: "/kategori/dogum-gunu",
+      image: "https://cksauvgjodsduhxtnqwm.supabase.co/storage/v1/object/public/cicekce-uploads/1788948885624-1218a0a4.jpg",
       price: "",
       title: "",
       discountBadge: "%10 İndirim"
@@ -50,7 +50,7 @@ const initialHeroData = _pageDb.hero || {
       discountBadge: "%10 İndirim"
     },
     {
-      id: 4,
+      id: 5,
       link: "/kategori/buketler",
       image: "https://cksauvgjodsduhxtnqwm.supabase.co/storage/v1/object/public/cicekce-uploads/1788948837837-757aa67c.jpg",
       price: "",

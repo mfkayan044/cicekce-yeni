@@ -9,6 +9,7 @@ export interface QuickOrderProduct {
   oldPrice?: string;
   image: string;
   code?: string;
+  slug?: string;
 }
 
 interface QuickOrderModalProps {

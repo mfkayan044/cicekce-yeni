@@ -1,25 +1,20 @@
 import { NextResponse } from "next/server";
 import { getSetting, setSetting } from "@/lib/settings-helper";
+import { isRequestAuthorized } from "@/lib/auth";
 import fs from "fs";
 import path from "path";
 
 const localDbPath = path.join(process.cwd(), "src", "data", "db.json");
 
-let memoryMembers: any[] = [
-  {
-    id: "mem_1",
-    name: "Demo Müşteri",
-    email: "demo@cicekce.com",
-    phone: "0555 111 22 33",
-    password: "password123",
-    date: "01.01.2026",
-    status: "Aktif",
-    orders: 2,
-    addresses: [
-      { id: "a_1", title: "Ev Adresi", city: "İstanbul", district: "Kadıköy", fullAddress: "Moda Cad. No: 12 Daire: 4" }
-    ]
-  }
-];
+let memoryMembers: any[] = [];
+
+async function hashMemberPassword(pass: string): Promise<string> {
+  const enc = new TextEncoder();
+  const data = enc.encode(`${pass}:cicekce_member_salt_2026`);
+  const digest = await crypto.subtle.digest("SHA-256", data);
+  const bytes = new Uint8Array(digest);
+  return Array.from(bytes).map(b => b.toString(16).padStart(2, "0")).join("");
+}
 
 function getLocalMembers(): any[] {
   try {
@@ -64,6 +59,7 @@ export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
     const email = searchParams.get("email");
     const id = searchParams.get("id");
+    const isAuth = await isRequestAuthorized(req);
 
     const members = await getMembersFromDb();
 
@@ -79,6 +75,13 @@ export async function GET(req: Request) {
       if (!found) return NextResponse.json({ error: "Üye bulunamadı" }, { status: 404 });
       const { password, ...safeData } = found;
       return NextResponse.json(safeData);
+    }
+
+    if (!isAuth) {
+      return NextResponse.json(
+        { error: "Yetkisiz erişim. Üye listesini görüntülemek için yönetici yetkisi gereklidir." },
+        { status: 401 }
+      );
     }
 
     const safeMembers = members.map(({ password, ...rest }) => rest);
@@ -99,17 +102,23 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: "Lütfen ad soyad ve e-posta giriniz." }, { status: 400 });
       }
 
+      if (!password || String(password).trim().length < 6) {
+        return NextResponse.json({ error: "Lütfen en az 6 karakterli bir şifre belirleyiniz." }, { status: 400 });
+      }
+
       const existing = members.find((m) => m.email.toLowerCase() === email.toLowerCase().trim());
       if (existing) {
         return NextResponse.json({ error: "Bu e-posta adresiyle kayıtlı bir hesap zaten var." }, { status: 400 });
       }
+
+      const hashedPassword = await hashMemberPassword(String(password).trim());
 
       const newMember = {
         id: `mem_${Date.now()}`,
         name: name.trim(),
         email: email.toLowerCase().trim(),
         phone: phone ? phone.trim() : "",
-        password: password || "123456",
+        password: hashedPassword,
         date: new Date().toLocaleDateString("tr-TR"),
         status: "Aktif",
         orders: 0,
@@ -144,8 +153,17 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: "Bu e-posta adresine ait kullanıcı bulunamadı." }, { status: 404 });
       }
 
-      if (member.password && member.password !== password) {
+      const inputHash = await hashMemberPassword(password);
+      const isPasswordCorrect = member.password === password || member.password === inputHash;
+
+      if (!isPasswordCorrect) {
         return NextResponse.json({ error: "Girdiğiniz şifre hatalı." }, { status: 401 });
+      }
+
+      // Upgrade plain text password to hash on successful login
+      if (member.password === password && member.password !== inputHash) {
+        member.password = inputHash;
+        await saveMembersToDb(members);
       }
 
       if (member.status === "Pasif") {
@@ -158,20 +176,32 @@ export async function POST(req: Request) {
 
     if (action === "update") {
       const { id, updatedData } = body;
+      const isAuth = await isRequestAuthorized(req);
+
       const index = members.findIndex((m) => String(m.id) === String(id));
       if (index === -1) {
         return NextResponse.json({ error: "Kullanıcı bulunamadı." }, { status: 404 });
       }
 
+      const isStatusChange = updatedData?.status !== undefined && updatedData.status !== members[index].status;
+      if (isStatusChange && !isAuth) {
+        return NextResponse.json({ error: "Yetkisiz işlem: Üye durumu yalnızca yönetici tarafından değiştirilebilir." }, { status: 403 });
+      }
+
+      let newPassword = members[index].password;
+      if (updatedData?.password) {
+        newPassword = await hashMemberPassword(String(updatedData.password).trim());
+      }
+
       members[index] = {
         ...members[index],
-        ...(updatedData.name ? { name: updatedData.name } : {}),
-        ...(updatedData.phone ? { phone: updatedData.phone } : {}),
-        ...(updatedData.email ? { email: updatedData.email } : {}),
-        ...(updatedData.password ? { password: updatedData.password } : {}),
-        ...(updatedData.addresses !== undefined ? { addresses: updatedData.addresses } : {}),
-        ...(updatedData.points !== undefined ? { points: updatedData.points } : {}),
-        ...(updatedData.status ? { status: updatedData.status } : {})
+        ...(updatedData?.name ? { name: updatedData.name } : {}),
+        ...(updatedData?.phone ? { phone: updatedData.phone } : {}),
+        ...(updatedData?.email ? { email: updatedData.email } : {}),
+        password: newPassword,
+        ...(updatedData?.addresses !== undefined ? { addresses: updatedData.addresses } : {}),
+        ...(updatedData?.points !== undefined ? { points: updatedData.points } : {}),
+        ...(updatedData?.status && isAuth ? { status: updatedData.status } : {})
       };
 
       await saveMembersToDb(members);
@@ -187,6 +217,14 @@ export async function POST(req: Request) {
 
 export async function DELETE(req: Request) {
   try {
+    const isAuth = await isRequestAuthorized(req);
+    if (!isAuth) {
+      return NextResponse.json(
+        { error: "Yetkisiz işlem. Üye silmek için yönetici girişi gereklidir." },
+        { status: 401 }
+      );
+    }
+
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("id");
     if (!id) return NextResponse.json({ error: "ID gereklidir." }, { status: 400 });

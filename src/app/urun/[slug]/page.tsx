@@ -25,13 +25,22 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
   const slug = resolvedParams.slug;
   const { products, addToCart, setSingleCartItem, clearCart } = useStore();
 
-  const targetProduct = products.find((p: Product) => p.slug === slug) || products[0];
+  const targetProduct = products.find((p: Product) => p.slug === slug || String(p.id) === slug);
   if (!targetProduct) {
     return (
       <div className="bg-[#FAF6F0] min-h-screen font-sans">
         <StoreHeader />
-        <div className="max-w-[1400px] mx-auto px-4 py-20 text-center text-slate-500 font-bold">
-          Ürün bulunamadı veya yükleniyor...
+        <div className="max-w-[1400px] mx-auto px-4 py-24 text-center space-y-4">
+          <div className="text-5xl font-black text-slate-800">404</div>
+          <div className="text-xl font-bold text-slate-700">Aradığınız Çiçek Bulunamadı</div>
+          <p className="text-slate-500 text-sm max-w-md mx-auto">
+            Bu ürün tükenmiş veya yayından kaldırılmış olabilir. Tüm çiçek ve buketlerimizi incelemek için anasayfaya dönebilirsiniz.
+          </p>
+          <div className="pt-2">
+            <Link href="/" className="inline-block px-6 py-3 bg-[#2b2623] text-white rounded-2xl text-xs font-bold shadow-md hover:opacity-95 transition">
+              Tüm Çiçekleri İncele →
+            </Link>
+          </div>
         </div>
         <StoreFooter />
       </div>
@@ -155,7 +164,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
           text: newReviewText,
           orderId: newReviewOrderId,
           phone: mem?.phone || "",
-          status: "Onaylandı",
+          status: newReviewOrderId ? "Onaylandı" : "Onay Bekliyor",
           source: newReviewOrderId ? "Doğrulanmış Müşteri" : "Web Site"
         })
       });
@@ -843,7 +852,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
       <QuickOrderModal
         product={selectedQuickProduct}
         onClose={() => setSelectedQuickProduct(null)}
-        onAddToCart={(prod) => setSingleCartItem(product, 1, [])}
+        onAddToCart={(prod) => setSingleCartItem((prod as any) || product, 1, [])}
       />
     </div>
   );

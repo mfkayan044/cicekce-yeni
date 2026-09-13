@@ -14,7 +14,7 @@ export async function GET(request: Request) {
       if (data) products = data;
     }
 
-    const host = "https://cicekce-yeni-two.vercel.app";
+    const host = process.env.NEXT_PUBLIC_SITE_URL || "https://www.cicekce.com";
 
     const xmlItems = products
       .map((p) => {

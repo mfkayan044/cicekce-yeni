@@ -56,10 +56,10 @@ function slugifyTurkish(text: string): string {
 
 let cachedProducts: any[] | null = null;
 let cachedProductsTime = 0;
-const CACHE_TTL_MS = 10 * 1000; // 10s short cache
+const CACHE_TTL_MS = 60 * 1000; // 60s memory cache
 
 const cacheHeaders = {
-  "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+  "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600",
 };
 
 export async function GET() {
@@ -127,6 +127,14 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    const isAuth = await isRequestAuthorized(request);
+    if (!isAuth) {
+      return NextResponse.json(
+        { error: "Yetkisiz işlem. Ürün eklemek veya güncellemek için yönetici girişi gereklidir." },
+        { status: 401 }
+      );
+    }
+
     const body = await request.json();
 
     // 1. BULK PRICE UPDATE ENGINE
@@ -263,10 +271,6 @@ export async function POST(request: Request) {
     cachedProducts = null;
 
     try {
-      await sql`ALTER TABLE products ADD COLUMN IF NOT EXISTS seo_title TEXT;`;
-      await sql`ALTER TABLE products ADD COLUMN IF NOT EXISTS seo_desc TEXT;`;
-      await sql`ALTER TABLE products ADD COLUMN IF NOT EXISTS seo_keywords TEXT;`;
-
       await sql`
         INSERT INTO products (
           id, slug, title, category, category_slug, selected_category_slugs,
@@ -332,6 +336,14 @@ export async function POST(request: Request) {
 
 export async function DELETE(request: Request) {
   try {
+    const isAuth = await isRequestAuthorized(request);
+    if (!isAuth) {
+      return NextResponse.json(
+        { error: "Yetkisiz işlem. Ürün silmek için yönetici girişi gereklidir." },
+        { status: 401 }
+      );
+    }
+
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");
     if (!id) {

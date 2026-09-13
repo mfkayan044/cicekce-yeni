@@ -29,11 +29,37 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+async function getGaIdServer(): Promise<string> {
+  try {
+    const { getSetting } = await import("@/lib/settings-helper");
+    const settings = await getSetting("api_settings");
+    const raw = settings?.googleAnalyticsId || settings?.googleTagId || "";
+    if (raw) {
+      const match = String(raw).match(/(G|GT|UA)-[A-Za-z0-9]+/i);
+      return match ? match[0].toUpperCase() : String(raw).trim();
+    }
+  } catch (e) {}
+
+  try {
+    const { supabase } = await import("@/lib/supabase");
+    const { data } = await supabase.from("site_settings").select("value").eq("id", "api_settings").maybeSingle();
+    const raw = data?.value?.googleAnalyticsId || data?.value?.googleTagId || "";
+    if (raw) {
+      const match = String(raw).match(/(G|GT|UA)-[A-Za-z0-9]+/i);
+      return match ? match[0].toUpperCase() : String(raw).trim();
+    }
+  } catch (e) {}
+
+  return "";
+}
+
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const gaId = await getGaIdServer();
+
   return (
     <html lang="tr" className="antialiased">
       <head>
@@ -47,6 +73,21 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-title" content="Çiçekçe" />
         <link rel="stylesheet" href="/demo-procicek.css" />
         <link rel="stylesheet" href="/sneat/assets/vendor/fonts/boxicons.css" />
+        {gaId && (
+          <>
+            <script async src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`}></script>
+            <script
+              dangerouslySetInnerHTML={{
+                __html: `
+                  window.dataLayer = window.dataLayer || [];
+                  function gtag(){dataLayer.push(arguments);}
+                  gtag('js', new Date());
+                  gtag('config', '${gaId}');
+                `,
+              }}
+            />
+          </>
+        )}
       </head>
       <body className="bg-[#FAF6F0] text-slate-800 min-h-screen font-sans pb-16 lg:pb-0">
         <PwaRegister />

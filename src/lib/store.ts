@@ -116,8 +116,8 @@ export const useZustandStore = create<StoreState>()(
         isFetchingInProgress = true;
         try {
           const [pRes, cRes] = await Promise.all([
-            fetch("/api/products", { cache: force ? "no-store" : "default" }),
-            fetch("/api/categories", { cache: force ? "no-store" : "default" }),
+            fetch(`/api/products?t=${force ? now : ""}`, { cache: force ? "no-store" : "default" }),
+            fetch(`/api/categories?t=${force ? now : ""}`, { cache: force ? "no-store" : "default" }),
           ]);
 
           if (pRes.ok) {
@@ -170,6 +170,16 @@ export const useZustandStore = create<StoreState>()(
             body: JSON.stringify({ id, ...updatedFields }),
           });
           if (res.ok) {
+            try {
+              const updated = await res.json();
+              if (updated && updated.id) {
+                set((state) => ({
+                  products: state.products.map((p) =>
+                    String(p.id) === String(id) ? { ...p, ...updated } : p
+                  ),
+                }));
+              }
+            } catch (e) {}
             await get().fetchFromApi(true);
           }
         } catch (e) {
@@ -367,8 +377,6 @@ export const useZustandStore = create<StoreState>()(
       partialize: (state) => ({
         cart: state.cart,
         favorites: state.favorites,
-        products: state.products,
-        categories: state.categories,
         coupon: state.coupon,
         discountAmount: state.discountAmount,
       }),

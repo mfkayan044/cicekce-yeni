@@ -91,37 +91,51 @@ export default function AdminEditProductPage({ params }: { params: Promise<{ id:
   });
 
   useEffect(() => {
-    if (currentProduct) {
-      const p = currentProduct as any;
-      
-      let dTypes: string[] = Array.isArray(p.designTypes) ? p.designTypes : (p.designType ? [p.designType] : ["Buket"]);
-      let recs: string[] = Array.isArray(p.recipients) ? p.recipients : (p.recipient ? [p.recipient] : ["Sevgiliye"]);
-      let purps: string[] = Array.isArray(p.purposes) ? p.purposes : (p.purpose ? [p.purpose] : ["Doğum Günü"]);
-      let cols: string[] = Array.isArray(p.colors) ? p.colors : (p.color ? [p.color] : ["Kırmızı"]);
+    if (!id) return;
+    fetch(`/api/products?id=${id}&admin=true&t=${Date.now()}`, { cache: "no-store" })
+      .then((res) => res.json())
+      .then((p) => {
+        if (p && p.id) {
+          let dTypes: string[] = Array.isArray(p.designTypes) ? p.designTypes : (p.designType ? [p.designType] : ["Buket"]);
+          let recs: string[] = Array.isArray(p.recipients) ? p.recipients : (p.recipient ? [p.recipient] : ["Sevgiliye"]);
+          let purps: string[] = Array.isArray(p.purposes) ? p.purposes : (p.purpose ? [p.purpose] : ["Doğum Günü"]);
+          let cols: string[] = Array.isArray(p.colors) ? p.colors : (p.color ? [p.color] : ["Kırmızı"]);
 
-      setForm({
-        title: currentProduct.title || "",
-        slug: currentProduct.slug || "",
-        code: currentProduct.code || `DM${currentProduct.id}`,
-        category: currentProduct.category || "Buketler",
-        price: currentProduct.price || "",
-        oldPrice: currentProduct.oldPrice || "",
-        discount: currentProduct.discount || "%10",
-        image: currentProduct.image || "",
-        description: currentProduct.description || "",
-        seoTitle: p.seoTitle || p.seo_title || (currentProduct.title ? `${currentProduct.title} Siparişi - Demo Çiçekçilik` : ""),
-        seoDesc: p.seoDesc || p.seo_desc || (currentProduct.title ? `${currentProduct.title} taze canlı çiçek buketini aynı gün teslimat fırsatıyla sipariş edin.` : ""),
-        seoKeywords: p.seoKeywords || p.seo_keywords || "çiçek, buket, orkide, gül",
-        stock: currentProduct.stock !== undefined ? currentProduct.stock : true,
-        featured: currentProduct.featured !== undefined ? currentProduct.featured : true,
-        selectedCategorySlugs: p.selectedCategorySlugs || [currentProduct.categorySlug || "buketler"],
-        designTypes: dTypes,
-        recipients: recs,
-        purposes: purps,
-        colors: cols,
-      });
-    }
-  }, [currentProduct]);
+          let rawSlugs: string[] = Array.isArray(p.selectedCategorySlugs)
+            ? p.selectedCategorySlugs
+            : (p.categorySlug ? [p.categorySlug] : ["buketler"]);
+
+          const normalizedSlugs = Array.from(new Set(rawSlugs.map((s: string) => {
+            if (s === "i-cimden-geldi") return "icimden-geldi";
+            if (s === "gecmis-olsun") return "gecmis-olsun-cicegi";
+            return s;
+          })));
+
+          setForm({
+            title: p.title || "",
+            slug: p.slug || "",
+            code: p.code || `DM${p.id}`,
+            category: p.category || "Buketler",
+            price: p.price || "",
+            oldPrice: p.oldPrice || "",
+            discount: p.discount || "%10",
+            image: p.image || "",
+            description: p.description || "",
+            seoTitle: p.seoTitle || (p.title ? `${p.title} Siparişi - Çiçekçe` : ""),
+            seoDesc: p.seoDesc || (p.title ? `${p.title} taze canlı çiçek buketini aynı gün teslimat fırsatıyla sipariş edin.` : ""),
+            seoKeywords: p.seoKeywords || "çiçek, buket, orkide, gül",
+            stock: p.stock !== undefined ? p.stock : true,
+            featured: p.featured !== undefined ? p.featured : true,
+            selectedCategorySlugs: normalizedSlugs,
+            designTypes: dTypes,
+            recipients: recs,
+            purposes: purps,
+            colors: cols,
+          });
+        }
+      })
+      .catch((err) => console.error("Admin edit load error:", err));
+  }, [id]);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -152,12 +166,15 @@ export default function AdminEditProductPage({ params }: { params: Promise<{ id:
 
   const toggleCategorySlug = (cSlug: string) => {
     let updated = [...form.selectedCategorySlugs];
+    if (cSlug === "icimden-geldi") updated = updated.filter((s) => s !== "i-cimden-geldi");
+    if (cSlug === "gecmis-olsun-cicegi") updated = updated.filter((s) => s !== "gecmis-olsun");
+
     if (updated.includes(cSlug)) {
       updated = updated.filter((s) => s !== cSlug);
     } else {
       updated.push(cSlug);
     }
-    setForm({ ...form, selectedCategorySlugs: updated });
+    setForm({ ...form, selectedCategorySlugs: Array.from(new Set(updated)) });
   };
 
   const toggleMultiFilter = (field: "designTypes" | "recipients" | "purposes" | "colors", val: string) => {

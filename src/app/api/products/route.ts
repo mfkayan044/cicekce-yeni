@@ -58,21 +58,65 @@ let cachedProducts: any[] | null = null;
 let cachedProductsTime = 0;
 const CACHE_TTL_MS = 60 * 1000; // 60s memory cache
 
-const cacheHeaders = {
+const publicCacheHeaders = {
   "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600",
 };
+const adminCacheHeaders = {
+  "Cache-Control": "no-store, no-cache, must-revalidate",
+};
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const now = Date.now();
-    if (cachedProducts && now - cachedProductsTime < CACHE_TTL_MS) {
-      return NextResponse.json(cachedProducts, { headers: cacheHeaders });
+    const url = new URL(request.url);
+    const idParam = url.searchParams.get("id");
+    const isAdmin = url.searchParams.get("admin") === "true" || request.headers.get("cookie")?.includes("admin_session");
+
+    // Single product lookup
+    if (idParam) {
+      try {
+        const data = await sql`SELECT * FROM products WHERE id = ${String(idParam)} LIMIT 1`;
+        if (data && data[0]) {
+          const sbP = data[0];
+          const fallbackSlug = sbP.category_slug || "cicekler";
+          let parsedSlugs = [fallbackSlug];
+          if (Array.isArray(sbP.selected_category_slugs)) {
+            parsedSlugs = sbP.selected_category_slugs;
+          } else if (typeof sbP.selected_category_slugs === "string") {
+            try { parsedSlugs = JSON.parse(sbP.selected_category_slugs); } catch (e) {}
+          }
+          return NextResponse.json({
+            id: String(sbP.id),
+            slug: sbP.slug || slugifyTurkish(sbP.title) || String(sbP.id),
+            title: sbP.title,
+            category: sbP.category || "Genel",
+            categorySlug: fallbackSlug,
+            selectedCategorySlugs: parsedSlugs,
+            designType: sbP.design_type || undefined,
+            recipient: sbP.recipient || undefined,
+            purpose: sbP.purpose || undefined,
+            color: sbP.color || undefined,
+            price: sbP.price,
+            oldPrice: sbP.old_price,
+            discount: sbP.discount,
+            image: sbP.image,
+            code: sbP.code || `DM${sbP.id}`,
+            stock: sbP.stock !== false,
+            featured: sbP.featured === true,
+            description: sbP.description,
+            seoTitle: sbP.seo_title || sbP.seoTitle || undefined,
+            seoDesc: sbP.seo_desc || sbP.seoDesc || undefined,
+            seoKeywords: sbP.seo_keywords || sbP.seoKeywords || undefined,
+          }, { headers: adminCacheHeaders });
+        }
+      } catch (e) {}
+      return NextResponse.json({ error: "Product not found" }, { status: 404, headers: adminCacheHeaders });
     }
 
-    const db = readDb();
-    let productsList = (db.products || []).filter(
-      (p: any) => p.category !== "SETTINGS" && !String(p.id).startsWith("__SETTING_")
-    );
+    const now = Date.now();
+    // Use cache only for non-admin public requests
+    if (!isAdmin && cachedProducts && now - cachedProductsTime < CACHE_TTL_MS) {
+      return NextResponse.json(cachedProducts, { headers: publicCacheHeaders });
+    }
 
     // Fetch from Neon Postgres
     try {
@@ -110,18 +154,23 @@ export async function GET() {
             seoKeywords: sbP.seo_keywords || sbP.seoKeywords || undefined,
           };
         });
-        cachedProducts = merged;
-        cachedProductsTime = Date.now();
-        return NextResponse.json(merged, { headers: cacheHeaders });
+        if (!isAdmin) {
+          cachedProducts = merged;
+          cachedProductsTime = Date.now();
+          return NextResponse.json(merged, { headers: publicCacheHeaders });
+        }
+        return NextResponse.json(merged, { headers: adminCacheHeaders });
       }
     } catch (neonErr) {}
 
-    cachedProducts = productsList;
-    cachedProductsTime = Date.now();
-    return NextResponse.json(productsList, { headers: cacheHeaders });
+    const db = readDb();
+    const fallbackList = (db.products || []).filter(
+      (p: any) => p.category !== "SETTINGS" && !String(p.id).startsWith("__SETTING_")
+    );
+    return NextResponse.json(fallbackList, { headers: isAdmin ? adminCacheHeaders : publicCacheHeaders });
   } catch (error) {
     const db = readDb();
-    return NextResponse.json(db.products || [], { headers: cacheHeaders });
+    return NextResponse.json(db.products || [], { headers: adminCacheHeaders });
   }
 }
 

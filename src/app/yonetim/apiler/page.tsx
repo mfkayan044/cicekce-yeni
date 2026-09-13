@@ -243,10 +243,13 @@ export default function ApilerPage() {
                 <input
                   type="text"
                   className="w-full p-3 border border-slate-300 rounded-xl text-xs font-mono font-bold text-slate-900 bg-slate-50 focus:outline-none"
-                  placeholder="Örn: G-XXXXXXXXXX veya GT-XXXXXX"
+                  placeholder="Örn: G-066C0KHESR veya Google Script Kodunuz"
                   value={form.googleAnalyticsId}
                   onChange={(e) => setForm({ ...form, googleAnalyticsId: e.target.value })}
                 />
+                <p className="text-[11px] text-slate-400 font-medium mt-1">
+                  Sadece Tag ID'nizi (<code className="font-mono text-amber-900 font-extrabold">G-066C0KHESR</code>) veya Google'dan aldığınız script kodunu yapıştırabilirsiniz.
+                </p>
               </div>
             </div>
           </div>

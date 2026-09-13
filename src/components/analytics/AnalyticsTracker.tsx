@@ -40,6 +40,20 @@ export function trackPurchase(data: { orderId: string; value: number; currency?:
   }
 }
 
+function extractGaId(raw: string): string {
+  if (!raw) return "";
+  const trimmed = raw.trim();
+  const match = trimmed.match(/(G|GT|UA)-[A-Za-z0-9]+/i);
+  return match ? match[0].toUpperCase() : trimmed;
+}
+
+function extractPixelId(raw: string): string {
+  if (!raw) return "";
+  const trimmed = raw.trim();
+  const match = trimmed.match(/\d{10,20}/);
+  return match ? match[0] : trimmed;
+}
+
 export default function AnalyticsTracker() {
   const [pixelId, setPixelId] = useState<string>("");
   const [gaId, setGaId] = useState<string>("");
@@ -48,8 +62,9 @@ export default function AnalyticsTracker() {
     fetch("/api/settings/apis")
       .then((res) => res.json())
       .then((data) => {
-        if (data?.metaPixelId) setPixelId(data.metaPixelId);
-        if (data?.googleAnalyticsId || data?.googleTagId) setGaId(data.googleAnalyticsId || data.googleTagId);
+        if (data?.metaPixelId) setPixelId(extractPixelId(data.metaPixelId));
+        const rawGa = data?.googleAnalyticsId || data?.googleTagId || "";
+        if (rawGa) setGaId(extractGaId(rawGa));
       })
       .catch(() => {});
   }, []);

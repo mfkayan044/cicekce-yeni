@@ -121,22 +121,14 @@ export default function MemberAccountPage() {
   const fetchOrders = async (email?: string, phone?: string) => {
     setLoadingOrders(true);
     try {
-      const res = await fetch("/api/orders");
+      const cleanUserEmail = (email || "").trim().toLowerCase();
+      const cleanUserPhone = (phone || "").replace(/\D/g, "");
+      const res = await fetch(`/api/orders?customerEmail=${encodeURIComponent(cleanUserEmail)}&customerPhone=${encodeURIComponent(cleanUserPhone)}`);
       if (res.ok) {
-        const all = await res.json();
-        const cleanUserEmail = (email || "").trim().toLowerCase();
-        const cleanUserPhone = (phone || "").replace(/\D/g, "");
-
-        const filtered = (all || []).filter((o: any) => {
-          const oEmail = (o.customerEmail || o.customer_email || "").trim().toLowerCase();
-          const oPhone = (o.customerPhone || o.customer_phone || "").replace(/\D/g, "");
-
-          const emailMatch = cleanUserEmail.length > 3 && oEmail === cleanUserEmail;
-          const phoneMatch = cleanUserPhone.length >= 7 && oPhone.length >= 7 && (oPhone.endsWith(cleanUserPhone) || cleanUserPhone.endsWith(oPhone));
-
-          return emailMatch || phoneMatch;
-        });
-        setMyOrders(filtered);
+        const data = await res.json();
+        if (Array.isArray(data)) {
+          setMyOrders(data);
+        }
       }
     } catch (e) {
     } finally {

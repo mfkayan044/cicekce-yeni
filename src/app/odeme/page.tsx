@@ -31,9 +31,18 @@ export default function CheckoutPage() {
 
   // Active Checkout Step: 1 = Alıcı & Teslimat, 2 = Ek Ürünler, 3 = Fatura, 4 = Mesaj Kartı, 5 = Ödeme
   const [step, setStep] = useState<1 | 2 | 3 | 4 | 5>(1);
-  const [cartSessionId] = useState<string>(
-    () => `TSL-2026-${Math.floor(100000 + Math.random() * 900000)}`
-  );
+  const [cartSessionId] = useState<string>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const existing = sessionStorage.getItem("cicekce_checkout_cart_id");
+        if (existing) return existing;
+        const newId = `TSL-2026-${Math.floor(100000 + Math.random() * 900000)}`;
+        sessionStorage.setItem("cicekce_checkout_cart_id", newId);
+        return newId;
+      } catch (e) {}
+    }
+    return `TSL-2026-${Math.floor(100000 + Math.random() * 900000)}`;
+  });
 
   const initialMember = typeof window !== "undefined" ? getStoredMember() : null;
   const initialCities = (initialDbData?.cities || []).filter((c: any) => c.active !== false);
@@ -500,11 +509,22 @@ export default function CheckoutPage() {
 
   const syncAbandonedCart = (targetStep: number) => {
     try {
+      const activePhone = (senderPhone || recipientPhone || "").replace(/\D/g, "");
+      const activeName = (senderName || recipientName || "").trim();
+
+      // SADECE telefon veya gerçek isim girilmişse yarım sipariş kaydet (boş oturumlarla DB şişmesini ve token israfını engelle)
+      if (!activePhone && (!activeName || activeName === "Misafir Müşteri")) {
+        return;
+      }
+
       const mainProd = cartItemsToUse[0]?.product || cartItemsToUse[0] || {};
       const payload = {
+        id: cartSessionId,
         cartNo: cartSessionId,
-        customerName: senderName || recipientName || "Misafir Müşteri",
+        customerName: activeName || "Misafir Müşteri",
         phone: senderPhone || recipientPhone || "",
+        customerPhone: senderPhone || recipientPhone || "",
+        customerEmail: senderEmail || "",
         recipientName: recipientName || "",
         recipientPhone: recipientPhone || "",
         address: constructedDeliveryAddress,
@@ -685,7 +705,14 @@ export default function CheckoutPage() {
             quantity: it.quantity || 1,
           })),
         });
-        try { await fetch(`/api/abandoned-carts?cartNo=${encodeURIComponent(cartSessionId)}`, { method: "DELETE" }); } catch (err) {}
+
+        try {
+          const cleanPhone = (senderPhone || recipientPhone || "").replace(/\D/g, "");
+          await fetch(`/api/abandoned-carts?id=${encodeURIComponent(cartSessionId)}&cartNo=${encodeURIComponent(cartSessionId)}&phone=${encodeURIComponent(cleanPhone)}`, { method: "DELETE" });
+          if (typeof window !== "undefined") {
+            try { sessionStorage.removeItem("cicekce_checkout_cart_id"); } catch (e) {}
+          }
+        } catch (err) {}
         clearCart();
         setOrderSuccess(true);
       } else {

@@ -245,6 +245,101 @@ export async function GET(request: Request) {
       }, { headers: NO_CACHE_HEADERS });
     }
 
+    // Member specific order query (public for the member matching email or phone)
+    const customerEmail = searchParams.get("customerEmail") || searchParams.get("email");
+    const customerPhone = searchParams.get("customerPhone");
+    if (customerEmail || customerPhone) {
+      const cleanEmail = (customerEmail || "").trim().toLowerCase();
+      const cleanPhoneDigits = (customerPhone || "").replace(/[^0-9]/g, "");
+      const phoneSuffix = cleanPhoneDigits.length >= 7 ? cleanPhoneDigits.slice(-7) : cleanPhoneDigits;
+
+      let memberOrders: any[] = [];
+      try {
+        if (cleanEmail && phoneSuffix && phoneSuffix.length >= 7) {
+          memberOrders = await sql`
+            SELECT * FROM orders 
+            WHERE LOWER(customer_email) = ${cleanEmail} 
+               OR customer_phone LIKE ${'%' + phoneSuffix}
+            ORDER BY created_at DESC 
+            LIMIT 50;
+          `;
+        } else if (cleanEmail) {
+          memberOrders = await sql`
+            SELECT * FROM orders 
+            WHERE LOWER(customer_email) = ${cleanEmail} 
+            ORDER BY created_at DESC 
+            LIMIT 50;
+          `;
+        } else if (phoneSuffix && phoneSuffix.length >= 7) {
+          memberOrders = await sql`
+            SELECT * FROM orders 
+            WHERE customer_phone LIKE ${'%' + phoneSuffix} 
+            ORDER BY created_at DESC 
+            LIMIT 50;
+          `;
+        }
+      } catch (err) {
+        try {
+          let q = supabase.from("orders").select("*");
+          if (cleanEmail && phoneSuffix && phoneSuffix.length >= 7) {
+            q = q.or(`customer_email.ilike.${cleanEmail},customer_phone.ilike.%${phoneSuffix}%`);
+          } else if (cleanEmail) {
+            q = q.ilike("customer_email", cleanEmail);
+          } else if (phoneSuffix) {
+            q = q.ilike("customer_phone", `%${phoneSuffix}%`);
+          }
+          const { data } = await q.order("created_at", { ascending: false }).limit(50);
+          if (data) memberOrders = data;
+        } catch (sbErr) {
+          memberOrders = [];
+        }
+      }
+
+      const formattedMemberOrders = (memberOrders || []).map((o: any) => {
+        const sbOrder = sbMap[o.id] || {};
+        const extra = courierMap[o.id] || memoryCourierMap[o.id] || {};
+        const meta = parseOrderMeta(o, extra);
+
+        return {
+          id: o.id,
+          date: o.date,
+          status: o.status || "Yeni Sipariş",
+          customerName: o.customer_name || o.customerName || sbOrder.customer_name,
+          customerPhone: o.customer_phone || o.customerPhone || sbOrder.customer_phone,
+          customerEmail: o.customer_email || o.customerEmail || sbOrder.customer_email,
+          recipientName: o.recipient_name || o.recipientName || sbOrder.recipient_name,
+          recipientPhone: o.recipient_phone || o.recipientPhone || sbOrder.recipient_phone,
+          address: o.address || sbOrder.address,
+          deliveryDate: o.delivery_date || o.deliveryDate || sbOrder.delivery_date,
+          deliveryTime: o.delivery_time || o.deliveryTime || sbOrder.delivery_time,
+          items: parseJsonArray(o.items || sbOrder.items),
+          addons: getFirstNonEmptyArray(o.addons, sbOrder.addons, extra.addons, o.selectedExtras, sbOrder.selectedExtras, extra.selectedExtras),
+          extras: parseJsonArray(o.extras || sbOrder.extras || extra.extras),
+          selectedExtras: parseJsonArray(o.selectedExtras || sbOrder.selectedExtras || extra.selectedExtras),
+          cardNote: o.card_note || o.cardNote || sbOrder.card_note,
+          isAnonymous: o.is_anonymous === true || sbOrder.is_anonymous === true,
+          paymentMethod: o.payment_method || o.paymentMethod || sbOrder.payment_method,
+          totalPrice: o.total_amount || o.totalPrice || sbOrder.total_amount,
+          totalAmount: o.total_amount || o.totalAmount || sbOrder.total_amount,
+          usedPoints: o.used_points || o.usedPoints || extra.usedPoints || null,
+          pointsDiscount: o.points_discount || o.pointsDiscount || extra.pointsDiscount || null,
+          discountAmount: o.discount_amount || o.discountAmount || extra.discountAmount || null,
+          preparedPhoto: meta.preparedPhoto,
+          preparedPhotoTime: meta.preparedPhotoTime,
+          customerApprovalStatus: meta.customerApprovalStatus,
+          rejectionReason: meta.rejectionReason,
+          courierId: meta.courierId,
+          courierName: meta.courierName,
+          deliveredAt: meta.deliveredAt,
+          deliveredPhoto: meta.deliveredPhoto,
+          deliveryNote: meta.deliveryNote,
+          updateRequest: meta.updateRequest
+        };
+      });
+
+      return NextResponse.json(formattedMemberOrders, { headers: NO_CACHE_HEADERS });
+    }
+
     // Full orders list requires admin auth
     const isAuth = await isRequestAuthorized(request);
     if (!isAuth) {

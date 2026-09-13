@@ -26,7 +26,7 @@ export default function YarimSiparislerPage() {
 
   useEffect(() => {
     fetchCarts();
-    const interval = setInterval(fetchCarts, 4000);
+    const interval = setInterval(fetchCarts, 15000);
     return () => clearInterval(interval);
   }, []);
 

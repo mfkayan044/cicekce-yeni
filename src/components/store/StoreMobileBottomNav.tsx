@@ -10,9 +10,11 @@ import { Home, LayoutGrid, Search, ShoppingCart, User } from "lucide-react";
 export default function StoreMobileBottomNav() {
   const pathname = usePathname();
   const { cart } = useStore();
+  const [mounted, setMounted] = useState(false);
   const [member, setMember] = useState<any>(null);
 
   useEffect(() => {
+    setMounted(true);
     setMember(getStoredMember());
     const handler = () => setMember(getStoredMember());
     window.addEventListener("cicekce_auth_change", handler);
@@ -82,7 +84,7 @@ export default function StoreMobileBottomNav() {
         >
           <div className="relative">
             <ShoppingCart className="w-5 h-5 mb-0.5" />
-            {cart && cart.length > 0 && (
+            {mounted && cart && cart.length > 0 && (
               <span suppressHydrationWarning className="absolute -top-1.5 -right-2.5 bg-red-500 text-white text-[9px] font-black w-4 h-4 rounded-full flex items-center justify-center">
                 {cart.length}
               </span>
@@ -93,14 +95,14 @@ export default function StoreMobileBottomNav() {
 
         {/* Hesabım / Giriş */}
         <Link
-          href={member ? "/hesabim" : "/giris-yap"}
+          href={mounted && member ? "/hesabim" : "/giris-yap"}
           className={`flex flex-col items-center justify-center py-1 transition ${
             isActive("/hesabim") || isActive("/giris-yap") ? "text-[#2b2623] font-black" : "text-slate-500 font-semibold"
           }`}
         >
           <User className="w-5 h-5 mb-0.5" />
           <span className="text-[10px] truncate max-w-[55px]">
-            {member ? member.name.split(" ")[0] : "Giriş"}
+            {mounted && member ? member.name.split(" ")[0] : "Giriş"}
           </span>
         </Link>
       </div>

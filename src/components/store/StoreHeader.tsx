@@ -12,33 +12,37 @@ const _hdrDb = getInitialDbData();
 
 export default function StoreHeader({ onOpenAssistant }: { onOpenAssistant?: () => void } = {}) {
   const { cart, favorites, products } = useStore();
+  const [mounted, setMounted] = useState(false);
   const [topbarData, setTopbarData] = useState<any>(_hdrDb.headerBant || null);
   const [dismissed, setDismissed] = useState(false);
-  const [liveMenus, setLiveMenus] = useState<any[]>(() => {
-    if (typeof window !== "undefined") {
-      try {
-        const cached = localStorage.getItem("cicekce_live_header_menus");
-        if (cached) {
-          const parsed = JSON.parse(cached);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            return parsed.filter((m: any) => m.active !== false);
-          }
-        }
-      } catch (e) {}
-    }
-    const initialList = _hdrDb.headerMenus || _hdrDb.header_menu || [
-      { id: "1", title: "Gül Buketleri", url: "/kategori/guller", order: 1, active: true },
-      { id: "1788356766009", title: "Geçmiş Olsun", url: "/kategori/gecmis-olsun", order: 2, active: true },
-      { id: "1789052178938", title: "Saksı/Orkide", url: "/kategori/saksi-cicekleri", order: 3, active: true }
-    ];
-    return Array.isArray(initialList) ? initialList.filter((m: any) => m.active !== false) : [];
-  });
+
+  const initialList = _hdrDb.headerMenus || _hdrDb.header_menu || [
+    { id: "1", title: "Gül Buketleri", url: "/kategori/guller", order: 1, active: true },
+    { id: "1788356766009", title: "Geçmiş Olsun", url: "/kategori/gecmis-olsun", order: 2, active: true },
+    { id: "1789052178938", title: "Saksı/Orkide", url: "/kategori/saksi-cicekleri", order: 3, active: true }
+  ];
+  const [liveMenus, setLiveMenus] = useState<any[]>(
+    Array.isArray(initialList) ? initialList.filter((m: any) => m.active !== false) : []
+  );
   const [genSettings, setGenSettings] = useState<any>(_hdrDb.generalSettings || { logoMode: "text", logoUrl: "/logo.jpg" });
   const [member, setMember] = useState<MemberUser | null>(null);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+
+  useEffect(() => {
+    setMounted(true);
+    try {
+      const cached = localStorage.getItem("cicekce_live_header_menus");
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setLiveMenus(parsed.filter((m: any) => m.active !== false));
+        }
+      }
+    } catch (e) {}
+  }, []);
 
   const searchResults = searchQuery.trim().length >= 2
     ? (products || []).filter((p: any) =>
@@ -264,13 +268,13 @@ export default function StoreHeader({ onOpenAssistant }: { onOpenAssistant?: () 
             <Link href="/favoriler" id="favBtn" aria-label="Favoriler" className="shrink-0 relative flex items-center justify-center w-8 h-8 lg:w-11 lg:h-11 border border-slate-200 hover:border-brand text-slate-700 hover:text-red-500 rounded-lg transition">
               <Heart className="w-5 h-5" />
               <span suppressHydrationWarning className="fav-count absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[10px] font-bold min-w-[18px] h-[18px] px-1 rounded-full flex items-center justify-center">
-                {favorites ? favorites.length : 0}
+                {mounted && favorites ? favorites.length : 0}
               </span>
             </Link>
             <Link href="/sepet" id="cartBtn" aria-label="Sepet" className="shrink-0 relative flex items-center justify-center w-8 h-8 lg:w-11 lg:h-11 border border-slate-200 hover:border-brand text-slate-700 hover:text-brand rounded-lg transition">
               <ShoppingCart className="w-5 h-5" />
               <span suppressHydrationWarning className="cart-count absolute -top-1.5 -right-1.5 bg-brand text-white text-[10px] font-bold min-w-[18px] h-[18px] px-1 rounded-full flex items-center justify-center">
-                {cart ? cart.length : 0}
+                {mounted && cart ? cart.length : 0}
               </span>
             </Link>
             <button id="menuOpen" type="button" onClick={() => setMobileMenuOpen(true)} aria-label="Menü" className="lg:hidden shrink-0 flex items-center justify-center w-8 h-8 lg:w-11 lg:h-11 border border-slate-200 hover:border-[#2b2623] text-slate-800 rounded-lg transition active:scale-95 bg-slate-50 cursor-pointer">

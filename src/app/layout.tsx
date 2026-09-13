@@ -61,7 +61,7 @@ export default async function RootLayout({
   const gaId = await getGaIdServer();
 
   return (
-    <html lang="tr" className="antialiased">
+    <html lang="tr" className="antialiased" suppressHydrationWarning>
       <head>
         <link rel="icon" href="/favicon.ico" sizes="any" />
         <link rel="icon" href="/icon.png" type="image/png" />
@@ -89,7 +89,7 @@ export default async function RootLayout({
           </>
         )}
       </head>
-      <body className="bg-[#FAF6F0] text-slate-800 min-h-screen font-sans pb-16 lg:pb-0">
+      <body className="bg-[#FAF6F0] text-slate-800 min-h-screen font-sans pb-16 lg:pb-0" suppressHydrationWarning>
         <PwaRegister />
         <AnalyticsTracker />
         {children}

@@ -26,27 +26,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
   const { products, addToCart, setSingleCartItem, clearCart } = useStore();
 
   const targetProduct = products.find((p: Product) => p.slug === slug || String(p.id) === slug);
-  if (!targetProduct) {
-    return (
-      <div className="bg-[#FAF6F0] min-h-screen font-sans">
-        <StoreHeader />
-        <div className="max-w-[1400px] mx-auto px-4 py-24 text-center space-y-4">
-          <div className="text-5xl font-black text-slate-800">404</div>
-          <div className="text-xl font-bold text-slate-700">Aradığınız Çiçek Bulunamadı</div>
-          <p className="text-slate-500 text-sm max-w-md mx-auto">
-            Bu ürün tükenmiş veya yayından kaldırılmış olabilir. Tüm çiçek ve buketlerimizi incelemek için anasayfaya dönebilirsiniz.
-          </p>
-          <div className="pt-2">
-            <Link href="/" className="inline-block px-6 py-3 bg-[#2b2623] text-white rounded-2xl text-xs font-bold shadow-md hover:opacity-95 transition">
-              Tüm Çiçekleri İncele →
-            </Link>
-          </div>
-        </div>
-        <StoreFooter />
-      </div>
-    );
-  }
-  const product: Product = targetProduct;
+  const product: Product = targetProduct || ({ id: "", title: "", slug: "", price: "", image: "", category: "", categorySlug: "", stock: true, featured: false } as Product);
 
   const [selectedAddress, setSelectedAddress] = useState<string>("Lütfen Teslimat Adresinizi Seçiniz");
   const [showAddressModal, setShowAddressModal] = useState(false);
@@ -307,7 +287,39 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
     window.open(`https://wa.me/905550000000?text=${message}`, "_blank");
   };
 
+  if (products.length === 0) {
+    return (
+      <div className="bg-[#FAF6F0] min-h-screen font-sans">
+        <StoreHeader />
+        <div className="max-w-[1400px] mx-auto px-4 py-24 text-center space-y-4">
+          <div className="w-10 h-10 border-4 border-[#2b2623] border-t-transparent rounded-full animate-spin mx-auto"></div>
+          <p className="text-slate-600 text-sm font-bold">Çiçek detayları yükleniyor...</p>
+        </div>
+        <StoreFooter />
+      </div>
+    );
+  }
 
+  if (!targetProduct) {
+    return (
+      <div className="bg-[#FAF6F0] min-h-screen font-sans">
+        <StoreHeader />
+        <div className="max-w-[1400px] mx-auto px-4 py-24 text-center space-y-4">
+          <div className="text-5xl font-black text-slate-800">404</div>
+          <div className="text-xl font-bold text-slate-700">Aradığınız Çiçek Bulunamadı</div>
+          <p className="text-slate-500 text-sm max-w-md mx-auto">
+            Bu ürün tükenmiş veya yayından kaldırılmış olabilir. Tüm çiçek ve buketlerimizi incelemek için anasayfaya dönebilirsiniz.
+          </p>
+          <div className="pt-2">
+            <Link href="/" className="inline-block px-6 py-3 bg-[#2b2623] text-white rounded-2xl text-xs font-bold shadow-md hover:opacity-95 transition">
+              Tüm Çiçekleri İncele →
+            </Link>
+          </div>
+        </div>
+        <StoreFooter />
+      </div>
+    );
+  }
 
   return (
     <div className="bg-[#FAF6F0] min-h-screen font-sans">

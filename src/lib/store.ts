@@ -380,28 +380,6 @@ export const useZustandStore = create<StoreState>()(
         coupon: state.coupon,
         discountAmount: state.discountAmount,
       }),
-      onRehydrateStorage: () => (state) => {
-        if (typeof window !== "undefined" && state) {
-          try {
-            if (!state.cart || state.cart.length === 0) {
-              const oldCart = localStorage.getItem("pro_flower_cart");
-              if (oldCart) state.cart = JSON.parse(oldCart);
-            }
-            if (!state.favorites || state.favorites.length === 0) {
-              const oldFavs = localStorage.getItem("pro_flower_favorites");
-              if (oldFavs) state.favorites = JSON.parse(oldFavs);
-            }
-            if (!state.products || state.products.length === 0) {
-              const oldProds = localStorage.getItem("pro_flower_products");
-              if (oldProds) state.products = JSON.parse(oldProds);
-            }
-            if (!state.categories || state.categories.length === 0) {
-              const oldCats = localStorage.getItem("pro_flower_categories");
-              if (oldCats) state.categories = JSON.parse(oldCats);
-            }
-          } catch (e) {}
-        }
-      },
     }
   )
 );

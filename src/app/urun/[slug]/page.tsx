@@ -335,11 +335,6 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
               onMouseLeave={() => setIsHovered(false)}
               onMouseMove={handleMouseMove}
             >
-              {/* Code Badge (Top Left) */}
-              <span style={{ backgroundColor: "#2b2623", color: "#ffffff" }} className="absolute top-4 left-4 z-10 text-xs font-black px-3 py-1 rounded-lg shadow-sm">
-                {product.code || `DM${product.id}`}
-              </span>
-
               {/* Product Image with Cursor Following Magnifier */}
               <img
                 src={product.image}
@@ -383,9 +378,27 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
                     {product.title}
                   </h1>
                   <div className="flex items-center gap-2 mt-1.5">
-                    <div className="flex text-amber-400 text-sm">★★★★☆</div>
-                    <span className="text-xs font-bold text-slate-700">4,8</span>
-                    <span className="text-xs text-slate-400">· 5 değerlendirme</span>
+                    {liveReviews.length > 0 ? (
+                      <>
+                        <div className="flex text-amber-400 text-sm">
+                          {"★".repeat(Math.round(liveReviews.reduce((sum: number, r: any) => sum + (Number(r.rating) || 5), 0) / liveReviews.length))}
+                          {"☆".repeat(Math.max(0, 5 - Math.round(liveReviews.reduce((sum: number, r: any) => sum + (Number(r.rating) || 5), 0) / liveReviews.length)))}
+                        </div>
+                        <span className="text-xs font-bold text-slate-700">
+                          {(liveReviews.reduce((sum: number, r: any) => sum + (Number(r.rating) || 5), 0) / liveReviews.length).toFixed(1).replace(".", ",")}
+                        </span>
+                        <a href="#degerlendirmeler" className="text-xs text-slate-400 hover:text-slate-600 transition">
+                          · {liveReviews.length} değerlendirme
+                        </a>
+                      </>
+                    ) : (
+                      <>
+                        <div className="flex text-slate-300 text-sm">☆☆☆☆☆</div>
+                        <a href="#degerlendirmeler" className="text-xs text-slate-400 hover:text-slate-600 transition">
+                          Henüz değerlendirilmedi
+                        </a>
+                      </>
+                    )}
                   </div>
                 </div>
 
@@ -640,7 +653,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
         </section>
 
         {/* CUSTOMER REVIEWS SECTION - STRICTLY PRODUCT SPECIFIC */}
-        <section className="mb-14">
+        <section id="degerlendirmeler" className="mb-14 scroll-mt-20">
           <div className="flex items-center justify-between mb-6">
             <div>
               <h3 className="text-xl font-extrabold text-slate-800">

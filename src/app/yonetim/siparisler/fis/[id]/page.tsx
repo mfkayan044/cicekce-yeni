@@ -90,7 +90,7 @@ export default function OrderThermalReceiptPage({ params }: { params: Promise<{ 
           </div>
           <div className="flex justify-between text-[11px]">
             <span>Teslimat Saati:</span>
-            <span className="font-black text-sm">{o.deliveryTime || "09:00 - 18:00"}</span>
+            <span className="font-black text-sm">{o.deliveryTime || o.deliverySlot || "Belirtilmedi"}</span>
           </div>
           {o.courierName && (
             <div className="flex justify-between text-[11px] pt-1">

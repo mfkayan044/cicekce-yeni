@@ -5,7 +5,7 @@ import path from "path";
 
 const ALLOWED_MIME_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
 const ALLOWED_EXTENSIONS = ["jpg", "jpeg", "png", "webp"];
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB limit
+const MAX_FILE_SIZE = 15 * 1024 * 1024; // 15 MB limit for high-res mobile cameras
 
 const uploadsDir = path.join(process.cwd(), "public", "uploads");
 

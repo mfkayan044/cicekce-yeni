@@ -229,33 +229,78 @@ function isOrderReadyForCourier(o: Order): boolean {
   // Cancelled orders are never ready
   if (lowerStatus.includes("iptal")) return false;
 
-  // 1. If a courier is explicitly assigned to this order, it is ready
-  if (o.courierId || o.courierName) return true;
+  // Show all non-cancelled active orders so couriers can see upcoming deliveries
+  return true;
+}
 
-  // 2. If status explicitly indicates courier delivery or approval
-  if (
-    lowerStatus.includes("kurye") ||
-    lowerStatus.includes("dağıtım") ||
-    lowerStatus.includes("yolda") ||
-    lowerStatus.includes("teslimat") ||
-    lowerStatus.includes("onaylandı")
-  ) {
-    return true;
+// Client-side HTML5 canvas image compressor to ensure phone photos don't fail upload
+async function compressImageFile(file: File, maxDimension = 1600, quality = 0.8): Promise<File> {
+  // If not an image or running on server, return original
+  if (typeof window === "undefined" || !file.type.startsWith("image/")) {
+    return file;
   }
 
-  // 3. Check customer approval status (Customer approved or 15-min auto approved)
-  const appStatus = String((o as any).customerApprovalStatus || "").toLowerCase();
-  if (
-    appStatus.includes("onaylandı") ||
-    appStatus.includes("sistem") ||
-    appStatus.includes("otomatik") ||
-    appStatus.includes("müşteri")
-  ) {
-    return true;
-  }
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (readerEvent) => {
+      const img = new Image();
+      img.onload = () => {
+        let width = img.width;
+        let height = img.height;
 
-  // Otherwise (e.g. "Yeni Sipariş", "Hazırlanıyor", "Fotoğraflı Onay Bekliyor" without approval), it is NOT ready for courier!
-  return false;
+        if (width > maxDimension || height > maxDimension) {
+          if (width > height) {
+            height = Math.round((height * maxDimension) / width);
+            width = maxDimension;
+          } else {
+            width = Math.round((width * maxDimension) / height);
+            height = maxDimension;
+          }
+        }
+
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) {
+          resolve(file);
+          return;
+        }
+
+        ctx.drawImage(img, 0, 0, width, height);
+
+        canvas.toBlob(
+          (blob) => {
+            if (!blob) {
+              resolve(file);
+              return;
+            }
+            const compressedFile = new File([blob], file.name.replace(/\.[^/.]+$/, ".jpg"), {
+              type: "image/jpeg",
+              lastModified: Date.now(),
+            });
+            resolve(compressedFile);
+          },
+          "image/jpeg",
+          quality
+        );
+      };
+      img.onerror = () => resolve(file);
+      img.src = readerEvent.target?.result as string;
+    };
+    reader.onerror = () => resolve(file);
+    reader.readAsDataURL(file);
+  });
+}
+
+// Cleans up customer entered address text for optimal Google & Yandex Maps routing
+function getCleanNavigationAddress(rawAddress?: string): string {
+  if (!rawAddress) return "";
+  let addr = rawAddress.trim();
+
+  // If address has dash separator like "İstanbul / Eyüpsultan / Göktürk Merkez - KEMERBURGAZ / MİTHATPAŞA MAHALLESİ..."
+  // Pick the most specific street/building part while keeping the ilce & il
+  return addr.replace(/\s+/g, " ");
 }
 
 export default function CourierPortalPage() {
@@ -416,15 +461,18 @@ export default function CourierPortalPage() {
   );
   const completedDeliveries = courierOrders.filter((o) => o.status === "Teslim Edildi");
 
-  // Handle Photo Selection & Upload
+  // Handle Photo Selection & Upload with automatic Canvas compression
   const handlePhotoSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const rawFile = e.target.files?.[0];
+    if (!rawFile) return;
 
     setUploadingPhoto(true);
     try {
+      // Compress image to max 1600px, 0.8 JPEG quality before sending
+      const compressedFile = await compressImageFile(rawFile, 1600, 0.8);
+
       const formData = new FormData();
-      formData.append("file", file);
+      formData.append("file", compressedFile);
       const upRes = await fetch("/api/upload", {
         method: "POST",
         body: formData,
@@ -434,13 +482,15 @@ export default function CourierPortalPage() {
         const upData = await upRes.json();
         if (upData.url) {
           setPreviewPhotoUrl(upData.url);
+        } else {
+          alert("⚠️ Fotoğraf yüklendi ancak sunucu adres veremedi. Lütfen tekrar deneyin.");
         }
       } else {
-        // Fallback local preview object url
-        setPreviewPhotoUrl(URL.createObjectURL(file));
+        const errJson = await upRes.json().catch(() => ({}));
+        alert(`⚠️ Fotoğraf yüklenemedi: ${errJson.error || "Sunucu hatası"}. Lütfen tekrar deneyin.`);
       }
-    } catch (err) {
-      setPreviewPhotoUrl(URL.createObjectURL(file));
+    } catch (err: any) {
+      alert(`⚠️ Fotoğraf yüklenirken bağlantı hatası oluştu: ${err?.message || "Hata"}`);
     } finally {
       setUploadingPhoto(false);
     }
@@ -455,10 +505,16 @@ export default function CourierPortalPage() {
       return;
     }
 
+    // Strictly forbid blob: URLs from being submitted to the database
+    if (previewPhotoUrl && previewPhotoUrl.startsWith("blob:")) {
+      alert("⚠️ Fotoğraf sunucuya henüz yüklenememiş. Lütfen internet bağlantınızı kontrol edip fotoğrafı tekrar seçiniz.");
+      return;
+    }
+
     setSubmittingDelivery(true);
 
-    // FIX: Delivered photo must NOT fallback to prepared approval photo!
-    const finalPhoto = previewPhotoUrl || "";
+    // Delivered photo URL must be permanent
+    const finalPhoto = previewPhotoUrl || deliveringOrder.deliveredPhoto || "";
     const deliveredTimeStr = new Date().toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" });
     const deliveredDateStr = new Date().toLocaleDateString("tr-TR");
     const deliveredAtFull = `${deliveredDateStr} ${deliveredTimeStr}`;
@@ -713,9 +769,9 @@ export default function CourierPortalPage() {
         ) : (
           <div className="space-y-4">
             {(activeTab === "active" ? activeDeliveries : completedDeliveries).map((order) => {
-              const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-                order.address
-              )}`;
+              const cleanAddr = getCleanNavigationAddress(order.address);
+              const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(cleanAddr)}`;
+              const yandexMapsUrl = `https://yandex.com.tr/harita/?text=${encodeURIComponent(cleanAddr)}`;
               const cleanRecipientPhone = getCleanPhone(order.recipientPhone);
               const waUrl = `https://wa.me/90${cleanRecipientPhone}?text=${encodeURIComponent(
                 `Merhaba ${order.recipientName}, Çiçekçe ekibinden kuryeniz ulaşıyor. Çiçek siparişinizi teslim etmek üzere adresinize geliyorum.`
@@ -812,16 +868,26 @@ export default function CourierPortalPage() {
                     <div className="text-xs font-bold text-slate-800 leading-snug">{order.address}</div>
 
                     {/* Navigation Buttons */}
-                    <div className="pt-1">
+                    <div className="pt-1 grid grid-cols-2 gap-2">
                       <a
                         href={googleMapsUrl}
                         target="_blank"
                         rel="noreferrer"
                         style={{ backgroundColor: "#4285F4", color: "#ffffff" }}
-                        className="w-full py-2.5 px-3 rounded-xl text-xs font-black flex items-center justify-center gap-1.5 shadow-2xs"
+                        className="py-2.5 px-3 rounded-xl text-xs font-black flex items-center justify-center gap-1.5 shadow-2xs hover:opacity-95 transition"
                       >
-                        <Navigation className="w-4 h-4 text-white" />
-                        <span>Google Haritalar'da Rotayı Aç</span>
+                        <Navigation className="w-3.5 h-3.5 text-white" />
+                        <span>Google Harita</span>
+                      </a>
+                      <a
+                        href={yandexMapsUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        style={{ backgroundColor: "#FC3F1D", color: "#ffffff" }}
+                        className="py-2.5 px-3 rounded-xl text-xs font-black flex items-center justify-center gap-1.5 shadow-2xs hover:opacity-95 transition"
+                      >
+                        <Navigation className="w-3.5 h-3.5 text-white" />
+                        <span>Yandex Navigasyon</span>
                       </a>
                     </div>
                   </div>

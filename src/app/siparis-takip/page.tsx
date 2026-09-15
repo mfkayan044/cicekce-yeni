@@ -478,7 +478,7 @@ export default function OrderTrackingPage() {
                     </div>
                     <div>
                       <span className="font-bold text-slate-800">Teslimat Zamanı: </span>
-                      {order.deliveryDate} ({order.deliveryTime})
+                      {order.deliveryDate || "Bugün"} {(order.deliveryTime || order.deliverySlot) ? `(${order.deliveryTime || order.deliverySlot})` : ""}
                     </div>
                     {order.courierName && (
                       <div className="p-2 bg-blue-50 rounded-xl text-blue-900 font-semibold border border-blue-100">

@@ -1174,7 +1174,7 @@ export default function AdminOrdersPage() {
                             📅 {o.deliveryDate || o.date}
                           </div>
                           <div className="text-[11px] text-slate-500 font-extrabold">
-                            ⏰ {o.deliveryTime || "09:00 - 18:00"}
+                            ⏰ {o.deliveryTime || o.deliverySlot || "Belirtilmedi"}
                           </div>
 
                           {isOrderOverdue(o.deliveryDate || o.delivery_date || o.date, o.deliveryTime || o.delivery_time, o.status) && (
@@ -1702,7 +1702,7 @@ export default function AdminOrdersPage() {
                       <div>Alıcı Adı: <strong className="text-slate-900">{selectedOrder.recipientName || "—"}</strong></div>
                       <div>Alıcı Telefonu: <strong className="text-slate-900">{selectedOrder.recipientPhone || "—"}</strong></div>
                       <div>Teslimat Tarihi: <strong className="text-[#2b2623]">{selectedOrder.deliveryDate || selectedOrder.date}</strong></div>
-                      <div>Teslimat Saati: <strong className="text-[#2b2623]">{selectedOrder.deliveryTime || "09:00 - 18:00"}</strong></div>
+                      <div>Teslimat Saati: <strong className="text-[#2b2623]">{selectedOrder.deliveryTime || selectedOrder.deliverySlot || "Belirtilmedi"}</strong></div>
                       <div className="pt-1">
                         <span className="text-slate-500">Açık Adres:</span>
                         <div className="font-bold text-slate-800 mt-0.5 bg-white p-2 rounded-lg border">{selectedOrder.address || "Adres belirtilmedi"}</div>

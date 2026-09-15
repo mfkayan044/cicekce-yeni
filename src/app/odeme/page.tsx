@@ -120,8 +120,24 @@ export default function CheckoutPage() {
   const [loadingRegions, setLoadingRegions] = useState(false);
 
   // Step 1: Alıcı & Teslimat Adresi State
-  const [recipientName, setRecipientName] = useState("");
-  const [recipientPhone, setRecipientPhone] = useState("");
+  const [recipientName, setRecipientName] = useState(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const reorderName = localStorage.getItem("pro_flower_reorder_recipient_name");
+        if (reorderName) return reorderName;
+      } catch (e) {}
+    }
+    return "";
+  });
+  const [recipientPhone, setRecipientPhone] = useState(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const reorderPhone = localStorage.getItem("pro_flower_reorder_recipient_phone");
+        if (reorderPhone) return reorderPhone;
+      } catch (e) {}
+    }
+    return "";
+  });
   const [selectedCityId, setSelectedCityId] = useState(initialAddrState.cityId);
   const [selectedDistrictId, setSelectedDistrictId] = useState(initialAddrState.districtId);
   const [selectedNeighId, setSelectedNeighId] = useState(initialAddrState.neighId);
@@ -154,7 +170,16 @@ export default function CheckoutPage() {
   const [taxNo, setTaxNo] = useState("");
 
   // Step 4: Mesaj Kartı State & Ready Templates
-  const [cardNote, setCardNote] = useState("");
+  const [cardNote, setCardNote] = useState(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const reorderNote = localStorage.getItem("pro_flower_reorder_card_note");
+        if (reorderNote) return reorderNote;
+      } catch (e) {}
+    }
+    return "";
+  });
+  const [mediaNoteUrl, setMediaNoteUrl] = useState("");
   const [cardCategory, setCardCategory] = useState("Aşk & Romantik");
   const [supabaseCardNotes, setSupabaseCardNotes] = useState<any[]>([]);
   const [isAnonymousSender, setIsAnonymousSender] = useState(false);
@@ -647,6 +672,7 @@ export default function CheckoutPage() {
           image: a.image || ""
         })),
         cardNote: cardNote || "Kart notu belirtilmedi.",
+        mediaNoteUrl: mediaNoteUrl.trim() || null,
         isAnonymous: isAnonymousSender,
         paymentMethod: paymentMethod === "card" ? "Kredi Kartı (3D Secure)" : paymentMethod === "iban" ? "Havale / EFT" : paymentMethod === "cash" ? "Kapıda Ödeme" : "WhatsApp Sipariş",
         usedPoints: pointsDiscount,
@@ -710,7 +736,12 @@ export default function CheckoutPage() {
           const cleanPhone = (senderPhone || recipientPhone || "").replace(/\D/g, "");
           await fetch(`/api/abandoned-carts?id=${encodeURIComponent(cartSessionId)}&cartNo=${encodeURIComponent(cartSessionId)}&phone=${encodeURIComponent(cleanPhone)}`, { method: "DELETE" });
           if (typeof window !== "undefined") {
-            try { sessionStorage.removeItem("cicekce_checkout_cart_id"); } catch (e) {}
+            try { 
+              sessionStorage.removeItem("cicekce_checkout_cart_id"); 
+              localStorage.removeItem("pro_flower_reorder_recipient_name");
+              localStorage.removeItem("pro_flower_reorder_recipient_phone");
+              localStorage.removeItem("pro_flower_reorder_card_note");
+            } catch (e) {}
           }
         } catch (err) {}
         clearCart();
@@ -1229,6 +1260,31 @@ export default function CheckoutPage() {
                     value={cardNote}
                     onChange={(e) => setCardNote(e.target.value)}
                   ></textarea>
+                </div>
+
+                {/* QR Code Media Note (Voice / Video Message) */}
+                <div className="p-4 bg-gradient-to-r from-amber-50 to-orange-50 rounded-2xl border border-amber-200 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="text-base">🎙️</span>
+                      <label className="text-xs font-extrabold text-amber-950">
+                        QR Kodlu Sesli / Videolu Mesaj Ekle (İsteğe Bağlı)
+                      </label>
+                    </div>
+                    <span className="text-[10px] font-black uppercase tracking-wider bg-amber-200/80 text-amber-900 px-2 py-0.5 rounded-md">
+                      Özel QR Kart
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-amber-800 leading-tight">
+                    Çiçek notunuzun altına özel bir QR kod basılır. Alıcı cep telefonuyla kameradan okuttuğunda ses kaydınızı, videonuzu veya YouTube/Drive/Cloud linkinizi anında izler/dinler.
+                  </p>
+                  <input
+                    type="url"
+                    className="w-full p-3 bg-white border border-amber-300 rounded-xl text-xs font-semibold text-slate-900 placeholder:text-slate-400 outline-none focus:border-amber-600 focus:ring-2 focus:ring-amber-200 transition"
+                    placeholder="https://... (YouTube, Google Drive, Ses Kaydı veya Video Bağlantısı)"
+                    value={mediaNoteUrl}
+                    onChange={(e) => setMediaNoteUrl(e.target.value)}
+                  />
                 </div>
 
                 <div className="p-4 bg-slate-50 rounded-2xl flex items-center justify-between border border-slate-200">

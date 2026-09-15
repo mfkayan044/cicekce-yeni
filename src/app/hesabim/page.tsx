@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { getStoredMember, setStoredMember, clearStoredMember, MemberUser, MemberAddress } from "@/lib/member-auth";
 import Link from "next/link";
 import OrderUpdateRequestModal from "@/components/orders/OrderUpdateRequestModal";
-import { Package, Calendar, MapPin, User, Flower2, Clock, CheckCircle, AlertCircle, Edit, Trash2, Plus, LogOut, Search, Cake, Sparkles, ShieldCheck, Star } from "lucide-react";
+import { Package, Calendar, MapPin, User, Flower2, Clock, CheckCircle, AlertCircle, Edit, Trash2, Plus, LogOut, Search, Cake, Sparkles, ShieldCheck, Star, RotateCcw } from "lucide-react";
 
 export default function MemberAccountPage() {
   const router = useRouter();
@@ -298,6 +298,25 @@ export default function MemberAccountPage() {
         setMember(updatedMember);
       }
     } catch (err) {}
+  };
+
+  const handleReorder = (order: any) => {
+    if (!order) return;
+    try {
+      if (order.recipientName) {
+        localStorage.setItem("pro_flower_reorder_recipient_name", order.recipientName);
+      }
+      if (order.recipientPhone) {
+        localStorage.setItem("pro_flower_reorder_recipient_phone", order.recipientPhone);
+      }
+      if (order.address) {
+        localStorage.setItem("pro_flower_delivery_address", order.address);
+      }
+      if (order.cardNote && order.cardNote !== "Kart notu belirtilmedi.") {
+        localStorage.setItem("pro_flower_reorder_card_note", order.cardNote);
+      }
+    } catch (e) {}
+    router.push("/");
   };
 
   const handleLogout = () => {
@@ -592,6 +611,15 @@ export default function MemberAccountPage() {
                           <Search className="w-3.5 h-3.5" />
                           <span>Siparişi Takip Et</span>
                         </Link>
+
+                        <button
+                          type="button"
+                          onClick={() => handleReorder(o)}
+                          className="py-2 px-4 rounded-xl text-xs font-black bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-300 transition flex items-center gap-1.5 shadow-2xs cursor-pointer ml-auto"
+                        >
+                          <RotateCcw className="w-3.5 h-3.5 text-emerald-600" />
+                          <span>🔄 1 Tıkla Yeniden Gönder</span>
+                        </button>
                       </div>
                     </div>
                   ))}

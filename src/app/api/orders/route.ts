@@ -226,6 +226,7 @@ export async function GET(request: Request) {
         extras: parseJsonArray(order.extras || extra.extras),
         selectedExtras: parseJsonArray(order.selectedExtras || extra.selectedExtras),
         cardNote: order.card_note || order.cardNote,
+        mediaNoteUrl: order.media_note_url || order.mediaNoteUrl || extra.mediaNoteUrl || null,
         isAnonymous: order.is_anonymous === true,
         paymentMethod: order.payment_method || order.paymentMethod,
         totalAmount: order.total_amount || order.totalAmount,
@@ -319,6 +320,7 @@ export async function GET(request: Request) {
           extras: parseJsonArray(o.extras || sbOrder.extras || extra.extras),
           selectedExtras: parseJsonArray(o.selectedExtras || sbOrder.selectedExtras || extra.selectedExtras),
           cardNote: o.card_note || o.cardNote || sbOrder.card_note,
+          mediaNoteUrl: o.media_note_url || o.mediaNoteUrl || sbOrder.media_note_url || extra.mediaNoteUrl || null,
           isAnonymous: o.is_anonymous === true || sbOrder.is_anonymous === true,
           paymentMethod: o.payment_method || o.paymentMethod || sbOrder.payment_method,
           totalPrice: o.total_amount || o.totalPrice || sbOrder.total_amount,
@@ -419,6 +421,7 @@ export async function GET(request: Request) {
         extras: parseJsonArray(o.extras || sbOrder.extras || extra.extras),
         selectedExtras: parseJsonArray(o.selectedExtras || sbOrder.selectedExtras || extra.selectedExtras),
         cardNote: o.card_note || o.cardNote || sbOrder.card_note,
+        mediaNoteUrl: o.media_note_url || o.mediaNoteUrl || sbOrder.media_note_url || extra.mediaNoteUrl || null,
         isAnonymous: o.is_anonymous === true || sbOrder.is_anonymous === true,
         paymentMethod: o.payment_method || o.paymentMethod || sbOrder.payment_method,
         totalPrice: o.total_amount || o.totalPrice || sbOrder.total_amount,
@@ -472,6 +475,8 @@ export async function POST(request: Request) {
       items: orderData.items || [],
       addons: orderData.addons || orderData.selectedExtras || [],
       card_note: orderData.cardNote || orderData.card_note || "",
+      media_note_url: orderData.mediaNoteUrl || orderData.media_note_url || null,
+      mediaNoteUrl: orderData.mediaNoteUrl || orderData.media_note_url || null,
       is_anonymous: orderData.isAnonymous === true,
       payment_method: orderData.paymentMethod || orderData.payment_method || "Kredi Kartı",
       total_amount: orderData.totalAmount || orderData.totalPrice || "0 ₺",
@@ -538,6 +543,7 @@ export async function POST(request: Request) {
       usedPoints: orderData.usedPoints || orderData.used_points || null,
       pointsDiscount: orderData.pointsDiscount || orderData.points_discount || null,
       discountAmount: orderData.discountAmount || orderData.discount_amount || null,
+      mediaNoteUrl: orderData.mediaNoteUrl || orderData.media_note_url || null,
     };
     await saveOrderCouriersMap(courierMap);
 

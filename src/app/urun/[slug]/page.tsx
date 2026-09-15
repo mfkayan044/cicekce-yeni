@@ -211,6 +211,49 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
     return currentTotalMinutes < startTotalMinutes;
   };
 
+  // Countdown State for Next Delivery Slot
+  const [countdownText, setCountdownText] = useState<{ targetSlot: string; remainingStr: string } | null>(null);
+
+  useEffect(() => {
+    const updateCountdown = () => {
+      const now = new Date();
+      const currentTotalSeconds = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
+
+      // Find nearest today slot
+      for (const slotObj of liveDeliverySlots) {
+        const rangeStr = slotObj.range || slotObj.slot || "";
+        const match = rangeStr.match(/(\d{1,2}):(\d{2})\s*-\s*(\d{1,2}):(\d{2})/);
+        if (match) {
+          const startH = parseInt(match[1], 10);
+          const startM = parseInt(match[2], 10);
+          const startTotalSeconds = startH * 3600 + startM * 60;
+
+          if (startTotalSeconds > currentTotalSeconds) {
+            const diffSeconds = startTotalSeconds - currentTotalSeconds;
+            const h = Math.floor(diffSeconds / 3600);
+            const m = Math.floor((diffSeconds % 3600) / 60);
+            const s = diffSeconds % 60;
+
+            const remainingStr = h > 0
+              ? `${h} saat ${m} dakika ${s} saniye`
+              : `${m} dakika ${s} saniye`;
+
+            setCountdownText({
+              targetSlot: rangeStr.split("(")[0].trim(),
+              remainingStr,
+            });
+            return;
+          }
+        }
+      }
+      setCountdownText(null);
+    };
+
+    updateCountdown();
+    const timer = setInterval(updateCountdown, 1000);
+    return () => clearInterval(timer);
+  }, [liveDeliverySlots]);
+
   // Auto-select first available valid time slot on date change
   useEffect(() => {
     const validSlots = liveDeliverySlots.filter(isTimeAvailable);
@@ -557,6 +600,28 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
                   <div className="mt-2 p-2 bg-amber-50 border border-amber-200 rounded-xl text-[11px] text-amber-800 font-bold flex items-center gap-1.5">
                     <Zap className="w-4 h-4 text-amber-700 shrink-0" />
                     <span>Bugün için teslimat saatleri doldu. Lütfen teslimat tarihini Yarın olarak seçiniz.</span>
+                  </div>
+                )}
+
+                {/* FOMO / URGENCY COUNTDOWN BANNER (SUGGESTION 2) */}
+                {countdownText && selectedDate === "Bugün" && (
+                  <div className="mt-3 p-3 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-300/80 rounded-2xl flex items-center justify-between gap-3 shadow-2xs animate-pulse">
+                    <div className="flex items-center gap-2">
+                      <div className="w-7 h-7 rounded-xl bg-amber-500 text-white flex items-center justify-center text-sm shadow-xs shrink-0">
+                        ⏳
+                      </div>
+                      <div className="text-xs">
+                        <div className="font-extrabold text-amber-950">
+                          Bugün <span className="underline decoration-amber-500">{countdownText.targetSlot}</span> teslimatı için:
+                        </div>
+                        <div className="text-[11px] text-amber-800 font-medium">
+                          Son <strong className="font-black text-red-600 font-mono text-xs">{countdownText.remainingStr}</strong> içinde sipariş verin!
+                        </div>
+                      </div>
+                    </div>
+                    <span className="hidden sm:inline-block bg-white text-amber-900 border border-amber-300 px-2.5 py-1 rounded-xl text-[10px] font-black uppercase shadow-2xs shrink-0">
+                      Hızlı Teslimat
+                    </span>
                   </div>
                 )}
               </div>

@@ -95,11 +95,38 @@ export default function StoreHeader({ onOpenAssistant }: { onOpenAssistant?: () 
     }
   }, []);
 
+  const [regionalBannerText, setRegionalBannerText] = useState<string | null>(null);
+
   useEffect(() => {
     fetch("/api/header-bant")
       .then((res) => res.json())
       .then((data) => setTopbarData(data))
       .catch(() => {});
+
+    // Regional detection from URL query (?bolge= / ?utm_location=) or referrer or saved location
+    if (typeof window !== "undefined") {
+      try {
+        const urlParams = new URLSearchParams(window.location.search);
+        const bolgeParam = (urlParams.get("bolge") || urlParams.get("konum") || urlParams.get("district") || "").toLowerCase();
+        const savedAddr = (localStorage.getItem("pro_flower_delivery_address") || "").toLowerCase();
+        
+        const isGokturk = bolgeParam.includes("göktürk") || bolgeParam.includes("gokturk") || savedAddr.includes("göktürk") || savedAddr.includes("gokturk");
+        const isKemerburgaz = bolgeParam.includes("kemerburgaz") || savedAddr.includes("kemerburgaz");
+        const isEyupsultan = bolgeParam.includes("eyüp") || bolgeParam.includes("eyup") || savedAddr.includes("eyüpsultan") || savedAddr.includes("eyup");
+        const isSariyer = bolgeParam.includes("sarıyer") || bolgeParam.includes("sariyer") || savedAddr.includes("sarıyer");
+        const isBesiktas = bolgeParam.includes("beşiktaş") || bolgeParam.includes("besiktas") || savedAddr.includes("beşiktaş");
+
+        if (isGokturk || isKemerburgaz) {
+          setRegionalBannerText("📍 Göktürk & Kemerburgaz Bölgesine Özel Kuryemizle 45-60 Dakikada VIP Hızlı Teslimat!");
+        } else if (isEyupsultan) {
+          setRegionalBannerText("📍 Eyüpsultan Bölgesine Özel Aynı Gün VIP Çiçek Teslimatı!");
+        } else if (isSariyer) {
+          setRegionalBannerText("📍 Sarıyer & Maslak Bölgesine Özel Hızlı Kurye ile Aynı Gün Çiçek Teslimatı!");
+        } else if (isBesiktas) {
+          setRegionalBannerText("📍 Beşiktaş & Levent Çevresine VIP Araçla Aynı Gün Hızlı Teslimat!");
+        }
+      } catch (e) {}
+    }
   }, []);
 
   const isVisible = topbarData?.enabled !== false && !dismissed;
@@ -112,12 +139,20 @@ export default function StoreHeader({ onOpenAssistant }: { onOpenAssistant?: () 
           className="py-2 px-4 text-xs font-extrabold text-center relative z-50 flex items-center justify-center gap-3 transition shadow-xs"
         >
           <div className="flex items-center gap-2 truncate">
-            <Sparkles className="w-3.5 h-3.5 text-amber-300 shrink-0" />
-            <span>{topbarData?.text || "Aynı Gün Adrese Teslimat! 1.500 ₺ Üzeri Ücretsiz Kargo | WhatsApp ile Hızlı Sipariş"}</span>
-            {topbarData?.promoEnabled !== false && topbarData?.code && (
-              <span className="hidden sm:inline-block bg-white/20 px-2 py-0.5 rounded text-[10px] font-bold">
-                Kupon: {topbarData.code} ({topbarData.amount || 100} ₺ İndirim)
+            {regionalBannerText ? (
+              <span className="inline-flex items-center gap-1.5 font-black text-amber-300 animate-pulse">
+                <span>{regionalBannerText}</span>
               </span>
+            ) : (
+              <>
+                <Sparkles className="w-3.5 h-3.5 text-amber-300 shrink-0" />
+                <span>{topbarData?.text || "Aynı Gün Adrese Teslimat! 1.500 ₺ Üzeri Ücretsiz Kargo | WhatsApp ile Hızlı Sipariş"}</span>
+                {topbarData?.promoEnabled !== false && topbarData?.code && (
+                  <span className="hidden sm:inline-block bg-white/20 px-2 py-0.5 rounded text-[10px] font-bold">
+                    Kupon: {topbarData.code} ({topbarData.amount || 100} ₺ İndirim)
+                  </span>
+                )}
+              </>
             )}
           </div>
           <button

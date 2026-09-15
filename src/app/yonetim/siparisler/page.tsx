@@ -1362,7 +1362,7 @@ export default function AdminOrdersPage() {
                     rel="noreferrer"
                     className="btn btn-light btn-sm text-xs font-bold px-3 py-2 rounded-xl flex items-center gap-1 border shadow-2xs"
                   >
-                    <span>🖨️ 80mm Fiş Yazdır</span>
+                    <span>🖨️ Sipariş Formu Yazdır (A4 / DL)</span>
                   </a>
                   <button
                     onClick={() => setSelectedOrder(null)}

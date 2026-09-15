@@ -61,116 +61,120 @@ export default function OrderThermalReceiptPage({ params }: { params: Promise<{ 
   const barcodeUrl = `https://bwipjs-api.metafloor.com/?bcid=code128&text=${encodeURIComponent(String(o.id).replace(/\D/g, "") || "460918939")}&scale=2&height=10&includetext`;
 
   // Render a single strip (Exact physical DL size: 210mm wide x 99mm high)
-  const renderStrip = (copyLabel?: string) => (
-    <div className="otokopi-strip bg-white text-black relative flex overflow-hidden">
-      {/* SOL KISIM: KART NOTU (Tam 70mm Genişlik x 99mm Yükseklik) */}
-      <div className="card-note-part w-[70mm] h-[99mm] p-3 flex flex-col justify-between relative box-border overflow-hidden">
-        {/* Card Note Body */}
-        <div className="space-y-1 overflow-hidden">
-          {copyLabel && (
-            <div className="text-[7.5px] font-bold uppercase text-slate-400 print:hidden">{copyLabel}</div>
-          )}
-          <div className="text-[9.5px] leading-tight font-serif italic text-slate-900 break-words line-clamp-6 pt-0.5">
-            "{o.cardNote || "Kart notu belirtilmedi."}"
-          </div>
-        </div>
+  const renderStrip = () => {
+    const rawOrderNo = String(o.id).replace(/\D/g, "") || String(o.id);
+    const barcodeCode = rawOrderNo.length >= 6 ? rawOrderNo : `${rawOrderNo}0143`;
+    const barcodeImgUrl = `https://bwipjs-api.metafloor.com/?bcid=code128&text=${encodeURIComponent(barcodeCode)}&scale=2&height=9&includetext=false`;
+    const qrTargetUrl = o.mediaNoteUrl || `https://www.cicekce.com/siparis-takip?id=${o.id}`;
 
-        {/* Media Note QR Code if available */}
-        {o.mediaNoteUrl ? (
-          <div className="flex items-center gap-1.5 py-1">
-            <img
-              src={`https://api.qrserver.com/v1/create-qr-code/?size=90x90&data=${encodeURIComponent(o.mediaNoteUrl)}`}
-              alt="Sesli/Videolu Mesaj QR Kodu"
-              className="w-7 h-7 object-contain rounded shrink-0 border border-slate-200"
-            />
-            <div className="text-[7px] font-sans leading-tight text-slate-700">
-              <span className="font-bold text-black block">🎙️ Ses/Video</span>
-              <span className="text-[6.5px] text-slate-500">Okutunuz</span>
+    return (
+      <div className="otokopi-strip bg-white text-black relative flex overflow-hidden">
+        {/* SOL KISIM: KART NOTU ALANI (Tam 70mm Genişlik x 99mm Yükseklik) */}
+        <div className="card-note-part w-[70mm] h-[99mm] p-3 pt-4 flex flex-col justify-between relative box-border overflow-hidden">
+          {/* Sol Üst: Tarih ve Saat */}
+          <div className="text-[8px] text-slate-700 font-sans">
+            {o.date || new Date().toLocaleDateString("tr-TR")} {new Date().toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" })}
+          </div>
+
+          {/* Kart Notu Metni - Ortalanmış, zarif italik */}
+          <div className="my-auto px-1">
+            <div className="text-[10px] leading-relaxed font-serif italic text-slate-900 break-words line-clamp-5">
+              "{o.cardNote || "Kart notu belirtilmedi."}"
+            </div>
+            {/* Gönderen Adı - Notun sağ altında */}
+            <div className="text-right pt-2">
+              <span className="text-[10.5px] font-bold font-serif italic text-black">
+                {o.isAnonymous ? "İsimsiz Gönderici" : (o.customerName || "Gönderen")}
+              </span>
             </div>
           </div>
-        ) : null}
 
-        {/* Sender Name - Sol kutunun en altında kalır, yatay çizgiyi asla aşmaz */}
-        <div className="pt-0.5 text-right">
-          <div className="text-[10px] font-black uppercase font-serif tracking-wide text-black truncate">
-            {o.isAnonymous ? "İsimsiz Gönderici" : (o.customerName || "Gönderen")}
+          {/* Sol Alt: QR Kod (Sesli/Videolu Not veya Sipariş Takip QR) */}
+          <div className="pt-1 flex items-end justify-start">
+            <img
+              src={`https://api.qrserver.com/v1/create-qr-code/?size=110x110&data=${encodeURIComponent(qrTargetUrl)}`}
+              alt="QR Kod"
+              className="w-12 h-12 object-contain"
+            />
           </div>
         </div>
-      </div>
 
-      {/* SAĞ KISIM: SİPARİŞ DETAY VE TESLİMAT BİLGİSİ (Tam 140mm Genişlik x 99mm Yükseklik) */}
-      <div className="order-detail-part w-[140mm] h-[99mm] p-3 pl-4 flex flex-col justify-between relative box-border overflow-hidden">
-        {/* Top: Barcode + Order Number + Product Thumb */}
-        <div className="flex items-start justify-between gap-2">
-          <div className="space-y-0.5">
-            <div className="h-7">
-              {/* Barcode representation */}
+        {/* SAĞ KISIM: SİPARİŞ & TESLİMAT ALANI (Tam 140mm Genişlik x 99mm Yükseklik) */}
+        <div className="order-detail-part w-[140mm] h-[99mm] p-3 pt-4 pl-4 flex flex-col justify-between relative box-border overflow-hidden">
+          {/* Üst: Barkod + Sipariş Kodu + Ürün Küçük Görseli */}
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex flex-col items-center">
+              {/* Barkod Görseli */}
               <img
-                src={barcodeUrl}
-                alt={`Barkod ${o.id}`}
-                className="h-6 max-w-[125px] object-contain"
+                src={barcodeImgUrl}
+                alt={`Barkod ${barcodeCode}`}
+                className="h-8 max-w-[140px] object-contain"
                 onError={(e: any) => {
                   e.target.style.display = "none";
                 }}
               />
-              <div className="text-[8px] font-mono font-bold tracking-widest leading-none mt-0.5">
-                #{String(o.id).replace(/\D/g, "") || o.id}
+              {/* Barkod Altı Sipariş Numarası */}
+              <div className="text-[10.5px] font-bold font-mono tracking-wider mt-0.5 text-black">
+                {barcodeCode}
+              </div>
+              {/* Tarih, Ürün Kodu ve Adet */}
+              <div className="text-[8px] text-slate-600 font-sans mt-0.5">
+                {o.deliveryDate || "15.09.2026"} / {firstItem.code || "at5115-1"} * {firstItem.quantity || 1} Adet
               </div>
             </div>
-            <div className="text-[8px] text-slate-500 font-semibold pt-0.5">
-              {o.deliveryDate || "15.09.2026"} / {firstItem.code || "vbt1812-1"} * {firstItem.quantity || 1} Adet
+
+            {/* Ürün Görseli */}
+            {o.productImage || firstItem.image ? (
+              <img
+                src={o.productImage || firstItem.image}
+                alt="Ürün"
+                className="w-9 h-9 object-cover rounded border border-slate-200"
+              />
+            ) : (
+              <div className="w-9 h-9 border border-slate-200 rounded flex items-center justify-center text-xs">🌸</div>
+            )}
+          </div>
+
+          {/* Orta: Sipariş Numarası, Ürün Başlığı, Teslimat Zamanı, Alıcı Bilgileri */}
+          <div className="space-y-0.5 my-auto text-[8.5px] leading-tight text-slate-900">
+            <div>
+              <span className="font-extrabold text-black">
+                {barcodeCode} - {firstItem.code || "at5115-1"} - {firstItem.title || "Çiçek Buketi"}
+              </span>
+            </div>
+            <div className="text-[8px] text-slate-500">Standart Boy</div>
+
+            <div className="pt-0.5">
+              <span className="font-medium text-slate-700">Teslimat Zamanı: </span>
+              <span className="font-bold text-black">{o.deliveryTime || o.deliverySlot || "18:00 - 22:00 Arası Teslimat"}</span>
+            </div>
+
+            <div>
+              <span className="font-medium text-slate-700">Alıcı Adı Soyadı: </span>
+              <span className="font-extrabold text-black text-[9.5px]">{o.recipientName}</span>
+              {o.recipientPhone && <span className="text-slate-600 ml-1 font-semibold">({o.recipientPhone})</span>}
+            </div>
+
+            <div className="pt-0.5">
+              <span className="font-medium text-slate-700">Alıcı Adresi: </span>
+              <span className="font-bold text-black uppercase text-[8.5px] leading-tight">
+                {o.address}
+              </span>
             </div>
           </div>
 
-          {/* Small Product Thumbnail */}
-          {o.productImage || firstItem.image ? (
-            <img
-              src={o.productImage || firstItem.image}
-              alt="Ürün"
-              className="w-8 h-8 object-cover rounded border border-slate-200"
-            />
-          ) : (
-            <div className="w-8 h-8 border border-slate-200 rounded flex items-center justify-center text-xs">🌸</div>
-          )}
-        </div>
-
-        {/* Center: Product Name & Recipient Address */}
-        <div className="space-y-0.5 my-auto text-[9px] leading-tight">
-          <div className="font-extrabold text-slate-900">
-            {firstItem.code || "vbt1812-1"} - {firstItem.title || "Çiçek Buketi"}
+          {/* Alt Bilgi */}
+          <div className="text-[7.5px] text-slate-400 text-right pt-0.5 border-t border-slate-100">
+            {o.paymentMethod || "Kredi Kartı"} · Çiçekçe Formu
           </div>
-          <div className="text-[8px] text-slate-500">Standart Boy</div>
-
-          <div className="text-[9px] font-bold text-slate-800 pt-0.5">
-            Teslimat Zamanı: <span className="font-black text-black">{o.deliveryTime || o.deliverySlot || "13:00 - 18:00 Arası Teslimat"}</span>
-          </div>
-
-          <div className="pt-0.5">
-            <span className="font-semibold text-slate-700">Alıcı Ad Soyadı: </span>
-            <span className="font-black text-black text-[10px]">{o.recipientName}</span>
-            {o.recipientPhone && <span className="text-[9px] text-slate-600 font-bold ml-1">({o.recipientPhone})</span>}
-          </div>
-
-          <div className="pt-0.5">
-            <span className="font-semibold text-slate-700">Alıcı Adresi: </span>
-            <span className="font-bold text-slate-900 text-[8.5px] uppercase leading-tight line-clamp-2">
-              {o.address}
-            </span>
-          </div>
-        </div>
-
-        {/* Bottom: Note / Print timestamp - 99mm yatay çizgisinin tam üstünde sonlanır */}
-        <div className="flex items-center justify-between text-[7px] text-slate-400 pt-0.5 border-t border-slate-100">
-          <span>{o.paymentMethod || "Kredi Kartı"} - {o.totalAmount || o.totalPrice} ₺</span>
-          <span className="italic">Çiçekçe Sipariş Formu · {new Date().toLocaleDateString("tr-TR")}</span>
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <div className="bg-slate-100 min-h-screen py-6 print:py-0 print:bg-white font-sans text-black">
-      {/* Screen Toolbar (Hidden on Print) */}
+      {/* Ekran Araç Çubuğu (Yazdırmada Gizlenir) */}
       <div className="print:hidden max-w-4xl mx-auto mb-6 px-4 flex flex-wrap items-center justify-between gap-3 bg-white p-4 rounded-2xl border shadow-xs">
         <div className="flex items-center gap-3">
           <Link
@@ -184,52 +188,20 @@ export default function OrderThermalReceiptPage({ params }: { params: Promise<{ 
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          {/* Paper Mode Toggle */}
-          <div className="flex items-center bg-slate-100 p-1 rounded-xl border text-xs font-bold">
-            <button
-              type="button"
-              onClick={() => setPaperMode("strip")}
-              className={`px-3 py-1.5 rounded-lg transition cursor-pointer ${
-                paperMode === "strip" ? "bg-white text-black shadow-xs font-black" : "text-slate-500"
-              }`}
-            >
-              Standart A4 Fiş (1. Bölüme Hizalı)
-            </button>
-            <button
-              type="button"
-              onClick={() => setPaperMode("full_a4")}
-              className={`px-3 py-1.5 rounded-lg transition cursor-pointer ${
-                paperMode === "full_a4" ? "bg-white text-black shadow-xs font-black" : "text-slate-500"
-              }`}
-            >
-              Tam A4 (3 Bölüm / 3 Nüsha)
-            </button>
-          </div>
-
-          <button
-            onClick={() => window.print()}
-            style={{ backgroundColor: "#2b2623", color: "#ffffff" }}
-            className="text-xs font-black px-5 py-2.5 rounded-xl shadow-md flex items-center gap-1.5 hover:opacity-95 transition cursor-pointer"
-          >
-            <span>🖨️ Formu Yazdır</span>
-          </button>
-        </div>
+        <button
+          onClick={() => window.print()}
+          style={{ backgroundColor: "#2b2623", color: "#ffffff" }}
+          className="text-xs font-black px-6 py-2.5 rounded-xl shadow-md flex items-center gap-1.5 hover:opacity-95 transition cursor-pointer"
+        >
+          <span>🖨️ Formu Yazdır (A4)</span>
+        </button>
       </div>
 
-      {/* PRINT CONTAINER */}
+      {/* YAZDIRMA ALANI - Tam A4 Sayfası */}
       <div className="print-canvas mx-auto">
-        {paperMode === "strip" ? (
-          <div className="a4-single-strip-sheet mx-auto bg-white shadow-md print:shadow-none">
-            {renderStrip()}
-          </div>
-        ) : (
-          <div className="a4-page-wrapper mx-auto bg-white shadow-lg print:shadow-none">
-            {renderStrip("1. Nüsha - Müşteri & Çiçek Notu")}
-            {renderStrip("2. Nüsha - Atölye / Hazırlık")}
-            {renderStrip("3. Nüsha - Kurye Teslimat")}
-          </div>
-        )}
+        <div className="a4-single-strip-sheet mx-auto bg-white shadow-md print:shadow-none">
+          {renderStrip()}
+        </div>
       </div>
 
       {/* Print Specific CSS to guarantee EXACT 1 Page output on A4 paper */}

@@ -89,12 +89,14 @@ export default async function RootLayout({
           </>
         )}
       </head>
-      <body className="bg-[#FAF6F0] text-slate-800 min-h-screen font-sans pb-16 lg:pb-0" suppressHydrationWarning>
+      <body className="bg-[#FAF6F0] text-slate-800 min-h-screen font-sans pb-16 lg:pb-0 print:p-0 print:m-0 print:bg-white" suppressHydrationWarning>
         <PwaRegister />
         <AnalyticsTracker />
         {children}
-        <AiFloristWidget />
-        <StoreMobileBottomNav />
+        <div className="print:hidden">
+          <AiFloristWidget />
+          <StoreMobileBottomNav />
+        </div>
       </body>
     </html>
   );

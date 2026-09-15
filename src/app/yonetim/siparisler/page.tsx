@@ -553,6 +553,67 @@ export default function AdminOrdersPage() {
     }
   };
 
+  const handleDeliveredPhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>, orderId: string) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const targetOrder = orders.find((o) => o.id === orderId) || selectedOrder;
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+      const data = await res.json();
+      if (res.ok && data.url) {
+        const deliveredTimeStr = new Date().toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" });
+        const deliveredDateStr = new Date().toLocaleDateString("tr-TR");
+        const deliveredAtFull = targetOrder?.deliveredAt || `${deliveredDateStr} ${deliveredTimeStr}`;
+
+        const updateRes = await fetch("/api/orders", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            id: orderId,
+            status: "Teslim Edildi",
+            deliveredPhoto: data.url,
+            deliveredAt: deliveredAtFull,
+            deliveryNote: targetOrder?.deliveryNote || "Alıcının kendisine teslim edildi.",
+            customerEmail: targetOrder?.customerEmail || targetOrder?.customer_email,
+          }),
+        });
+
+        if (updateRes.ok) {
+          setOrders(
+            orders.map((o) =>
+              o.id === orderId
+                ? {
+                    ...o,
+                    status: "Teslim Edildi",
+                    deliveredPhoto: data.url,
+                    deliveredAt: deliveredAtFull,
+                  }
+                : o
+            )
+          );
+          if (selectedOrder && selectedOrder.id === orderId) {
+            setSelectedOrder({
+              ...selectedOrder,
+              status: "Teslim Edildi",
+              deliveredPhoto: data.url,
+              deliveredAt: deliveredAtFull,
+            });
+          }
+          alert("Kapıda teslimat fotoğrafı başarıyla yüklendi ve sipariş takip sistemine yansıtıldı!");
+        }
+      }
+    } catch (err) {
+      alert("Teslimat fotoğrafı yükleme hatası.");
+    }
+  };
+
   if (loading) {
     return (
       <AdminLayout>
@@ -1455,18 +1516,22 @@ export default function AdminOrdersPage() {
                     </div>
                   </div>
 
-                  {/* SEPARATE COURIER DOOR DELIVERY PHOTO DISPLAY */}
-                  {selectedOrder.deliveredPhoto && selectedOrder.deliveredPhoto !== selectedOrder.preparedPhoto && (
-                    <div className="pt-3 border-t border-slate-200 mt-3">
-                      <div className="flex items-center gap-2 mb-2">
+                  {/* SEPARATE COURIER DOOR DELIVERY PHOTO DISPLAY & UPLOAD */}
+                  <div className="pt-3 border-t border-slate-200 mt-3">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
                         <span className="text-base">🚚</span>
                         <h4 className="text-xs font-black text-slate-900 m-0 uppercase">Kurye Kapıda Teslimat Görseli</h4>
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
-                          Teslimat Anında Çekildi ({selectedOrder.deliveredAt || "Teslim Edildi"})
-                        </span>
+                        {selectedOrder.deliveredPhoto && (
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                            Teslim Edildi ({selectedOrder.deliveredAt || "Tamamlandı"})
+                          </span>
+                        )}
                       </div>
-                      <div className="flex items-center gap-3">
-                        <div className="relative w-24 h-24 rounded-2xl overflow-hidden border bg-slate-100 shrink-0 shadow-xs">
+                    </div>
+                    <div className="flex flex-col sm:flex-row items-center gap-4">
+                      {selectedOrder.deliveredPhoto ? (
+                        <div className="relative w-28 h-28 rounded-2xl overflow-hidden border bg-slate-100 shrink-0 shadow-xs">
                           <img
                             src={selectedOrder.deliveredPhoto}
                             alt="Kurye Teslimat Fotoğrafı"
@@ -1481,13 +1546,31 @@ export default function AdminOrdersPage() {
                             Büyüt 🔍
                           </a>
                         </div>
-                        <div className="text-xs text-slate-600 space-y-1">
+                      ) : (
+                        <div className="w-28 h-28 rounded-2xl border-2 border-dashed border-slate-300 flex flex-col items-center justify-center text-slate-400 shrink-0 p-2 text-center text-xs">
+                          <span className="text-2xl mb-1">📸</span>
+                          <span>Teslimat Fotoğrafı Yok</span>
+                        </div>
+                      )}
+                      <div className="space-y-2 flex-1 w-full text-xs">
+                        <div className="text-slate-600 space-y-1">
                           <div>Teslim Edilme Zamanı: <strong className="text-slate-900">{selectedOrder.deliveredAt || "—"}</strong></div>
                           <div>Teslimat Notu: <strong className="text-slate-900">{selectedOrder.deliveryNote || "Alıcının kendisine teslim edildi."}</strong></div>
                         </div>
+                        <div className="pt-1">
+                          <label className="btn btn-dark btn-sm text-xs font-bold px-3 py-2 rounded-xl inline-flex items-center gap-1.5 cursor-pointer shadow-xs">
+                            <span>📷 {selectedOrder.deliveredPhoto ? "Teslimat Fotoğrafını Değiştir" : "Kapıda Teslimat Fotoğrafı Yükle"}</span>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={(e) => handleDeliveredPhotoUpload(e, selectedOrder.id)}
+                            />
+                          </label>
+                        </div>
                       </div>
                     </div>
-                  )}
+                  </div>
                 </div>
 
                 {/* 3. FLOWER CARD NOTE (YAZILACAK KART NOTU) */}

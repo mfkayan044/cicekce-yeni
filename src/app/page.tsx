@@ -495,22 +495,37 @@ export default function CustomerHomePage() {
           </div>
 
           <div className={gridColsClass}>
-            {sortedVitrinProducts.map((p: Product) => (
-              <ProductCard
-                key={p.id}
-                id={p.id}
-                slug={p.slug}
-                title={p.title}
-                price={p.price}
-                oldPrice={p.oldPrice}
-                discount={p.discount}
-                image={p.image}
-                code={p.code}
-                isInCart={cartItemIds.includes(p.id)}
-                onQuickOrder={() => { window.location.href = "/odeme"; }}
-                onRemoveFromCart={(id) => handleRemoveFromCart(id)}
-              />
-            ))}
+            {sortedVitrinProducts.length > 0 ? (
+              sortedVitrinProducts.map((p: Product) => (
+                <ProductCard
+                  key={p.id}
+                  id={p.id}
+                  slug={p.slug}
+                  title={p.title}
+                  price={p.price}
+                  oldPrice={p.oldPrice}
+                  discount={p.discount}
+                  image={p.image}
+                  code={p.code}
+                  isInCart={cartItemIds.includes(p.id)}
+                  onQuickOrder={() => { window.location.href = "/odeme"; }}
+                  onRemoveFromCart={(id) => handleRemoveFromCart(id)}
+                />
+              ))
+            ) : (
+              /* Loading Skeleton Grid to eliminate blank wait time */
+              Array.from({ length: 8 }).map((_, idx) => (
+                <div key={idx} className="bg-white rounded-3xl p-3 border border-slate-100 shadow-xs animate-pulse space-y-3">
+                  <div className="w-full aspect-[4/5] bg-slate-200 rounded-2xl"></div>
+                  <div className="h-4 bg-slate-200 rounded-md w-3/4"></div>
+                  <div className="h-3 bg-slate-100 rounded-md w-1/2"></div>
+                  <div className="flex justify-between items-center pt-2">
+                    <div className="h-5 bg-slate-200 rounded-md w-1/3"></div>
+                    <div className="h-8 bg-slate-200 rounded-xl w-1/4"></div>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </section>
 

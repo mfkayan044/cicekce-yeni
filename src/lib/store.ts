@@ -60,7 +60,11 @@ export const extraGiftsList: ExtraGift[] = [
   { id: "e3", name: "Kişiye Özel Doğum Günü Balonu", price: 150, image: "🎈" },
 ];
 
-export const initialCategories: CategoryItem[] = [];
+import { initialDbData } from "./initial-db";
+
+export const initialCategories: CategoryItem[] = Array.isArray(initialDbData?.categories)
+  ? initialDbData.categories
+  : [];
 export const initialProducts: Product[] = [];
 
 let lastFetchTimestamp = 0;
@@ -99,7 +103,7 @@ export const useZustandStore = create<StoreState>()(
   persist(
     (set, get) => ({
       products: [],
-      categories: [],
+      categories: initialCategories,
       cart: [],
       favorites: [],
       coupon: null,
@@ -375,6 +379,8 @@ export const useZustandStore = create<StoreState>()(
       name: "cicekce_store",
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
+        products: state.products,
+        categories: state.categories,
         cart: state.cart,
         favorites: state.favorites,
         coupon: state.coupon,

@@ -99,6 +99,37 @@ interface StoreState {
   clearFavorites: () => void;
 }
 
+const safeLocalStorage = {
+  getItem: (key: string): string | null => {
+    try {
+      if (typeof window === "undefined") return null;
+      return window.localStorage.getItem(key);
+    } catch {
+      return null;
+    }
+  },
+  setItem: (key: string, value: string): void => {
+    try {
+      if (typeof window === "undefined") return;
+      window.localStorage.setItem(key, value);
+    } catch (e: any) {
+      // Tarayıcı kotası aşıldığında eski devasa veriyi temizleyip sadece hafif yeni veriyi kaydet
+      try {
+        window.localStorage.removeItem(key);
+        window.localStorage.setItem(key, value);
+      } catch {
+        // Tarayıcı gizli modda veya storage kilitliyse sessizce geç
+      }
+    }
+  },
+  removeItem: (key: string): void => {
+    try {
+      if (typeof window === "undefined") return;
+      window.localStorage.removeItem(key);
+    } catch {}
+  },
+};
+
 export const useZustandStore = create<StoreState>()(
   persist(
     (set, get) => ({
@@ -377,10 +408,8 @@ export const useZustandStore = create<StoreState>()(
     }),
     {
       name: "cicekce_store",
-      storage: createJSONStorage(() => localStorage),
+      storage: createJSONStorage(() => safeLocalStorage),
       partialize: (state) => ({
-        products: state.products,
-        categories: state.categories,
         cart: state.cart,
         favorites: state.favorites,
         coupon: state.coupon,

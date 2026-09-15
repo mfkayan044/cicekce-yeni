@@ -9,7 +9,6 @@ export default function OrderThermalReceiptPage({ params }: { params: Promise<{ 
 
   const [order, setOrder] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [paperMode, setPaperMode] = useState<"full_a4" | "strip1" | "strip2" | "strip3">("full_a4");
 
   useEffect(() => {
     async function loadOrder() {
@@ -47,10 +46,10 @@ export default function OrderThermalReceiptPage({ params }: { params: Promise<{ 
     address: "GÖKTÜRK MAH. KÖPRÜBAŞI CAD. OZAK SİTESİ A 1 BLOK DAİRE 19 GÖKTÜRK EYÜPSULTAN Göktürk Merkez Mahallesi Eyüpsultan İSTANBUL AVRUPA",
     deliveryDate: "15.09.2026",
     deliveryTime: "15:00 - 17:00 Arası Teslimat",
-    cardNote: "Bu çiçekler sana şifa ve enerji getirsin. Kendine çok iyi bak çok geçmiş olsun öpüyorum seni.",
+    cardNote: "İlk öğretmenlik deneyimin ve hayatındaki bu güzel başlangıç hayırlı olsun. Eminiz ki öğrencilerin senden çok güzel şeyler öğrenecek. Bu yeni yolculuğunda her zaman yanında olduğumuzu bil. Başarılarınla, mutluluğunla ve güzel kalbinle hep gurur duyacağımızdan eminiz. Seninle gurur duyuyoruz. Seni çok seviyoruz. ❤️ AİLEN…",
     totalAmount: "2.510 ₺",
     paymentMethod: "Kredi Kartı",
-    items: [{ title: "Gazete Desenli Buket Süslemeli Saksıda Spatifilyum", code: "vbt1812-1", quantity: 1, price: "2.510 ₺" }],
+    items: [{ title: "Beyaz Papatyalar Buketi", code: "at5115-1", quantity: 1, price: "2.510 ₺" }],
   };
 
   const cleanItems = o.items && o.items.length > 0
@@ -61,14 +60,24 @@ export default function OrderThermalReceiptPage({ params }: { params: Promise<{ 
   const itemsSummary = cleanItems.map((it: any) => `${it.code || "ürün"} * ${it.quantity || 1} Adet`).join(" / ");
 
   // Render a single strip (Exact physical size: 210mm wide x 90mm high | Left 90mm + Right 120mm)
-  const renderStrip = (keyIndex: number = 1) => {
-    const rawOrderNo = String(o.id).replace(/\D/g, "") || String(o.id);
-    const barcodeCode = rawOrderNo.length >= 6 ? rawOrderNo : `${rawOrderNo}0143`;
-    const barcodeImgUrl = `https://bwipjs-api.metafloor.com/?bcid=code128&text=${encodeURIComponent(barcodeCode)}&scale=2&height=8&includetext=false`;
+  const renderStrip = () => {
+    // Gerçek sipariş numarası (SIP-80024 vb.)
+    const actualOrderNo = String(o.id || orderId);
+    const barcodeNumber = actualOrderNo.replace(/^SIP-/i, "") || actualOrderNo;
+    const barcodeImgUrl = `https://bwipjs-api.metafloor.com/?bcid=code128&text=${encodeURIComponent(barcodeNumber)}&scale=2&height=8&includetext=false`;
     const qrTargetUrl = o.mediaNoteUrl || `https://www.cicekce.com/siparis-takip?id=${o.id}`;
 
+    // Kart notu uzunluğuna göre dinamik yazı boyutu (Metnin kesilmesini önler)
+    const noteText = o.cardNote || "Kart notu belirtilmedi.";
+    const noteLen = noteText.length;
+    const noteFontClass = noteLen > 220
+      ? "text-[8px] leading-tight"
+      : noteLen > 140
+        ? "text-[9px] leading-snug"
+        : "text-[10px] leading-relaxed";
+
     return (
-      <div key={keyIndex} className="otokopi-strip bg-white text-black relative flex overflow-hidden border-b border-dashed border-slate-300 print:border-none">
+      <div className="otokopi-strip bg-white text-black relative flex overflow-hidden border-b border-dashed border-slate-300 print:border-none">
         {/* SOL KISIM: KART NOTU ALANI (Tam 90mm Genişlik x 90mm Yükseklik) */}
         <div className="card-note-part w-[90mm] min-w-[90mm] max-w-[90mm] h-[90mm] min-h-[90mm] max-h-[90mm] p-3 pt-2.5 pb-2 flex flex-col justify-between relative box-border overflow-hidden">
           {/* Sol Üst: Tarih ve Saat */}
@@ -76,10 +85,10 @@ export default function OrderThermalReceiptPage({ params }: { params: Promise<{ 
             {o.date || new Date().toLocaleDateString("tr-TR")} {new Date().toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" })}
           </div>
 
-          {/* Kart Notu Metni - Ortalanmış, zarif italik */}
+          {/* Kart Notu Metni - Ortalanmış, zarif italik, KESİNTİSİZ TAM METİN */}
           <div className="my-auto px-1">
-            <div className="text-[10px] leading-relaxed font-serif italic text-slate-900 break-words line-clamp-4">
-              "{o.cardNote || "Kart notu belirtilmedi."}"
+            <div className={`font-serif italic text-slate-900 break-words ${noteFontClass}`}>
+              "{noteText}"
             </div>
             {/* Gönderen Adı - Notun sağ altında */}
             <div className="text-right pt-1.5">
@@ -101,21 +110,21 @@ export default function OrderThermalReceiptPage({ params }: { params: Promise<{ 
 
         {/* SAĞ KISIM: SİPARİŞ & TESLİMAT ALANI (Tam 120mm Genişlik x 90mm Yükseklik) */}
         <div className="order-detail-part w-[120mm] min-w-[120mm] max-w-[120mm] h-[90mm] min-h-[90mm] max-h-[90mm] p-2.5 pt-2.5 pb-1.5 pl-3 flex flex-col justify-between relative box-border overflow-hidden">
-          {/* Üst: Barkod + Sipariş Kodu + Ürün Küçük Görselleri */}
+          {/* Üst: Barkod + Sipariş Numarası + Ürün Küçük Görselleri */}
           <div className="flex items-start justify-between gap-2">
             <div className="flex flex-col items-center">
               {/* Barkod Görseli */}
               <img
                 src={barcodeImgUrl}
-                alt={`Barkod ${barcodeCode}`}
+                alt={`Barkod ${actualOrderNo}`}
                 className="h-7 max-w-[130px] object-contain"
                 onError={(e: any) => {
                   e.target.style.display = "none";
                 }}
               />
-              {/* Barkod Altı Sipariş Numarası */}
+              {/* Barkod Altı Gerçek Sipariş Numarası */}
               <div className="text-[10.5px] font-bold font-mono tracking-wider mt-0.5 text-black">
-                {barcodeCode}
+                {actualOrderNo}
               </div>
               {/* Tarih, Ürün Kodu ve Adet */}
               <div className="text-[8px] text-slate-600 font-sans mt-0.5 text-center truncate max-w-[120px]">
@@ -123,7 +132,7 @@ export default function OrderThermalReceiptPage({ params }: { params: Promise<{ 
               </div>
             </div>
 
-            {/* Ürün Görselleri (Varsa birden fazla ürün) */}
+            {/* Ürün Görselleri */}
             <div className="flex items-center gap-1 shrink-0">
               {cleanItems.slice(0, 2).map((item: any, idx: number) => (
                 item.image || o.productImage ? (
@@ -144,7 +153,7 @@ export default function OrderThermalReceiptPage({ params }: { params: Promise<{ 
           <div className="space-y-0.5 my-auto text-[8.5px] leading-tight text-slate-900">
             <div className="truncate">
               <span className="font-extrabold text-black">
-                {barcodeCode} - {firstItem.code || "at5115-1"} - {firstItem.title || "Çiçek Buketi"}
+                {actualOrderNo} - {firstItem.code || "at5115-1"} - {firstItem.title || "Çiçek Buketi"}
               </span>
             </div>
             <div className="text-[8px] text-slate-500">Standart Boy</div>
@@ -193,87 +202,19 @@ export default function OrderThermalReceiptPage({ params }: { params: Promise<{ 
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          {/* Parça Seçimi */}
-          <div className="flex items-center bg-slate-100 p-1 rounded-xl border text-xs font-bold">
-            <button
-              type="button"
-              onClick={() => setPaperMode("full_a4")}
-              className={`px-3 py-1.5 rounded-lg transition cursor-pointer ${
-                paperMode === "full_a4" ? "bg-white text-black shadow-xs font-black" : "text-slate-500"
-              }`}
-            >
-              Tam A4 (3 Parça)
-            </button>
-            <button
-              type="button"
-              onClick={() => setPaperMode("strip1")}
-              className={`px-2.5 py-1.5 rounded-lg transition cursor-pointer ${
-                paperMode === "strip1" ? "bg-white text-black shadow-xs font-black" : "text-slate-500"
-              }`}
-            >
-              1. Parça (Üst)
-            </button>
-            <button
-              type="button"
-              onClick={() => setPaperMode("strip2")}
-              className={`px-2.5 py-1.5 rounded-lg transition cursor-pointer ${
-                paperMode === "strip2" ? "bg-white text-black shadow-xs font-black" : "text-slate-500"
-              }`}
-            >
-              2. Parça (Orta)
-            </button>
-            <button
-              type="button"
-              onClick={() => setPaperMode("strip3")}
-              className={`px-2.5 py-1.5 rounded-lg transition cursor-pointer ${
-                paperMode === "strip3" ? "bg-white text-black shadow-xs font-black" : "text-slate-500"
-              }`}
-            >
-              3. Parça (Alt)
-            </button>
-          </div>
-
-          <button
-            onClick={() => window.print()}
-            style={{ backgroundColor: "#2b2623", color: "#ffffff" }}
-            className="text-xs font-black px-6 py-2.5 rounded-xl shadow-md flex items-center gap-1.5 hover:opacity-95 transition cursor-pointer"
-          >
-            <span>🖨️ Formu Yazdır</span>
-          </button>
-        </div>
+        <button
+          onClick={() => window.print()}
+          style={{ backgroundColor: "#2b2623", color: "#ffffff" }}
+          className="text-xs font-black px-6 py-2.5 rounded-xl shadow-md flex items-center gap-1.5 hover:opacity-95 transition cursor-pointer"
+        >
+          <span>🖨️ Formu Yazdır</span>
+        </button>
       </div>
 
-      {/* YAZDIRMA ALANI - Tam A4 Sayfası (210mm x 297mm) */}
+      {/* YAZDIRMA ALANI - Tam A4 Sayfası İçinde Tek Parça (90mm x 210mm) */}
       <div className="print-canvas mx-auto">
         <div className="a4-page-wrapper mx-auto bg-white shadow-lg print:shadow-none">
-          {paperMode === "full_a4" && (
-            <>
-              {renderStrip(1)}
-              {renderStrip(2)}
-              {renderStrip(3)}
-            </>
-          )}
-
-          {paperMode === "strip1" && (
-            <>
-              {renderStrip(1)}
-            </>
-          )}
-
-          {paperMode === "strip2" && (
-            <>
-              <div className="w-[210mm] h-[90mm] min-h-[90mm] max-h-[90mm] invisible" />
-              {renderStrip(2)}
-            </>
-          )}
-
-          {paperMode === "strip3" && (
-            <>
-              <div className="w-[210mm] h-[180mm] min-h-[180mm] max-h-[180mm] invisible" />
-              {renderStrip(3)}
-            </>
-          )}
+          {renderStrip()}
         </div>
       </div>
 

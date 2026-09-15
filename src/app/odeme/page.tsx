@@ -1251,12 +1251,18 @@ export default function CheckoutPage() {
                 </div>
 
                 <div>
-                  <label className="text-xs font-bold text-slate-700 block mb-1.5">Kart Mesajınız (Yazılan Not)</label>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="text-xs font-bold text-slate-700 block">Kart Mesajınız (Yazılan Not)</label>
+                    <span className={`text-[11px] font-bold ${cardNote.length >= 260 ? "text-amber-600" : "text-slate-400"}`}>
+                      {cardNote.length} / 280 Karakter
+                    </span>
+                  </div>
                   <textarea
                     id="cardNoteArea"
                     rows={4}
+                    maxLength={280}
                     className="w-full p-3.5 border border-slate-200 rounded-2xl text-sm font-semibold outline-none focus:border-[#2b2623] focus:ring-2 focus:ring-[#2b2623]/20 transition"
-                    placeholder="Çiçeğin yanında iletilmesini istediğiniz duygu dolu mesajınızı buraya yazabilirsiniz..."
+                    placeholder="Çiçeğin yanında iletilmesini istediğiniz duygu dolu mesajınızı buraya yazabilirsiniz... (Maksimum 280 karakter)"
                     value={cardNote}
                     onChange={(e) => setCardNote(e.target.value)}
                   ></textarea>

@@ -60,64 +60,64 @@ export default function OrderThermalReceiptPage({ params }: { params: Promise<{ 
   const firstItem = cleanItems[0];
   const barcodeUrl = `https://bwipjs-api.metafloor.com/?bcid=code128&text=${encodeURIComponent(String(o.id).replace(/\D/g, "") || "460918939")}&scale=2&height=10&includetext`;
 
-  // Render a single strip (210mm x 99mm)
+  // Render a single strip (Exact physical DL size: 210mm wide x 99mm high)
   const renderStrip = (copyLabel?: string) => (
     <div className="otokopi-strip bg-white text-black relative flex overflow-hidden">
-      {/* SOL KISIM: KART NOTU (70mm) */}
-      <div className="card-note-part w-[70mm] h-full p-2.5 flex flex-col justify-between border-r border-dashed border-slate-300 relative box-border">
+      {/* SOL KISIM: KART NOTU (Tam 70mm Genişlik x 99mm Yükseklik) */}
+      <div className="card-note-part w-[70mm] h-[99mm] p-3 flex flex-col justify-between relative box-border overflow-hidden">
         {/* Card Note Body */}
         <div className="space-y-1 overflow-hidden">
           {copyLabel && (
             <div className="text-[7.5px] font-bold uppercase text-slate-400 print:hidden">{copyLabel}</div>
           )}
-          <div className="text-[10px] leading-snug font-serif italic text-slate-900 break-words line-clamp-6">
+          <div className="text-[9.5px] leading-tight font-serif italic text-slate-900 break-words line-clamp-6 pt-0.5">
             "{o.cardNote || "Kart notu belirtilmedi."}"
           </div>
         </div>
 
-        {/* Media Note QR Code (Voice / Video Message) if available */}
+        {/* Media Note QR Code if available */}
         {o.mediaNoteUrl ? (
-          <div className="flex items-center gap-1.5 pt-1 border-t border-dashed border-slate-200">
+          <div className="flex items-center gap-1.5 py-1">
             <img
-              src={`https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(o.mediaNoteUrl)}`}
+              src={`https://api.qrserver.com/v1/create-qr-code/?size=90x90&data=${encodeURIComponent(o.mediaNoteUrl)}`}
               alt="Sesli/Videolu Mesaj QR Kodu"
-              className="w-8 h-8 object-contain rounded shrink-0 border border-slate-200"
+              className="w-7 h-7 object-contain rounded shrink-0 border border-slate-200"
             />
-            <div className="text-[7.5px] font-sans leading-tight text-slate-700">
+            <div className="text-[7px] font-sans leading-tight text-slate-700">
               <span className="font-bold text-black block">🎙️ Ses/Video</span>
-              <span className="text-[7px] text-slate-500">Okutunuz</span>
+              <span className="text-[6.5px] text-slate-500">Okutunuz</span>
             </div>
           </div>
         ) : null}
 
-        {/* Sender Name */}
-        <div className="pt-1 text-right">
-          <div className="text-[10.5px] font-black uppercase font-serif tracking-wide text-black truncate">
+        {/* Sender Name - Sol kutunun en altında kalır, yatay çizgiyi asla aşmaz */}
+        <div className="pt-0.5 text-right">
+          <div className="text-[10px] font-black uppercase font-serif tracking-wide text-black truncate">
             {o.isAnonymous ? "İsimsiz Gönderici" : (o.customerName || "Gönderen")}
           </div>
         </div>
       </div>
 
-      {/* SAĞ KISIM: SİPARİŞ DETAY VE TESLİMAT BİLGİSİ (140mm) */}
-      <div className="order-detail-part w-[140mm] h-full p-2.5 pl-3.5 flex flex-col justify-between relative box-border">
+      {/* SAĞ KISIM: SİPARİŞ DETAY VE TESLİMAT BİLGİSİ (Tam 140mm Genişlik x 99mm Yükseklik) */}
+      <div className="order-detail-part w-[140mm] h-[99mm] p-3 pl-4 flex flex-col justify-between relative box-border overflow-hidden">
         {/* Top: Barcode + Order Number + Product Thumb */}
         <div className="flex items-start justify-between gap-2">
           <div className="space-y-0.5">
-            <div className="h-8">
+            <div className="h-7">
               {/* Barcode representation */}
               <img
                 src={barcodeUrl}
                 alt={`Barkod ${o.id}`}
-                className="h-7 max-w-[130px] object-contain"
+                className="h-6 max-w-[125px] object-contain"
                 onError={(e: any) => {
                   e.target.style.display = "none";
                 }}
               />
-              <div className="text-[8.5px] font-mono font-bold tracking-widest leading-none mt-0.5">
+              <div className="text-[8px] font-mono font-bold tracking-widest leading-none mt-0.5">
                 #{String(o.id).replace(/\D/g, "") || o.id}
               </div>
             </div>
-            <div className="text-[8.5px] text-slate-500 font-semibold pt-0.5">
+            <div className="text-[8px] text-slate-500 font-semibold pt-0.5">
               {o.deliveryDate || "15.09.2026"} / {firstItem.code || "vbt1812-1"} * {firstItem.quantity || 1} Adet
             </div>
           </div>
@@ -127,40 +127,40 @@ export default function OrderThermalReceiptPage({ params }: { params: Promise<{ 
             <img
               src={o.productImage || firstItem.image}
               alt="Ürün"
-              className="w-9 h-9 object-cover rounded border border-slate-200"
+              className="w-8 h-8 object-cover rounded border border-slate-200"
             />
           ) : (
-            <div className="w-9 h-9 border border-slate-200 rounded flex items-center justify-center text-xs">🌸</div>
+            <div className="w-8 h-8 border border-slate-200 rounded flex items-center justify-center text-xs">🌸</div>
           )}
         </div>
 
         {/* Center: Product Name & Recipient Address */}
-        <div className="space-y-0.5 my-auto text-[9.5px] leading-tight">
+        <div className="space-y-0.5 my-auto text-[9px] leading-tight">
           <div className="font-extrabold text-slate-900">
             {firstItem.code || "vbt1812-1"} - {firstItem.title || "Çiçek Buketi"}
           </div>
-          <div className="text-[8.5px] text-slate-500">Standart Boy</div>
+          <div className="text-[8px] text-slate-500">Standart Boy</div>
 
-          <div className="text-[9.5px] font-bold text-slate-800 pt-0.5">
+          <div className="text-[9px] font-bold text-slate-800 pt-0.5">
             Teslimat Zamanı: <span className="font-black text-black">{o.deliveryTime || o.deliverySlot || "13:00 - 18:00 Arası Teslimat"}</span>
           </div>
 
           <div className="pt-0.5">
             <span className="font-semibold text-slate-700">Alıcı Ad Soyadı: </span>
-            <span className="font-black text-black text-[10.5px]">{o.recipientName}</span>
-            {o.recipientPhone && <span className="text-[9.5px] text-slate-600 font-bold ml-1">({o.recipientPhone})</span>}
+            <span className="font-black text-black text-[10px]">{o.recipientName}</span>
+            {o.recipientPhone && <span className="text-[9px] text-slate-600 font-bold ml-1">({o.recipientPhone})</span>}
           </div>
 
           <div className="pt-0.5">
             <span className="font-semibold text-slate-700">Alıcı Adresi: </span>
-            <span className="font-bold text-slate-900 text-[9px] uppercase leading-tight">
+            <span className="font-bold text-slate-900 text-[8.5px] uppercase leading-tight line-clamp-2">
               {o.address}
             </span>
           </div>
         </div>
 
-        {/* Bottom: Note / Print timestamp */}
-        <div className="flex items-center justify-between text-[7.5px] text-slate-400 pt-1 border-t border-slate-100">
+        {/* Bottom: Note / Print timestamp - 99mm yatay çizgisinin tam üstünde sonlanır */}
+        <div className="flex items-center justify-between text-[7px] text-slate-400 pt-0.5 border-t border-slate-100">
           <span>{o.paymentMethod || "Kredi Kartı"} - {o.totalAmount || o.totalPrice} ₺</span>
           <span className="italic">Çiçekçe Sipariş Formu · {new Date().toLocaleDateString("tr-TR")}</span>
         </div>
@@ -194,7 +194,7 @@ export default function OrderThermalReceiptPage({ params }: { params: Promise<{ 
                 paperMode === "strip" ? "bg-white text-black shadow-xs font-black" : "text-slate-500"
               }`}
             >
-              Standart A4 Fiş (Örnekteki Gibi)
+              Standart A4 Fiş (1. Bölüme Hizalı)
             </button>
             <button
               type="button"
@@ -203,7 +203,7 @@ export default function OrderThermalReceiptPage({ params }: { params: Promise<{ 
                 paperMode === "full_a4" ? "bg-white text-black shadow-xs font-black" : "text-slate-500"
               }`}
             >
-              Tam A4 (3 Nüsha Kopya)
+              Tam A4 (3 Bölüm / 3 Nüsha)
             </button>
           </div>
 
@@ -226,9 +226,7 @@ export default function OrderThermalReceiptPage({ params }: { params: Promise<{ 
         ) : (
           <div className="a4-page-wrapper mx-auto bg-white shadow-lg print:shadow-none">
             {renderStrip("1. Nüsha - Müşteri & Çiçek Notu")}
-            <div className="perforation-divider my-0 border-b border-dashed border-slate-300"></div>
             {renderStrip("2. Nüsha - Atölye / Hazırlık")}
-            <div className="perforation-divider my-0 border-b border-dashed border-slate-300"></div>
             {renderStrip("3. Nüsha - Kurye Teslimat")}
           </div>
         )}
@@ -238,30 +236,35 @@ export default function OrderThermalReceiptPage({ params }: { params: Promise<{ 
       <style jsx global>{`
         .a4-single-strip-sheet {
           width: 210mm;
-          min-height: 290mm;
-          max-height: 297mm;
+          height: 297mm;
           box-sizing: border-box;
-          padding-top: 5mm;
+          margin: 0 auto;
+          overflow: hidden;
         }
         .a4-page-wrapper {
           width: 210mm;
-          min-height: 290mm;
-          max-height: 297mm;
+          height: 297mm;
           display: flex;
           flex-direction: column;
-          justify-content: space-between;
           box-sizing: border-box;
+          margin: 0 auto;
+          overflow: hidden;
         }
         .otokopi-strip {
           width: 210mm;
-          height: 92mm;
+          height: 99mm;
+          max-height: 99mm;
           box-sizing: border-box;
+          overflow: hidden;
         }
 
         @media print {
           @page {
             size: A4 portrait;
-            margin: 0 !important;
+            margin: 0mm !important;
+          }
+          *, *::before, *::after {
+            box-sizing: border-box !important;
           }
           html, body {
             background: white !important;
@@ -269,6 +272,8 @@ export default function OrderThermalReceiptPage({ params }: { params: Promise<{ 
             padding: 0 !important;
             width: 210mm !important;
             height: 297mm !important;
+            max-width: 210mm !important;
+            max-height: 297mm !important;
             overflow: hidden !important;
             -webkit-print-color-adjust: exact;
             print-color-adjust: exact;
@@ -277,16 +282,23 @@ export default function OrderThermalReceiptPage({ params }: { params: Promise<{ 
             margin: 0 !important;
             padding: 0 !important;
             width: 210mm !important;
+            height: 297mm !important;
             page-break-after: avoid !important;
             page-break-before: avoid !important;
           }
           .a4-single-strip-sheet,
           .a4-page-wrapper {
+            width: 210mm !important;
+            height: 297mm !important;
             margin: 0 !important;
+            padding: 0 !important;
             page-break-after: avoid !important;
             page-break-inside: avoid !important;
           }
           .otokopi-strip {
+            width: 210mm !important;
+            height: 99mm !important;
+            max-height: 99mm !important;
             page-break-inside: avoid !important;
             border: none !important;
           }

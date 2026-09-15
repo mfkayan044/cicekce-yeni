@@ -11,6 +11,7 @@ import ProductCard from "@/components/store/ProductCard";
 import QuickOrderModal, { QuickOrderProduct } from "@/components/store/QuickOrderModal";
 import { useStore, Product, CategoryItem } from "@/lib/store";
 import React, { useState, useEffect } from "react";
+import { ArrowUpDown, Flame, ArrowDownAZ, ArrowUpZA, Sparkles, Percent } from "lucide-react";
 
 function formatLink(url?: string): string {
   if (!url) return "#";
@@ -208,8 +209,42 @@ export default function CustomerHomePage() {
     setCartItemIds(cartItemIds.filter((cartId) => cartId !== id));
   };
 
-  // Vitrin Grid Filtering
-  const vitrinProducts = products.filter((p: Product) => p.stock !== false && p.featured !== false);
+  const [sortBy, setSortBy] = useState<string>("suggested");
+
+  const parsePriceNum = (val?: string | number): number => {
+    if (!val) return 0;
+    if (typeof val === "number") return val;
+    const cl = String(val).replace(/\./g, "").replace(",", ".").replace(/[^0-9.]/g, "");
+    return parseFloat(cl) || 0;
+  };
+
+  // Vitrin Grid Filtering & Sorting
+  const vitrinBaseProducts = products.filter((p: Product) => p.stock !== false && p.featured !== false);
+
+  const sortedVitrinProducts = [...vitrinBaseProducts].sort((a: Product, b: Product) => {
+    if (sortBy === "price_asc") {
+      return parsePriceNum(a.price) - parsePriceNum(b.price);
+    }
+    if (sortBy === "price_desc") {
+      return parsePriceNum(b.price) - parsePriceNum(a.price);
+    }
+    if (sortBy === "bestsellers") {
+      const scoreA = ((a as any).salesCount || 0) * 10 + (a.featured ? 5 : 0);
+      const scoreB = ((b as any).salesCount || 0) * 10 + (b.featured ? 5 : 0);
+      if (scoreB !== scoreA) return scoreB - scoreA;
+      return String(b.id).localeCompare(String(a.id));
+    }
+    if (sortBy === "newest") {
+      return String(b.id).localeCompare(String(a.id));
+    }
+    if (sortBy === "discount") {
+      const discA = parsePriceNum(a.discount || 0);
+      const discB = parsePriceNum(b.discount || 0);
+      return discB - discA;
+    }
+    // "suggested" default
+    return 0;
+  });
 
   const promoCards = Array.isArray(heroData?.promoCards) ? heroData.promoCards : [];
   const horizontalBanners = Array.isArray(heroData?.horizontalBanners) ? heroData.horizontalBanners : [];
@@ -360,17 +395,107 @@ export default function CustomerHomePage() {
 
         {/* Vitrin Product Grid Section */}
         <section className="mb-14">
-          <div className="mb-6">
-            <h1 className="text-xl lg:text-2xl font-extrabold text-slate-800 leading-tight">
-              {seoData?.h1Title || "Çiçekçe ile Aynı Gün Taze Çiçek Siparişi"}
-            </h1>
-            <p className="text-xs text-slate-500 mt-1">
-              {seoData?.h1Subtitle || "Sizler için özenle seçtiğimiz taze çiçekler, buketler ve aranjmanlar; hepsi aynı gün adrese teslimata hazır."}
-            </p>
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-4">
+            <div>
+              <h1 className="text-xl lg:text-2xl font-extrabold text-slate-800 leading-tight">
+                {seoData?.h1Title || "Çiçekçe ile Aynı Gün Taze Çiçek Siparişi"}
+              </h1>
+              <p className="text-xs text-slate-500 mt-1">
+                {seoData?.h1Subtitle || "Sizler için özenle seçtiğimiz taze çiçekler, buketler ve aranjmanlar; hepsi aynı gün adrese teslimata hazır."} ({sortedVitrinProducts.length} ürün)
+              </p>
+            </div>
+
+            {/* Desktop Sort Dropdown */}
+            <div className="hidden sm:flex items-center gap-2">
+              <span className="text-xs font-bold text-slate-500 flex items-center gap-1">
+                <ArrowUpDown className="w-3.5 h-3.5 text-slate-400" />
+                <span>Sırala:</span>
+              </span>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="bg-white border border-slate-200 text-slate-800 text-xs font-bold rounded-xl px-3 py-2 outline-none focus:border-[#2b2623] cursor-pointer shadow-2xs"
+              >
+                <option value="suggested">🌟 Önerilen Sıralama</option>
+                <option value="bestsellers">🔥 Çok Satanlar</option>
+                <option value="price_asc">💰 Fiyat: Düşükten Yükseğe</option>
+                <option value="price_desc">💎 Fiyat: Yüksekten Düşüğe</option>
+                <option value="newest">✨ En Yeniler</option>
+                <option value="discount">🏷️ İndirim Oranına Göre</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Horizontal Sorting Pill Buttons */}
+          <div className="mb-6 flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+            <button
+              type="button"
+              onClick={() => setSortBy("suggested")}
+              className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition shrink-0 flex items-center gap-1.5 ${
+                sortBy === "suggested"
+                  ? "bg-[#2b2623] text-white shadow-xs"
+                  : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200/80"
+              }`}
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Önerilen</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setSortBy("bestsellers")}
+              className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition shrink-0 flex items-center gap-1.5 ${
+                sortBy === "bestsellers"
+                  ? "bg-amber-600 text-white shadow-xs"
+                  : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200/80"
+              }`}
+            >
+              <Flame className="w-3.5 h-3.5" />
+              <span>Çok Satanlar</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setSortBy("price_asc")}
+              className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition shrink-0 flex items-center gap-1.5 ${
+                sortBy === "price_asc"
+                  ? "bg-emerald-700 text-white shadow-xs"
+                  : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200/80"
+              }`}
+            >
+              <ArrowDownAZ className="w-3.5 h-3.5" />
+              <span>En Düşük Fiyat</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setSortBy("price_desc")}
+              className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition shrink-0 flex items-center gap-1.5 ${
+                sortBy === "price_desc"
+                  ? "bg-purple-700 text-white shadow-xs"
+                  : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200/80"
+              }`}
+            >
+              <ArrowUpZA className="w-3.5 h-3.5" />
+              <span>En Yüksek Fiyat</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setSortBy("discount")}
+              className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition shrink-0 flex items-center gap-1.5 ${
+                sortBy === "discount"
+                  ? "bg-red-600 text-white shadow-xs"
+                  : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200/80"
+              }`}
+            >
+              <Percent className="w-3.5 h-3.5" />
+              <span>Fırsat & İndirim</span>
+            </button>
           </div>
 
           <div className={gridColsClass}>
-            {vitrinProducts.map((p: Product) => (
+            {sortedVitrinProducts.map((p: Product) => (
               <ProductCard
                 key={p.id}
                 id={p.id}

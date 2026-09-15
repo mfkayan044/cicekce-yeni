@@ -6,6 +6,7 @@ import ProductCard from "@/components/store/ProductCard";
 import QuickOrderModal, { QuickOrderProduct } from "@/components/store/QuickOrderModal";
 import { useStore, Product } from "@/lib/store";
 import { use, useState, useEffect } from "react";
+import { ArrowUpDown, Flame, ArrowDownAZ, ArrowUpZA, Sparkles, Percent } from "lucide-react";
 
 function normalizeSlug(str: string) {
   if (!str) return "";
@@ -57,6 +58,7 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
   const [cartItemIds, setCartItemIds] = useState<(string | number)[]>([]);
 
   const [gridColsClass, setGridColsClass] = useState<string>("grid product-catalog-grid cols-mob-2 cols-desk-4 gap-4 sm:gap-6");
+  const [sortBy, setSortBy] = useState<string>("suggested");
 
   useEffect(() => {
     fetch("/api/settings/general")
@@ -79,8 +81,15 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
       .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
       .join(" ");
 
+  const parsePriceNum = (val?: string | number): number => {
+    if (!val) return 0;
+    if (typeof val === "number") return val;
+    const cl = String(val).replace(/\./g, "").replace(",", ".").replace(/[^0-9.]/g, "");
+    return parseFloat(cl) || 0;
+  };
+
   // ULTRA-SMART MATCHING (Categories + Filter Purpose + Recipient + Color + Design Type)
-  const filteredProducts = products.filter((p: Product) => {
+  const baseProducts = products.filter((p: Product) => {
     // 1. Must be Active (stock !== false)
     if (p.stock === false) return false;
 
@@ -127,6 +136,34 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
     return false;
   });
 
+  // SORTING ENGINE
+  const sortedProducts = [...baseProducts].sort((a: Product, b: Product) => {
+    if (sortBy === "price_asc") {
+      return parsePriceNum(a.price) - parsePriceNum(b.price);
+    }
+    if (sortBy === "price_desc") {
+      return parsePriceNum(b.price) - parsePriceNum(a.price);
+    }
+    if (sortBy === "bestsellers") {
+      const scoreA = ((a as any).salesCount || 0) * 10 + (a.featured ? 5 : 0);
+      const scoreB = ((b as any).salesCount || 0) * 10 + (b.featured ? 5 : 0);
+      if (scoreB !== scoreA) return scoreB - scoreA;
+      return String(b.id).localeCompare(String(a.id));
+    }
+    if (sortBy === "newest") {
+      return String(b.id).localeCompare(String(a.id));
+    }
+    if (sortBy === "discount") {
+      const discA = parsePriceNum(a.discount || 0);
+      const discB = parsePriceNum(b.discount || 0);
+      return discB - discA;
+    }
+    // "suggested" default: featured first, then standard order
+    if (a.featured && !b.featured) return -1;
+    if (!a.featured && b.featured) return 1;
+    return 0;
+  });
+
   const handleAddToCart = (prod: QuickOrderProduct) => {
     if (!cartItemIds.includes(prod.id)) {
       setCartItemIds([...cartItemIds, prod.id]);
@@ -159,17 +196,111 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
       <div>
         <StoreHeader />
 
-        <div className="bg-white border-b py-8 shadow-xs">
+        <div className="bg-white border-b py-6 sm:py-8 shadow-xs">
           <div className="max-w-[1400px] mx-auto px-4 lg:px-6">
-            <h1 className="text-3xl font-black text-slate-900">{categoryName}</h1>
-            <p className="text-xs text-slate-500 mt-1">Taze ve canlı {categoryName} koleksiyonu.</p>
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+              <div>
+                <h1 className="text-2xl sm:text-3xl font-black text-slate-900">{categoryName}</h1>
+                <p className="text-xs text-slate-500 mt-1">
+                  Taze ve canlı {categoryName} koleksiyonu ({sortedProducts.length} ürün listeleniyor)
+                </p>
+              </div>
+
+              {/* Desktop Sort Dropdown */}
+              <div className="hidden sm:flex items-center gap-2">
+                <span className="text-xs font-bold text-slate-500 flex items-center gap-1">
+                  <ArrowUpDown className="w-3.5 h-3.5 text-slate-400" />
+                  <span>Sırala:</span>
+                </span>
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value)}
+                  className="bg-slate-50 border border-slate-200 text-slate-800 text-xs font-bold rounded-xl px-3 py-2 outline-none focus:border-[#2b2623] cursor-pointer shadow-2xs"
+                >
+                  <option value="suggested">🌟 Önerilen Sıralama</option>
+                  <option value="bestsellers">🔥 Çok Satanlar</option>
+                  <option value="price_asc">💰 Fiyat: Düşükten Yükseğe</option>
+                  <option value="price_desc">💎 Fiyat: Yüksekten Düşüğe</option>
+                  <option value="newest">✨ En Yeniler</option>
+                  <option value="discount">🏷️ İndirim Oranına Göre</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Mobile & Desktop Horizontal Sorting Pill Buttons */}
+            <div className="mt-4 pt-3 border-t border-slate-100 flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+              <button
+                type="button"
+                onClick={() => setSortBy("suggested")}
+                className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition shrink-0 flex items-center gap-1.5 ${
+                  sortBy === "suggested"
+                    ? "bg-[#2b2623] text-white shadow-xs"
+                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                }`}
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>Önerilen</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setSortBy("bestsellers")}
+                className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition shrink-0 flex items-center gap-1.5 ${
+                  sortBy === "bestsellers"
+                    ? "bg-amber-600 text-white shadow-xs"
+                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                }`}
+              >
+                <Flame className="w-3.5 h-3.5" />
+                <span>Çok Satanlar</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setSortBy("price_asc")}
+                className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition shrink-0 flex items-center gap-1.5 ${
+                  sortBy === "price_asc"
+                    ? "bg-emerald-700 text-white shadow-xs"
+                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                }`}
+              >
+                <ArrowDownAZ className="w-3.5 h-3.5" />
+                <span>En Düşük Fiyat</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setSortBy("price_desc")}
+                className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition shrink-0 flex items-center gap-1.5 ${
+                  sortBy === "price_desc"
+                    ? "bg-purple-700 text-white shadow-xs"
+                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                }`}
+              >
+                <ArrowUpZA className="w-3.5 h-3.5" />
+                <span>En Yüksek Fiyat</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setSortBy("discount")}
+                className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition shrink-0 flex items-center gap-1.5 ${
+                  sortBy === "discount"
+                    ? "bg-red-600 text-white shadow-xs"
+                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                }`}
+              >
+                <Percent className="w-3.5 h-3.5" />
+                <span>Fırsat & İndirim</span>
+              </button>
+            </div>
           </div>
         </div>
 
-        <section className="py-10 max-w-[1400px] mx-auto px-4 lg:px-6">
-          {filteredProducts.length > 0 ? (
+        <section className="py-8 max-w-[1400px] mx-auto px-4 lg:px-6">
+          {sortedProducts.length > 0 ? (
             <div className={gridColsClass}>
-              {filteredProducts.map((product: Product) => (
+              {sortedProducts.map((product: Product) => (
                 <ProductCard
                   key={product.id}
                   id={product.id}
